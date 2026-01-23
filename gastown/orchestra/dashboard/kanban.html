@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchestra Town - Kanban Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .dashboard {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .mayor-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .mayor-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin: 0 auto 15px;
+        }
+
+        .mayor-panel h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .thinking-box {
+            background: #f8f9fa;
+            border-left: 4px solid #764ba2;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .thinking-item {
+            font-size: 0.9em;
+            color: #555;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .thinking-item:before {
+            content: "💭";
+            position: absolute;
+            left: 0;
+        }
+
+        .chat-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+        }
+
+        .chat-panel h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .chat-message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .chat-message.user {
+            background: #667eea;
+            color: white;
+            margin-left: 20px;
+        }
+
+        .chat-message.mayor {
+            background: white;
+            border: 2px solid #764ba2;
+            margin-right: 20px;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .chat-input button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Kanban Board */
+        .kanban-board {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .board-columns {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .column {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 600px;
+        }
+
+        .column-header {
+            font-weight: bold;
+            color: #333;
+            padding: 10px;
+            border-bottom: 3px solid;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .column.idle .column-header { border-color: #28a745; }
+        .column.assigned .column-header { border-color: #ffc107; }
+        .column.working .column-header { border-color: #007bff; }
+        .column.completed .column-header { border-color: #6c757d; }
+
+        .agent-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: move;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .agent-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .agent-card.dragging {
+            opacity: 0.5;
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .agent-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .agent-avatar.mayor { background: linear-gradient(135deg, #764ba2, #667eea); }
+        .agent-avatar.worker { background: linear-gradient(135deg, #667eea, #3a5fd8); }
+        .agent-avatar.specialist { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        .agent-avatar.advisor { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+        .agent-avatar.utility { background: linear-gradient(135deg, #1abc9c, #16a085); }
+        .agent-avatar.prompter { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+
+        .agent-info {
+            flex: 1;
+        }
+
+        .agent-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .agent-role {
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        .agent-details {
+            font-size: 0.85em;
+            color: #555;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s;
+        }
+
+        .last-message {
+            font-size: 0.8em;
+            color: #666;
+            background: #fff3cd;
+            padding: 8px;
+            border-radius: 4px;
+            border-left: 3px solid #ffc107;
+            margin-top: 8px;
+        }
+
+        .collaborators {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .collaborator-badge {
+            font-size: 0.75em;
+            padding: 4px 8px;
+            background: #667eea;
+            color: white;
+            border-radius: 12px;
+        }
+
+        .stats-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .stats-badge.success { background: #28a745; color: white; }
+        .stats-badge.warning { background: #ffc107; color: #333; }
+        .stats-badge.info { background: #17a2b8; color: white; }
+
+        .teams-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+
+        .team-box {
+            background: white;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .team-header {
+            font-weight: bold;
+            color: #764ba2;
+            margin-bottom: 8px;
+        }
+
+        .team-members {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .member-chip {
+            font-size: 0.8em;
+            padding: 4px 10px;
+            background: #667eea;
+            color: white;
+            border-radius: 12px;
+        }
+
+        .integration-status {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 6px;
+            border-left: 4px solid #28a745;
+        }
+
+        .integration-item {
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+
+        .integration-item strong {
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <h1>🏙️ Orchestra Town - Kanban Dashboard</h1>
+            <p>Real-time Agent Orchestration</p>
+            <div class="nav-tabs">
+                <button class="tab-btn active" onclick="window.location.href='kanban.html'">Kanban Board</button>
+                <button class="tab-btn" onclick="window.location.href='index.html'">Classic View</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Mayor Panel -->
+                <div class="mayor-panel">
+                    <div class="mayor-avatar">👑</div>
+                    <h2>The Mayor</h2>
+
+                    <h4 style="margin-bottom: 10px;">Current Thinking:</h4>
+                    <div class="thinking-box" id="mayor-thinking">
+                        <div class="thinking-item">Initializing town...</div>
+                    </div>
+
+                    <div class="teams-section">
+                        <h4 style="margin-bottom: 10px;">Teams:</h4>
+                        <div class="team-box">
+                            <div class="team-header">🎯 Advisor Team (4)</div>
+                            <div class="team-members">
+                                <span class="member-chip">Planning</span>
+                                <span class="member-chip">Architecture</span>
+                                <span class="member-chip">Optimization</span>
+                                <span class="member-chip">Risk</span>
+                            </div>
+                        </div>
+                        <div class="team-box">
+                            <div class="team-header">🔧 Utility Team (4)</div>
+                            <div class="team-members">
+                                <span class="member-chip">WebSearch</span>
+                                <span class="member-chip">DeepThink</span>
+                                <span class="member-chip">Browser</span>
+                                <span class="member-chip">ComputerUse</span>
+                            </div>
+                        </div>
+                        <div class="team-box">
+                            <div class="team-header">✍️ Prompting Team (4)</div>
+                            <div class="team-members">
+                                <span class="member-chip">ChainOfThought</span>
+                                <span class="member-chip">FewShot</span>
+                                <span class="member-chip">TreeOfThought</span>
+                                <span class="member-chip">ZeroShot</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="integration-status">
+                        <h4 style="margin-bottom: 8px;">🔌 Integrations:</h4>
+                        <div class="integration-item"><strong>✅</strong> Claude Code</div>
+                        <div class="integration-item"><strong>🔧</strong> OpenCode (Ready)</div>
+                        <div class="integration-item"><strong>🚀</strong> Antigravity (Conceptual)</div>
+                    </div>
+                </div>
+
+                <!-- Chat Panel -->
+                <div class="chat-panel">
+                    <h3>💬 Chat with Mayor</h3>
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="chat-message mayor">
+                            <strong>Mayor:</strong> Hello! I'm ready to orchestrate your agents. What would you like to build today?
+                        </div>
+                    </div>
+                    <div class="chat-input">
+                        <input type="text" id="chat-input" placeholder="Talk to the Mayor..." onkeypress="if(event.key==='Enter') sendMessage()">
+                        <button onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kanban Board -->
+            <div class="kanban-board">
+                <h2>Agent Flow</h2>
+                <div class="board-columns">
+                    <!-- Idle Column -->
+                    <div class="column idle" data-status="idle">
+                        <div class="column-header">
+                            <span>✅ Idle</span>
+                            <span class="stats-badge success" id="idle-count">0</span>
+                        </div>
+                        <div id="idle-agents" class="agent-drop-zone">
+                            <!-- Agent cards will be added here -->
+                        </div>
+                    </div>
+
+                    <!-- Assigned Column -->
+                    <div class="column assigned" data-status="assigned">
+                        <div class="column-header">
+                            <span>📋 Assigned</span>
+                            <span class="stats-badge warning" id="assigned-count">0</span>
+                        </div>
+                        <div id="assigned-agents" class="agent-drop-zone">
+                            <!-- Agent cards will be added here -->
+                        </div>
+                    </div>
+
+                    <!-- Working Column -->
+                    <div class="column working" data-status="working">
+                        <div class="column-header">
+                            <span>⚙️ Working</span>
+                            <span class="stats-badge info" id="working-count">0</span>
+                        </div>
+                        <div id="working-agents" class="agent-drop-zone">
+                            <!-- Agent cards will be added here -->
+                        </div>
+                    </div>
+
+                    <!-- Completed Column -->
+                    <div class="column completed" data-status="completed">
+                        <div class="column-header">
+                            <span>✔️ Completed</span>
+                            <span class="stats-badge success" id="completed-count">0</span>
+                        </div>
+                        <div id="completed-agents" class="agent-drop-zone">
+                            <!-- Agent cards will be added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let agents = {};
+        let tasks = {};
+        let messages = {};
+
+        // Initialize dashboard
+        async function init() {
+            await loadData();
+            renderAgentCards();
+            setupDragAndDrop();
+            startAutoRefresh();
+        }
+
+        // Load all data
+        async function loadData() {
+            try {
+                const [agentsRes, tasksRes, messagesRes] = await Promise.all([
+                    fetch(`${API_URL}/agents`),
+                    fetch(`${API_URL}/tasks`),
+                    fetch(`${API_URL}/messages`)
+                ]);
+
+                agents = await agentsRes.json();
+                tasks = await tasksRes.json();
+                messages = await messagesRes.json();
+
+                updateMayorThinking();
+            } catch (error) {
+                console.error('Failed to load data:', error);
+            }
+        }
+
+        // Render agent cards
+        function renderAgentCards() {
+            const columns = {
+                idle: document.getElementById('idle-agents'),
+                assigned: document.getElementById('assigned-agents'),
+                working: document.getElementById('working-agents'),
+                completed: document.getElementById('completed-agents')
+            };
+
+            // Clear columns
+            Object.values(columns).forEach(col => col.innerHTML = '');
+
+            // Group agents by status
+            const agentsByStatus = {idle: [], assigned: [], working: [], completed: []};
+
+            agents.forEach(agent => {
+                const status = agent.status === 'in_progress' ? 'working' : agent.status;
+                if (agentsByStatus[status]) {
+                    agentsByStatus[status].push(agent);
+                } else {
+                    agentsByStatus.idle.push(agent);
+                }
+            });
+
+            // Render cards
+            Object.entries(agentsByStatus).forEach(([status, agentList]) => {
+                agentList.forEach(agent => {
+                    const card = createAgentCard(agent);
+                    if (columns[status]) {
+                        columns[status].appendChild(card);
+                    }
+                });
+            });
+
+            // Update counts
+            document.getElementById('idle-count').textContent = agentsByStatus.idle.length;
+            document.getElementById('assigned-count').textContent = agentsByStatus.assigned.length;
+            document.getElementById('working-count').textContent = agentsByStatus.working.length;
+            document.getElementById('completed-count').textContent = agentsByStatus.completed.length;
+        }
+
+        // Create agent card
+        function createAgentCard(agent) {
+            const card = document.createElement('div');
+            card.className = 'agent-card';
+            card.draggable = true;
+            card.dataset.agentId = agent.id;
+
+            const currentTask = tasks.find(t => t.assigned_to === agent.id);
+            const lastMessage = messages.filter(m => m.to_agent === agent.id || m.from_agent === agent.id)[0];
+
+            const progress = currentTask ? 50 : 0; // Simplified progress
+            const collaborators = currentTask ? getCollaborators(currentTask) : [];
+
+            card.innerHTML = `
+                <div class="agent-header">
+                    <div class="agent-avatar ${agent.role}">
+                        ${getRoleEmoji(agent.role)}
+                    </div>
+                    <div class="agent-info">
+                        <div class="agent-name">${agent.name}</div>
+                        <div class="agent-role">${agent.role}${agent.specialty ? ': ' + agent.specialty : ''}</div>
+                    </div>
+                </div>
+
+                <div class="agent-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Status:</span>
+                        <span>${agent.status}</span>
+                    </div>
+                    ${currentTask ? `
+                    <div class="detail-row">
+                        <span class="detail-label">Task:</span>
+                        <span>${currentTask.title.substring(0, 30)}...</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progress}%"></div>
+                    </div>
+                    ` : ''}
+                    <div class="detail-row">
+                        <span class="detail-label">Completed:</span>
+                        <span class="stats-badge success">${agent.tasks_completed}</span>
+                    </div>
+                </div>
+
+                ${lastMessage ? `
+                <div class="last-message">
+                    <strong>Last A2A:</strong> ${lastMessage.content.substring(0, 50)}...
+                </div>
+                ` : ''}
+
+                ${collaborators.length > 0 ? `
+                <div class="collaborators">
+                    ${collaborators.map(c => `<span class="collaborator-badge">${c}</span>`).join('')}
+                </div>
+                ` : ''}
+            `;
+
+            return card;
+        }
+
+        function getRoleEmoji(role) {
+            const emojis = {
+                mayor: '👑',
+                worker: '👷',
+                specialist: '🎯',
+                monitor: '👁️',
+                advisor: '🎓',
+                utility: '🔧',
+                prompter: '✍️'
+            };
+            return emojis[role] || '🤖';
+        }
+
+        function getCollaborators(task) {
+            // Find other agents working on same task or related tasks
+            return tasks
+                .filter(t => t.parent_id === task.parent_id && t.id !== task.id)
+                .map(t => agents.find(a => a.id === t.assigned_to))
+                .filter(a => a)
+                .map(a => a.name)
+                .slice(0, 3);
+        }
+
+        // Drag and drop
+        function setupDragAndDrop() {
+            const cards = document.querySelectorAll('.agent-card');
+            const dropZones = document.querySelectorAll('.agent-drop-zone');
+
+            cards.forEach(card => {
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragend', handleDragEnd);
+            });
+
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', handleDragOver);
+                zone.addEventListener('drop', handleDrop);
+            });
+        }
+
+        function handleDragStart(e) {
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', e.target.innerHTML);
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDrop(e) {
+            e.stopPropagation();
+            e.preventDefault();
+
+            const draggingCard = document.querySelector('.dragging');
+            if (draggingCard && e.target.classList.contains('agent-drop-zone')) {
+                e.target.appendChild(draggingCard);
+
+                // Update agent status based on column
+                const newStatus = e.target.closest('.column').dataset.status;
+                const agentId = draggingCard.dataset.agentId;
+                updateAgentStatus(agentId, newStatus);
+            }
+
+            return false;
+        }
+
+        async function updateAgentStatus(agentId, newStatus) {
+            // In real implementation, would call API to update status
+            console.log(`Updating agent ${agentId} to status: ${newStatus}`);
+        }
+
+        // Mayor thinking updates
+        function updateMayorThinking() {
+            const thinkingBox = document.getElementById('mayor-thinking');
+            const recentTasks = tasks.slice(0, 5);
+
+            const thoughts = [
+                `Managing ${agents.length} agents across the town`,
+                `${tasks.filter(t => t.status === 'in_progress').length} tasks currently in progress`,
+                recentTasks.length > 0 ? `Latest task: "${recentTasks[0].title}"` : 'Awaiting new tasks',
+                `${messages.length} inter-agent communications logged`
+            ];
+
+            thinkingBox.innerHTML = thoughts.map(t =>
+                `<div class="thinking-item">${t}</div>`
+            ).join('');
+        }
+
+        // Chat functionality
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Add user message
+            const chatMessages = document.getElementById('chat-messages');
+            const userMsg = document.createElement('div');
+            userMsg.className = 'chat-message user';
+            userMsg.innerHTML = `<strong>You:</strong> ${message}`;
+            chatMessages.appendChild(userMsg);
+
+            // Simulate Mayor response
+            setTimeout(() => {
+                const mayorMsg = document.createElement('div');
+                mayorMsg.className = 'chat-message mayor';
+                mayorMsg.innerHTML = `<strong>Mayor:</strong> ${generateMayorResponse(message)}`;
+                chatMessages.appendChild(mayorMsg);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 1000);
+
+            input.value = '';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function generateMayorResponse(userMessage) {
+            const lowerMsg = userMessage.toLowerCase();
+
+            if (lowerMsg.includes('create') || lowerMsg.includes('build') || lowerMsg.includes('make')) {
+                return "I'll assemble the right team for that. Let me consult my advisors and delegate to the appropriate specialists.";
+            } else if (lowerMsg.includes('status')) {
+                return `Currently managing ${agents.length} agents with ${tasks.filter(t => t.status === 'in_progress').length} active tasks.`;
+            } else if (lowerMsg.includes('help')) {
+                return "I can help you orchestrate complex tasks using my teams: Advisors for planning, Utilities for special capabilities, and Prompters for optimized execution.";
+            } else {
+                return "Understood. I'll coordinate with my teams to handle this efficiently.";
+            }
+        }
+
+        // Auto-refresh
+        function startAutoRefresh() {
+            setInterval(async () => {
+                await loadData();
+                renderAgentCards();
+                setupDragAndDrop();
+            }, 5000);
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
