@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchestra Town Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .stat {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .agent-list, .task-list, .message-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .agent-item, .task-item, .message-item {
+            background: #f8f9fa;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .agent-item.idle { border-left-color: #28a745; }
+        .agent-item.working { border-left-color: #ffc107; }
+        .agent-item.waiting { border-left-color: #17a2b8; }
+        .agent-item.error { border-left-color: #dc3545; }
+
+        .task-item.pending { border-left-color: #6c757d; }
+        .task-item.in_progress { border-left-color: #007bff; }
+        .task-item.completed { border-left-color: #28a745; }
+        .task-item.failed { border-left-color: #dc3545; }
+
+        .message-item.info { border-left-color: #17a2b8; }
+        .message-item.task_assignment { border-left-color: #ffc107; }
+        .message-item.result { border-left-color: #28a745; }
+        .message-item.error { border-left-color: #dc3545; }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .badge.idle { background: #28a745; color: white; }
+        .badge.working { background: #ffc107; color: #333; }
+        .badge.waiting { background: #17a2b8; color: white; }
+        .badge.pending { background: #6c757d; color: white; }
+        .badge.in_progress { background: #007bff; color: white; }
+        .badge.completed { background: #28a745; color: white; }
+        .badge.failed { background: #dc3545; color: white; }
+        .badge.mayor { background: #764ba2; color: white; }
+        .badge.worker { background: #667eea; color: white; }
+        .badge.specialist { background: #f39c12; color: white; }
+        .badge.monitor { background: #e74c3c; color: white; }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .item-title {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .item-meta {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .timestamp {
+            font-size: 0.75em;
+            color: #999;
+        }
+
+        .create-task-form {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .auto-refresh {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #dc3545;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏙️ Orchestra Town Dashboard</h1>
+            <p>Multi-Agent Orchestration System</p>
+        </header>
+
+        <div id="error-container"></div>
+
+        <div class="create-task-form">
+            <h2>Create New Task</h2>
+            <form id="task-form">
+                <div class="form-group">
+                    <label for="task-title">Task Title*</label>
+                    <input type="text" id="task-title" required placeholder="e.g., Build REST API for user management">
+                </div>
+                <div class="form-group">
+                    <label for="task-description">Description</label>
+                    <textarea id="task-description" placeholder="Detailed task description..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="task-priority">Priority</label>
+                    <select id="task-priority">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="task-thinking">Thinking Method</label>
+                    <select id="task-thinking">
+                        <option value="sequential">Sequential (single agent)</option>
+                        <option value="swarm">Swarm (multiple collaborating agents)</option>
+                        <option value="parallel">Parallel (multiple approaches)</option>
+                        <option value="twin">Twin (cross-verification)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Create Task</button>
+            </form>
+        </div>
+
+        <div class="dashboard">
+            <div class="card">
+                <h2>📊 Town Statistics</h2>
+                <div class="stat-grid" id="stats-grid">
+                    <div class="stat">
+                        <div class="stat-label">Total Agents</div>
+                        <div class="stat-value">0</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Active Tasks</div>
+                        <div class="stat-value">0</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Messages</div>
+                        <div class="stat-value">0</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Completed</div>
+                        <div class="stat-value">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🤖 Agents</h2>
+                <div class="agent-list" id="agent-list">
+                    <div class="loading pulse">Loading agents...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📋 Tasks</h2>
+                <div class="task-list" id="task-list">
+                    <div class="loading pulse">Loading tasks...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>💬 Agent Communications</h2>
+                <div class="message-list" id="message-list">
+                    <div class="loading pulse">Loading messages...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="auto-refresh">
+            <label>
+                <input type="checkbox" id="auto-refresh" checked>
+                Auto-refresh (5s)
+            </label>
+        </div>
+
+        <button class="refresh-btn" onclick="refreshDashboard()">🔄 Refresh</button>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let autoRefreshInterval = null;
+
+        // Initialize dashboard
+        async function initDashboard() {
+            await refreshDashboard();
+            setupAutoRefresh();
+        }
+
+        // Refresh all data
+        async function refreshDashboard() {
+            try {
+                await Promise.all([
+                    loadStats(),
+                    loadAgents(),
+                    loadTasks(),
+                    loadMessages()
+                ]);
+                clearError();
+            } catch (error) {
+                showError('Failed to load dashboard data: ' + error.message);
+            }
+        }
+
+        // Load statistics
+        async function loadStats() {
+            const response = await fetch(`${API_URL}/stats`);
+            const stats = await response.json();
+
+            const grid = document.getElementById('stats-grid');
+            grid.innerHTML = `
+                <div class="stat">
+                    <div class="stat-label">Total Agents</div>
+                    <div class="stat-value">${stats.agents.total}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Active Tasks</div>
+                    <div class="stat-value">${stats.tasks.by_status.in_progress || 0}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Messages</div>
+                    <div class="stat-value">${stats.communication.total_messages}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Completed</div>
+                    <div class="stat-value">${stats.tasks.by_status.completed || 0}</div>
+                </div>
+            `;
+        }
+
+        // Load agents
+        async function loadAgents() {
+            const response = await fetch(`${API_URL}/agents`);
+            const agents = await response.json();
+
+            const list = document.getElementById('agent-list');
+            if (agents.length === 0) {
+                list.innerHTML = '<p>No agents found</p>';
+                return;
+            }
+
+            list.innerHTML = agents.map(agent => `
+                <div class="agent-item ${agent.status}">
+                    <div class="item-header">
+                        <div>
+                            <span class="badge ${agent.role}">${agent.role}</span>
+                            <span class="badge ${agent.status}">${agent.status}</span>
+                        </div>
+                    </div>
+                    <div class="item-title">${agent.name}</div>
+                    ${agent.specialty ? `<div class="item-meta">Specialty: ${agent.specialty}</div>` : ''}
+                    <div class="item-meta">
+                        Completed: ${agent.tasks_completed} | Failed: ${agent.tasks_failed}
+                    </div>
+                    ${agent.current_task_id ? `<div class="item-meta">Current Task: ${agent.current_task_id}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Load tasks
+        async function loadTasks() {
+            const response = await fetch(`${API_URL}/tasks`);
+            const tasks = await response.json();
+
+            const list = document.getElementById('task-list');
+            if (tasks.length === 0) {
+                list.innerHTML = '<p>No tasks found</p>';
+                return;
+            }
+
+            list.innerHTML = tasks.map(task => `
+                <div class="task-item ${task.status}">
+                    <div class="item-header">
+                        <span class="badge ${task.status}">${task.status}</span>
+                        <span class="timestamp">${formatTime(task.created_at)}</span>
+                    </div>
+                    <div class="item-title">${task.title}</div>
+                    ${task.description ? `<div class="item-meta">${task.description}</div>` : ''}
+                    <div class="item-meta">
+                        Priority: ${task.priority} |
+                        ${task.thinking_method ? `Method: ${task.thinking_method} | ` : ''}
+                        ${task.assigned_to ? `Agent: ${task.assigned_to}` : 'Unassigned'}
+                    </div>
+                    ${task.children && task.children.length > 0 ? `<div class="item-meta">Subtasks: ${task.children.length}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Load messages
+        async function loadMessages() {
+            const response = await fetch(`${API_URL}/messages`);
+            const messages = await response.json();
+
+            const list = document.getElementById('message-list');
+            if (messages.length === 0) {
+                list.innerHTML = '<p>No messages found</p>';
+                return;
+            }
+
+            list.innerHTML = messages.slice(0, 20).map(msg => `
+                <div class="message-item ${msg.message_type}">
+                    <div class="item-header">
+                        <span class="badge ${msg.message_type}">${msg.message_type}</span>
+                        <span class="timestamp">${formatTime(msg.timestamp)}</span>
+                    </div>
+                    <div class="item-meta">From: ${msg.from_agent} → To: ${msg.to_agent}</div>
+                    <div class="item-title">${msg.content}</div>
+                </div>
+            `).join('');
+        }
+
+        // Create task
+        document.getElementById('task-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const taskData = {
+                title: document.getElementById('task-title').value,
+                description: document.getElementById('task-description').value,
+                priority: document.getElementById('task-priority').value,
+                thinking_method: document.getElementById('task-thinking').value,
+                auto_assign: true
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/tasks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(taskData)
+                });
+
+                if (response.ok) {
+                    document.getElementById('task-form').reset();
+                    await refreshDashboard();
+                } else {
+                    showError('Failed to create task');
+                }
+            } catch (error) {
+                showError('Error creating task: ' + error.message);
+            }
+        });
+
+        // Auto-refresh
+        function setupAutoRefresh() {
+            const checkbox = document.getElementById('auto-refresh');
+
+            checkbox.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    autoRefreshInterval = setInterval(refreshDashboard, 5000);
+                } else {
+                    clearInterval(autoRefreshInterval);
+                }
+            });
+
+            if (checkbox.checked) {
+                autoRefreshInterval = setInterval(refreshDashboard, 5000);
+            }
+        }
+
+        // Utility functions
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+
+            if (diff < 60000) return 'Just now';
+            if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+            return date.toLocaleDateString();
+        }
+
+        function showError(message) {
+            const container = document.getElementById('error-container');
+            container.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        function clearError() {
+            document.getElementById('error-container').innerHTML = '';
+        }
+
+        // Initialize on load
+        initDashboard();
+    </script>
+</body>
+</html>
