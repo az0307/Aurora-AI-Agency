@@ -5,7 +5,8 @@ Enhanced REST API Server with Teams and Mayor Thinking
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import sys
-sys.path.append('/root/gastown/orchestra')
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.town_manager import TownManager
 from core.enhanced_mayor import EnhancedMayor

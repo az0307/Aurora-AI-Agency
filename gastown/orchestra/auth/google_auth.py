@@ -5,7 +5,7 @@ Secure multi-user authentication for Orchestra Town
 
 import json
 import secrets
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from datetime import datetime, timedelta
 from pathlib import Path
 
