@@ -1,0 +1,3 @@
+# Runtime state files - generated during server operation
+*.json
+!.gitignore
