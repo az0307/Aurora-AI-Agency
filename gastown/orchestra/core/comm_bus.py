@@ -61,8 +61,9 @@ class Message:
 class CommunicationBus:
     """Manages agent-to-agent communication"""
 
-    def __init__(self, state_dir: str = "/root/gastown/orchestra/state"):
-        self.state_dir = Path(state_dir)
+    def __init__(self, state_dir: str = None):
+        base = Path(__file__).parent.parent
+        self.state_dir = Path(state_dir) if state_dir else base / "state"
         self.state_dir.mkdir(parents=True, exist_ok=True)
         self.messages: Dict[str, Message] = {}
         self.subscribers: Dict[str, List[Callable]] = defaultdict(list)

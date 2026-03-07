@@ -100,8 +100,9 @@ class Task:
 class TaskManager:
     """Manages hierarchical task structure"""
 
-    def __init__(self, state_dir: str = "/root/gastown/orchestra/state"):
-        self.state_dir = Path(state_dir)
+    def __init__(self, state_dir: str = None):
+        base = Path(__file__).parent.parent
+        self.state_dir = Path(state_dir) if state_dir else base / "state"
         self.state_dir.mkdir(parents=True, exist_ok=True)
         self.tasks: Dict[str, Task] = {}
         self.load_state()

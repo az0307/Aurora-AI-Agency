@@ -1,6 +1,4 @@
-flask==3.0.0
-flask-cors==4.0.0
-tiktoken==0.5.2
-google-auth==2.25.2
-google-auth-oauthlib==1.2.0
-google-auth-httplib2==0.2.0
+flask>=3.0.0
+flask-cors>=4.0.0
+tiktoken>=0.5.2
+anthropic>=0.40.0
