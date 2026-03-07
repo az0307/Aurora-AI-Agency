@@ -91,3 +91,80 @@ All modules use `Path(__file__).parent.parent` for relative path resolution — 
 ## Dependencies
 
 Python 3.x with: `flask`, `flask-cors`, `tiktoken`, `anthropic` (optional for API execution).
+
+## Session Management & Best Practices
+
+### Working with Claude Code
+
+**Checkpoint Pattern**: Save progress frequently to avoid losing work to rate limits or session interruptions.
+
+```bash
+# Create checkpoints at milestones
+git add -A && git commit -m "checkpoint: <feature> working" && git push -u origin <branch>
+
+# Use the /checkpoint skill (if available) to auto-test and commit
+/checkpoint "feature description"
+```
+
+**Testing Before Committing**: Always validate changes before committing:
+
+```bash
+# Run Orchestra Town tests
+cd gastown/orchestra
+python3 -m pytest tests/ -v                    # unit tests
+python3 api/enhanced_server.py &               # integration test
+sleep 3 && curl http://localhost:5000/health
+kill %1
+
+# Project generator smoke test
+python3 gastown/project_generator.py "test app" -o /tmp/test-output
+```
+
+**Session Recovery**: If a session is interrupted:
+
+1. Check branch status: `git status` and `git log -3`
+2. Review uncommitted changes: `git diff`
+3. Check running processes: `ps aux | grep python`
+4. Verify state files: `ls -lh gastown/orchestra/state/`
+
+### Development Workflow
+
+**Incremental Development**: Break large features into small, testable chunks:
+
+1. Plan feature in small steps (use TodoWrite)
+2. Implement one step at a time
+3. Test each step individually
+4. Commit working state before moving to next step
+5. Push to remote branch regularly
+
+**Testing Strategy**:
+
+- **Unit tests**: Test individual components in isolation
+- **Integration tests**: Start server, test API endpoints
+- **Smoke tests**: Run CLI commands, verify basic functionality
+- **State validation**: Check JSON files in `state/` directory
+
+**Common Pitfalls**:
+
+- Don't commit broken code (always test first)
+- Don't skip testing "small changes" (they often break things)
+- Don't batch too many changes in one commit
+- Don't forget to push to remote (work can be lost otherwise)
+
+### Sub-Agent Usage
+
+When tasks require extensive exploration or multiple parallel queries, use sub-agents:
+
+```python
+# Instead of manually searching through many files:
+# Use Agent tool with subagent_type="Explore" for broad codebase searches
+
+# Instead of running multiple independent tests:
+# Use Agent tool to parallelize test execution
+```
+
+**When to use sub-agents**:
+- Exploring unfamiliar codebases (> 3 search queries needed)
+- Running multiple independent test suites
+- Researching external documentation or APIs
+- Parallelizing independent work items
