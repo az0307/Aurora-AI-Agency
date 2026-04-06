@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "name": "hexstrike-portal",
+  "buildCommand": "cd hexstrike-ai/frontend && npm install && npm run build",
+  "outputDirectory": "hexstrike-ai/frontend/dist",
+  "framework": "vite",
+  "env": {
+    "VITE_BACKEND_URL":   "@hexstrike_backend_url",
+    "VITE_KALI_HOST":     "@hexstrike_kali_host",
+    "VITE_KALI_SSH_PORT": "@hexstrike_kali_ssh_port",
+    "VITE_KALI_USER":     "@hexstrike_kali_user",
+    "VITE_SHODAN_KEY":    "@hexstrike_shodan_key",
+    "VITE_VT_KEY":        "@hexstrike_vt_key",
+    "VITE_GN_KEY":        "@hexstrike_gn_key",
+    "VITE_GITHUB_TOKEN":  "@hexstrike_github_token"
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "no-referrer" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
