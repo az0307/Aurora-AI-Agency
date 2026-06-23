@@ -375,13 +375,75 @@ See `autoboros/docs/SECONDARY_REVIEW.md` for full details. Priority items before
 
 ---
 
+---
+
+## ymi-roofing
+
+### What it does
+
+Client delivery package for **Y.M.I Roofing** (client: Ben Breheny, ACN 695 710 055). A complete local-trades digital presence: static website (Cloudflare Pages), privacy policy, terms of service, n8n lead-capture and review-machine workflow specs, ManyChat chatbot spec, and all ops documents (invoices, welcome letter, Google Sheets setup, SEO tracking, DNS cheatsheet).
+
+### Structure
+
+```
+ymi-roofing/
+├── site/           ← Files deployed to Cloudflare Pages
+│   ├── index.html          Website (v2.0 — pressure washing, floating CTA, ACL compliance)
+│   ├── privacy.html        Privacy policy (ACL, OAIC, opt-out, 7-year retention)
+│   ├── terms.html          Terms of service (full ACL compliance, cooling-off, remedies)
+│   ├── robots.txt
+│   ├── sitemap.xml
+│   ├── favicon.png         (64×64)
+│   ├── og-image.jpg        (1200×630 social sharing)
+│   ├── manifest.json       (PWA manifest)
+│   └── email-signature.html Ben's branded email signature
+└── ops/            ← Agency-internal docs (not deployed)
+    ├── MASTER-DELIVERY-CHECKLIST.md   6-phase launch checklist (v2.0)
+    ├── GOOGLE-SHEETS-SETUP.md         CRM sheet structure (Leads, Jobs, Monthly Summary)
+    ├── MANYCHAT-SETUP-CHECKLIST.md    8-flow chatbot build guide
+    ├── SEO-TRACKING-SETUP.md          Google Search Console / GA4 / Meta Pixel setup
+    ├── n8n-BACKUP-SECURITY.md         Workflow backup & security hardening guide
+    ├── DOMAIN-DNS-CHEATSHEET.md       DNS records reference for ymiroofing.com.au
+    ├── WELCOME-LETTER.txt             Client onboarding letter
+    └── INVOICE-TEMPLATE.txt           AURORA-0001 invoice template
+```
+
+### Deployment
+
+**Website (Cloudflare Pages):**
+1. Create Cloudflare Pages project `ymi-roofing`
+2. Upload all files from `ymi-roofing/site/`
+3. Optionally connect custom domain `ymiroofing.com.au` (VentraIP ~$14/yr)
+
+**Lead capture (n8n):**
+- Import `lead-capture.json` workflow into n8n
+- Set `WEBHOOK_URL` in `site/index.html` line ~883 to the n8n webhook URL ending in `/webhook/ymi-roofing-lead`
+- Requires: Google Sheets with Leads/Jobs/Monthly Summary tabs, Twilio account
+
+**Review machine (n8n):**
+- Import `review-machine.json` into n8n
+- Set Google Place ID and Twilio number
+
+See `ymi-roofing/ops/MASTER-DELIVERY-CHECKLIST.md` for the complete 6-phase launch sequence.
+
+### Key open items (from checklist)
+
+- `WEBHOOK_URL` placeholder in `site/index.html` must be replaced with real n8n URL before go-live
+- Facebook/Instagram footer links are placeholders — update with real URLs
+- ABN not yet confirmed (only ACN 695 710 055 is set)
+- BPC registration number not yet verified — required for display
+- Real photos needed to replace emoji icons and placeholder testimonials
+- n8n CORS is wildcard `*` — restrict to actual domain after go-live
+
+---
+
 ## Repository layout
 
 ```
 Aurora-AI-Agency/
 ├── CLAUDE.md                              ← this file
 ├── README.md                              ← placeholder (AI Studio banner)
-├── .gitignore                             ← Python bytecode (__pycache__, *.pyc)
+├── .gitignore                             ← Python bytecode, .env, node_modules, dist
 ├── vercel.json                            ← Vercel config for hexstrike frontend
 ├── gastown/
 │   ├── README.md
@@ -392,6 +454,9 @@ Aurora-AI-Agency/
 │   │   └── index.ts                      ← entire backend (~257 lines)
 │   └── scripts/
 │       └── setup-kali.sh                 ← one-shot Kali provisioning script
+├── ymi-roofing/
+│   ├── site/                             ← static files for Cloudflare Pages
+│   └── ops/                              ← agency-internal docs
 └── autoboros/
     ├── backend/                           ← FastAPI + n8n + MCP (Python ≥3.11)
     │   ├── app/                           ← routers, models, schemas, services

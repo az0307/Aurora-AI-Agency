@@ -1,0 +1,74 @@
+Y.M.I ROOFING — WELCOME LETTER
+Aurora AI Agency · Client Onboarding
+
+---
+
+Dear Ben,
+
+Welcome to the Aurora AI Agency family. We're excited to help Y.M.I Roofing grow.
+
+WHAT'S INCLUDED IN YOUR IGNITE PACKAGE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ Professional website (ymiroofing.com.au)
+  — Lead capture form with instant SMS alerts
+  — Mobile-optimised, fast-loading design
+  — SEO-ready with structured data
+
+✓ Automated Lead Capture
+  — Every website form submission → instant SMS to your phone
+  — All leads logged to a shared Google Sheet
+  — No lead ever slips through the cracks
+
+✓ Review Machine
+  — After each job, tap a bookmark → customer gets review SMS next day
+  — Friendly follow-up 3 days later if no review
+  — Builds your Google reputation on autopilot
+
+✓ Facebook/Instagram Chatbot (ManyChat)
+  — Answers common questions 24/7
+  — Qualifies leads and captures details
+  — Routes urgent repairs to your phone immediately
+
+MONTHLY RETAINER: $350/month (GST-free)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This covers:
+  • Website hosting & maintenance
+  • n8n automation platform hosting
+  • Monthly performance report
+  • Minor website updates (text, phone numbers, etc.)
+  • Chatbot monitoring & tweaks
+
+NOT INCLUDED (your responsibility):
+  • Domain renewal (~$14/year via VentraIP)
+  • Twilio SMS costs (~$0.60/month)
+  • ManyChat Pro subscription (~$22/month)
+  • Any advertising spend (Google Ads, Meta Ads)
+  • Photography or custom design work
+
+YOUR NEXT STEPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Review and sign the attached Services Agreement
+2. Pay Invoice AURORA-0001 (setup + first 2 months)
+3. Send us:
+   • Your Google Business Profile login (or we'll create one)
+   • Any photos of completed jobs (for the website gallery)
+   • Your preferred Twilio phone number (or we'll help set one up)
+
+4. We'll handle the rest and report back within 48 hours of going live.
+
+QUESTIONS?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Reply to this email or call me direct. I'm here to make this easy.
+
+Talk soon,
+
+[Your Name]
+Aurora AI Agency
+[Your Phone] · [Your Email]
+
+---
+P.S. — Keep the bookmark handy: after your first job, tap it and watch the review requests roll in automatically.
