@@ -2,14 +2,40 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Organization Context
+
+This repo is one piece of a larger organization. Understanding the hierarchy helps when making decisions about where things belong:
+
+```
+Ouroboros Foundation Ltd Pty  (AU holding company)
+├── Ouroboros AI Innovations Pte Ltd  (Singapore — R&D)
+├── Ouroboros Technologies LLC  (Delaware — US market/IP)
+└── SPVs per vertical
+    ├── Aurora AI Agency        ← PUBLIC FACE — client delivery (this repo)
+    ├── AutoBoros               ← ENGINE — n8n orchestration, MCP mesh, multi-agent
+    ├── UltronOmega / HexStrike ← SECURITY — red team, pentest, Kali integration
+    └── Meta Umbrella v3.0      ← GOVERNANCE — SOPs, compliance, legal
+```
+
+**This repo** (`Aurora-AI-Agency`) is the client-delivery and tooling layer. It contains:
+- Internal tooling the agency uses to build projects (gastown, autoboros)
+- Security tooling (hexstrike-ai)
+- Client deliverables (ymi-roofing)
+- Organizational strategy documents (_empire)
+
+The `_empire/ARCHITECTURE_GAP_SYNTHESIS.md` document maps the full skill ecosystem, gap analysis, and strategic priorities across all organization layers.
+
 ## Repository Overview
 
-**Aurora-AI-Agency** is a monorepo containing two independent subsystems:
+**Aurora-AI-Agency** is a monorepo containing independent subsystems:
 
 | Subsystem | Path | Description |
 |-----------|------|-------------|
 | **gastown** | `gastown/` | Zero-dependency Python 3 CLI — generates project scaffolding from natural language |
 | **hexstrike-ai** | `hexstrike-ai/` | AI-native red team platform — live Kali Linux integration via SSH-over-WebSocket |
+| **autoboros** | `autoboros/` | Agentic job-orchestration platform — FastAPI + n8n + MCP + React cockpit |
+| **ymi-roofing** | `ymi-roofing/` | Client delivery package — Y.M.I Roofing website, ops docs, chatbot spec |
+| **_empire** | `_empire/` | Org-wide strategic documents — architecture gap analysis, skill ecosystem maps |
 
 There is no shared code, test suite, linter, build system, or CI/CD pipeline across either subsystem.
 
@@ -178,6 +204,21 @@ Deployed to Vercel via `vercel.json`. Built with Vite from `hexstrike-ai/fronten
 | `VITE_VT_KEY` | `@hexstrike_vt_key` |
 | `VITE_GN_KEY` | `@hexstrike_gn_key` |
 | `VITE_GITHUB_TOKEN` | `@hexstrike_github_token` |
+
+### Playbooks (`hexstrike-ai/playbooks/`)
+
+Operational playbooks for authorized engagements. Each maps directly to the D-CIPHER team pattern (Strike → Analysis → Research → Report).
+
+| File | Coverage |
+|------|----------|
+| `playbook-bug-bounty.md` | 8-phase bug bounty pipeline: passive recon → subdomain enum → fingerprinting → scanning → vulnerability testing → subdomain takeover → cloud recon → reporting. Program onboarding checklist and strong report template included. |
+| `playbook-container-k8s.md` | Container/K8s security: Docker socket exposure, privileged container escape, capabilities abuse, K8s RBAC abuse, secrets extraction (etcd, env vars, ConfigMaps), automated tools (trivy, kube-bench, kube-hunter, deepce). |
+
+### Proposals (`hexstrike-ai/proposals/`)
+
+| File | Description |
+|------|-------------|
+| `pentest-proposal-template.docx` | External network pentest proposal template (placeholder client: Acme Corp Pty Ltd). 7-day engagement, PTES methodology, $8,000 AUD + GST. Includes scope, RoE, deliverables, timeline, acceptance block. Replace client details before use. |
 
 ### Deployment
 
@@ -401,6 +442,7 @@ ymi-roofing/
     ├── MASTER-DELIVERY-CHECKLIST.md   6-phase launch checklist (v2.0)
     ├── GOOGLE-SHEETS-SETUP.md         CRM sheet structure (Leads, Jobs, Monthly Summary)
     ├── MANYCHAT-SETUP-CHECKLIST.md    8-flow chatbot build guide
+    ├── manychat-spec.md               Full ManyChat chatbot spec (5 flows, custom fields, n8n webhook)
     ├── SEO-TRACKING-SETUP.md          Google Search Console / GA4 / Meta Pixel setup
     ├── n8n-BACKUP-SECURITY.md         Workflow backup & security hardening guide
     ├── DOMAIN-DNS-CHEATSHEET.md       DNS records reference for ymiroofing.com.au
@@ -437,6 +479,20 @@ See `ymi-roofing/ops/MASTER-DELIVERY-CHECKLIST.md` for the complete 6-phase laun
 
 ---
 
+## _empire
+
+### What it is
+
+Organizational strategy documents spanning all layers of the Ouroboros/Aurora/HexStrike ecosystem. Not deployable code — reference material for architectural decisions.
+
+### Contents
+
+| File | Description |
+|------|-------------|
+| `ARCHITECTURE_GAP_SYNTHESIS.md` | Full gap analysis of the skill ecosystem across all five empire components (Ouroboros Foundation, AutoBoros engine, Ouro agent pattern, Aurora Agency, UltronOmega/HexStrike). Maps 30+ missing skills against the D-CIPHER attack pattern and Ouro command pattern. Identifies 3 critical action items: restore 7 lost legal skills, build 3 P0 skills (intake-triage, financial-modeller, au-tax-optimizer), and wire 5 skill-chain playbooks (/empire legal, /empire finance, /empire client, /empire secure, /empire build). |
+
+---
+
 ## Repository layout
 
 ```
@@ -452,11 +508,19 @@ Aurora-AI-Agency/
 │   ├── README.md
 │   ├── server/
 │   │   └── index.ts                      ← entire backend (~257 lines)
-│   └── scripts/
-│       └── setup-kali.sh                 ← one-shot Kali provisioning script
+│   ├── scripts/
+│   │   └── setup-kali.sh                 ← one-shot Kali provisioning script
+│   ├── playbooks/
+│   │   ├── playbook-bug-bounty.md        ← 8-phase bug bounty pipeline
+│   │   └── playbook-container-k8s.md     ← Docker/K8s escape + RBAC abuse
+│   └── proposals/
+│       └── pentest-proposal-template.docx ← external pentest proposal template
 ├── ymi-roofing/
 │   ├── site/                             ← static files for Cloudflare Pages
-│   └── ops/                              ← agency-internal docs
+│   ├── site/                             ← static files for Cloudflare Pages
+│   └── ops/                              ← agency-internal docs (incl. manychat-spec.md)
+├── _empire/
+│   └── ARCHITECTURE_GAP_SYNTHESIS.md     ← org-wide skill gap analysis
 └── autoboros/
     ├── backend/                           ← FastAPI + n8n + MCP (Python ≥3.11)
     │   ├── app/                           ← routers, models, schemas, services
