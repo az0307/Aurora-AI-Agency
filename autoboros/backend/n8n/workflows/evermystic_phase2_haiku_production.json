@@ -1,0 +1,92 @@
+{
+  "name": "Evermystic: Phase 2 — Haiku Copy Generation (Production)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evermystic-phase2",
+        "responseMode": "responseNode"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\nreturn [{\n  json: {\n    job_id: body.job_id,\n    brand_voice: body.payload.brand_voice || 'friendly, direct, print-shop casual',\n    policy: body.payload.policy || { refund: '7-day', turnaround: '3-5 days' },\n    callback_url: body.callback_url,\n    products: body.payload.products || ['DTF transfers', 'hoodies', 'tees', 'hi-vis']\n  }\n}];"
+      },
+      "name": "Parse Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "model": "claude-3-haiku-20240307",
+        "messages": {
+          "message": [
+            {
+              "role": "system",
+              "content": "You are a copywriter for Evermystic, a DTF print shop in Sydney. Write in a friendly, direct, print-shop casual tone. Keep answers under 50 words. Use Australian English (colour, centre, organise)."
+            },
+            {
+              "role": "user",
+              "content": "=Generate 12 FAQ responses, a welcome message, fallback text, and a keyword synonym map for a DTF print shop. Brand voice: {{ $json.brand_voice }}. Products: {{ $json.products.join(', ') }}. Refund policy: {{ $json.policy.refund }}. Turnaround: {{ $json.policy.turnaround }}. Output as JSON with keys: faqs (array of {q,a}), welcome (string), fallback (string), synonyms (object)."
+            }
+          ]
+        }
+      },
+      "name": "Anthropic Haiku",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "credentials": { "anthropicApi": { "id": "YOUR_CREDENTIAL_ID", "name": "Anthropic API" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const haiku = $input.first().json;\nreturn [{\n  json: {\n    job_id: $json.job_id,\n    callback_url: $json.callback_url,\n    faqs: haiku.faqs,\n    welcome: haiku.welcome,\n    fallback: haiku.fallback,\n    synonyms: haiku.synonyms,\n    generated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "name": "Format Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.callback_url }}",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "job_id": "={{ $json.job_id }}",
+          "result": {
+            "status": "Done",
+            "actor": "Agent",
+            "last_ag": "Haiku generated 12 FAQs, welcome flow, keyword map, and fallback text",
+            "activity_text": "Phase 2 complete: copy generated via Anthropic Haiku",
+            "result_label": "Evermystic Copy Bundle",
+            "result_url": "/Clients/Evermystic/Copy/phase2-bundle.md"
+          }
+        },
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-N8N-Key", "value": "={{ $env.N8N_API_KEY }}" }
+          ]
+        }
+      },
+      "name": "Callback to FastAPI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{"node": "Parse Input", "type": "main", "index": 0}]] },
+    "Parse Input": { "main": [[{"node": "Anthropic Haiku", "type": "main", "index": 0}]] },
+    "Anthropic Haiku": { "main": [[{"node": "Format Output", "type": "main", "index": 0}]] },
+    "Format Output": { "main": [[{"node": "Callback to FastAPI", "type": "main", "index": 0}]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["evermystic", "phase2", "autoboros", "anthropic"]
+}

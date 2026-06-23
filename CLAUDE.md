@@ -204,29 +204,226 @@ cloudflared tunnel --url http://localhost:3001
 
 ---
 
+---
+
+## autoboros
+
+### What it does
+
+Real-time agentic job-orchestration platform. A FastAPI backend manages jobs, activities, and autonomous agent execution via n8n workflows. A React 19 cockpit (SPA) provides the operator UI with live WebSocket push. An MCP stdio server gives LLM agents sandboxed tool access (file ops, DB queries, shell commands).
+
+**Status:** audited and patched — backend 4 tests pass, `vite build` exits 0, Alembic migration applies cleanly, zero functional `shell=True`. See `autoboros/docs/AUDIT_CHANGELOG.md` for the full fix log.
+
+### Commands
+
+**Backend:**
+```bash
+cd autoboros/backend
+
+# Install deps (Python ≥3.11)
+pip install -e ".[dev]"
+
+# Run with SQLite (dev)
+DATABASE_URL="sqlite+aiosqlite:///./dev.db" SECRET_KEY=x AB_PASSWORD=autoboros uvicorn app.main:app --reload
+
+# Run migrations (Postgres)
+alembic upgrade head
+
+# Run tests
+DATABASE_URL="sqlite+aiosqlite:///./t.db" SECRET_KEY=x AB_PASSWORD=autoboros python -m pytest tests/ -q
+
+# Lint
+ruff check .
+```
+
+**Cockpit (frontend):**
+```bash
+cd autoboros/cockpit
+npm install
+npm run dev        # dev server (Vite)
+npm run build      # production build → dist/
+npm run lint
+```
+
+**Docker Compose (full stack: API + n8n + Postgres):**
+```bash
+cd autoboros/backend
+cp .env.example .env  # edit with real values
+docker compose up
+```
+
+### Architecture
+
+```
+Browser (React 19 / Vite)
+    ↕ REST + WebSocket
+FastAPI :8000  (JWT auth, SQLAlchemy async, structlog)
+    ↕ httpx webhook
+n8n  :5678  (workflow automation)
+    ↕ HTTP callback → /api/v1/n8n/callback
+FastAPI (resolves job approval / notifies WS)
+    ↕
+MCP stdio server  (tool access for LLM agents)
+```
+
+### Backend structure (`autoboros/backend/`)
+
+| Path | Role |
+|------|------|
+| `app/main.py` | FastAPI app — lifespan, CORS, router mounts, prod boot guard |
+| `app/config.py` | Pydantic `Settings` — all env vars, CORS list parser |
+| `app/database.py` | Async SQLAlchemy engine + session factory |
+| `app/models/job.py` | `Job` model (id, title, status, level, est, steps, result, timestamps) |
+| `app/models/activity.py` | `Activity` model (id, job_id, type, message, created_at) |
+| `app/schemas.py` | Pydantic v2 request/response schemas (ConfigDict) |
+| `app/routers/auth.py` | `POST /api/v1/auth/login` — JWT issue; 5-try / 5-min brute-force lockout |
+| `app/routers/jobs.py` | CRUD + `POST /jobs/{id}/approve` — fires n8n callback on L≥3 |
+| `app/routers/activity.py` | `GET /api/v1/activity` — paginated activity feed |
+| `app/routers/websocket.py` | `GET /api/v1/ws` — mandatory JWT auth (close 4001); broadcast with 2s backpressure |
+| `app/routers/n8n.py` | `POST /api/v1/n8n/callback` + `POST /api/v1/n8n/webhook` |
+| `app/routers/seed.py` | `POST /api/v1/seed/evermystic` — JWT-gated demo data loader |
+| `app/services/n8n_bridge.py` | httpx async client with 10s/5s timeouts |
+| `app/services/websocket_manager.py` | `ConnectionManager` — WS broadcast with per-send timeout |
+| `mcp/mcp_server.py` | MCP stdio server — `shell_exec` (allowlist + `shell=False`), `file_read/write` (sandboxed), `db_query` (read-only, 10KB limit) |
+| `mcp/mcp_http_bridge.py` | HTTP→MCP bridge (FastMCP) |
+| `alembic/` | Async Alembic env — `jobs` + `activity` + indexes |
+| `n8n/workflows/` | n8n workflow JSON exports (Evermystic phase 2, example approval) |
+| `scripts/seed_evermystic.py` | Seeds demo jobs by importing canonical list from router |
+| `tests/test_jobs.py` | 4 pytest-asyncio tests — CRUD, auth (401s), approval flow |
+
+### API routes
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/health` | public | `{status, version}` |
+| POST | `/api/v1/auth/login` | public | Returns JWT; body: `{password}` |
+| GET | `/api/v1/jobs` | JWT | List jobs (filter/sort) |
+| POST | `/api/v1/jobs` | JWT | Create job |
+| PATCH | `/api/v1/jobs/{id}` | JWT | Update job |
+| POST | `/api/v1/jobs/{id}/approve` | JWT | Approve job; triggers n8n if L≥3 |
+| GET | `/api/v1/activity` | JWT | Paginated activity feed |
+| GET | `/api/v1/ws` | JWT (header) | WebSocket — real-time push |
+| POST | `/api/v1/n8n/callback` | public | n8n → backend result delivery |
+| POST | `/api/v1/n8n/webhook` | public | n8n → backend event push |
+| POST | `/api/v1/seed/evermystic` | JWT | Load demo dataset |
+
+### Backend environment variables
+
+```
+DATABASE_URL=postgresql+asyncpg://...   # sqlite+aiosqlite:///./dev.db for dev
+SECRET_KEY=<random 32+ chars>           # app refuses to boot on default in prod
+AB_PASSWORD=<password>                  # single shared password for JWT login
+ENV=development                         # "production" enforces non-default secrets
+API_BASE_URL=http://localhost:8000      # used by n8n for callback URLs
+CORS_ORIGINS=http://localhost:5173      # comma-separated; no wildcard in prod
+N8N_WEBHOOK_URL=http://localhost:5678/webhook/autoboros
+N8N_API_KEY=
+MCP_SERVER_URL=http://localhost:3001
+MCP_WORKSPACE=~/autoboros_workspace     # sandbox root for MCP file ops
+```
+
+### Cockpit structure (`autoboros/cockpit/`)
+
+React 19 / Vite 6 SPA. Key files:
+
+| Path | Role |
+|------|------|
+| `src/main.jsx` | Entry — `StrictMode › ErrorBoundary › AppProvider › App` |
+| `src/context/AppContext.jsx` | Global state — jobs, activities, auth; optimistic updates with rollback |
+| `src/hooks/useWebSocket.js` | WS client — reconnect gated on token; cleanup closes socket on unmount |
+| `src/hooks/useAuth.js` | Login/logout — token in `localStorage` (see S7 in docs/SECONDARY_REVIEW.md) |
+| `src/api/client.js` | axios wrapper — injects JWT, handles 401 |
+| `src/components/Feed.jsx` | Activity feed — stable keys, `useMemo` on time formatting |
+| `src/utils/formatTime.js` | `formatRelative()` — ISO-8601 → human-readable |
+| `src/components/ErrorBoundary.jsx` | Class boundary — catches render errors, shows reload |
+| `vite.config.js` | `base` set for deployment; proxy to API in dev |
+| `.github/workflows/deploy.yml` | GH Actions: build SPA → GitHub Pages |
+| `nginx.conf` | SPA fallback for Docker deploy |
+
+### Cockpit environment variables
+
+```
+VITE_API_URL=https://autoboros.fly.dev/api/v1
+VITE_WS_URL=wss://autoboros.fly.dev/api/v1/ws
+```
+
+### Deployment
+
+See `autoboros/docs/DEPLOYMENT_GUIDE.md` for full options. Quick reference:
+
+**Fly.io (recommended):**
+```bash
+fly apps create autoboros
+fly volumes create autoboros_data --region iad --size 1
+fly secrets set SECRET_KEY=$(openssl rand -base64 32) AB_PASSWORD=$(openssl rand -base64 24) ...
+fly deploy --ha=false
+```
+
+**Docker Compose (VPS):**
+```bash
+cp autoboros/backend/.env.example autoboros/backend/.env
+docker compose -f autoboros/backend/docker-compose.yml up
+```
+
+### Known open issues (non-blocking for single-machine demo)
+
+See `autoboros/docs/SECONDARY_REVIEW.md` for full details. Priority items before internet-facing production:
+
+- **S5 (P1):** JWT has no `jti`/revocation — stolen token valid for 30 days. Requires Redis-backed blacklist.
+- **S6 (P1):** Rate-limit state is in-process — bypassed across multiple VMs. Use Redis-backed `slowapi`.
+- **S7 (P1):** JWT stored in `localStorage` — exfiltrable via XSS. Migrate to `httpOnly` cookie.
+
+---
+
 ## Repository layout
 
 ```
 Aurora-AI-Agency/
-├── CLAUDE.md                         ← this file
-├── README.md                         ← placeholder (AI Studio banner)
-├── .gitignore                        ← Python bytecode only (__pycache__, *.pyc)
-├── vercel.json                       ← Vercel config for hexstrike frontend
+├── CLAUDE.md                              ← this file
+├── README.md                              ← placeholder (AI Studio banner)
+├── .gitignore                             ← Python bytecode (__pycache__, *.pyc)
+├── vercel.json                            ← Vercel config for hexstrike frontend
 ├── gastown/
 │   ├── README.md
-│   └── project_generator.py          ← entire gastown app (~843 lines)
-└── hexstrike-ai/
-    ├── README.md
-    ├── server/
-    │   └── index.ts                  ← entire backend (~257 lines)
-    └── scripts/
-        └── setup-kali.sh             ← one-shot Kali provisioning script
+│   └── project_generator.py              ← entire gastown app (~843 lines)
+├── hexstrike-ai/
+│   ├── README.md
+│   ├── server/
+│   │   └── index.ts                      ← entire backend (~257 lines)
+│   └── scripts/
+│       └── setup-kali.sh                 ← one-shot Kali provisioning script
+└── autoboros/
+    ├── backend/                           ← FastAPI + n8n + MCP (Python ≥3.11)
+    │   ├── app/                           ← routers, models, schemas, services
+    │   ├── mcp/                           ← MCP stdio server + HTTP bridge
+    │   ├── alembic/                       ← async migrations
+    │   ├── n8n/workflows/                 ← n8n workflow exports
+    │   ├── tests/                         ← pytest-asyncio tests
+    │   ├── scripts/                       ← seed scripts
+    │   ├── Dockerfile / Dockerfile.mcp
+    │   ├── docker-compose.yml
+    │   └── pyproject.toml
+    ├── cockpit/                           ← React 19 / Vite 6 SPA
+    │   ├── src/
+    │   │   ├── components/                ← 30+ UI components
+    │   │   ├── context/AppContext.jsx
+    │   │   ├── hooks/                     ← useWebSocket, useAuth, useApi, etc.
+    │   │   └── utils/
+    │   ├── .github/workflows/deploy.yml
+    │   ├── Dockerfile / nginx.conf
+    │   └── package.json
+    └── docs/
+        ├── AUDIT_CHANGELOG.md             ← full fix log (5 batches)
+        ├── SECONDARY_REVIEW.md            ← 13 follow-up findings (P0–P3)
+        ├── DEPLOYMENT_GUIDE.md            ← Fly.io / Docker / Railway options
+        └── REMEDIATION_PACKAGE.md         ← deliverables index
 ```
 
 ## Development conventions
 
-- **gastown** has no test suite, no linter, no build step. Validate with `python3 -m py_compile`.
-- **hexstrike-ai backend** is TypeScript but has no `tsconfig.json` or build step in the repo — the setup script runs it via `ts-node/esm/transpile-only`.
-- Neither subsystem uses environment-specific branching or feature flags.
-- All subprocess execution in the backend must go through `safeSpawn()` — never add `exec()` with string interpolation for user-supplied input.
-- When adding a new tool route to the backend, add the command name to `ALLOWED_CMDS` and implement a `sanitizeArg`-aware call through `safeSpawn` or `streamSSE`.
+- **gastown** — no test suite, no linter, no build step. Validate with `python3 -m py_compile`.
+- **hexstrike-ai backend** — TypeScript, no `tsconfig.json` in repo; setup script runs via `ts-node/esm/transpile-only`. All subprocess calls must use `safeSpawn()` — never `exec()` with string interpolation.
+- **autoboros backend** — Python ≥3.11, linted with `ruff` (100-char line length). Uses `pytest-asyncio` in auto mode. MCP `shell_exec` must go through the command allowlist + `shell=False`.
+- **autoboros cockpit** — React 19, Vite 6, ESLint. No TypeScript (plain JSX). WS reconnect must be gated on token presence to avoid login-screen reconnect loops.
+- None of the subsystems share code or configuration.
+- Never commit `.env` files — only `.env.example`.

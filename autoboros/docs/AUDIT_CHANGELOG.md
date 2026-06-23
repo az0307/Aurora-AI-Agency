@@ -1,0 +1,77 @@
+# AutoBoros — Audit Fix Changelog
+
+**Scope:** `autoboros-backend` (FastAPI + n8n bridge + MCP) and `autoboros-cockpit` (React 19 / Vite 6).
+**Starting state (honest):** the app had **never run** — white screen on boot, fake-green tests, a hard build break, and an `shell=True` RCE in the MCP server.
+**Ending state (proven):** backend **4 tests pass**, frontend **`vite build` exits 0**, Alembic migration **applies cleanly**, **zero functional `shell=True`**, all timestamps real ISO-8601.
+
+> On method: this sandbox has no literal parallel “sub-agent” runtime — that’s an AutoBoros/Claude-Code primitive, not a chat primitive. So “batches” were executed as **sequential workstreams with real edits + proof at each step**, and “skills” = standard hardening/Alembic/error-boundary **practice applied directly**, not ceremony. No agent theater.
+
+-----
+
+## Proof (re-runnable)
+
+- **Backend tests:** `DATABASE_URL="sqlite+aiosqlite:///./t.db" SECRET_KEY=x AB_PASSWORD=autoboros python -m pytest tests/ -q` → **4 passed**
+- **Frontend build:** `npm install && npm run build` → **exit 0** (75 modules, `dist/` emitted)
+- **Migrations:** `alembic upgrade head` → creates `jobs` + `activity` + indexes
+- **Security:** `grep -rn "shell=True" --include=*.py` → docstring mention only
+
+-----
+
+## Batch 1 — Make it run (P0)  ✅ proven
+
+|Fix                                                                                              |File                                      |Note                                                |
+|-------------------------------------------------------------------------------------------------|------------------------------------------|----------------------------------------------------|
+|`<App/>` never wrapped in provider → white screen                                                |`src/main.jsx`                            |now `StrictMode › ErrorBoundary › AppProvider › App`|
+|Context value dropped `login/logout/loading` → LoginModal crash                                  |`src/context/AppContext.jsx`              |exposed on provider value                           |
+|**NEW P0 the static audit missed** — literal newline in a single-quoted string → hard build break|`src/components/NewJobModal.jsx:84`       |caught only by actually compiling; `\n` escaped     |
+|Added crash isolation                                                                            |`src/components/ErrorBoundary.jsx` *(new)*|class boundary + reload                             |
+|Fake-green tests (no auth, no lifespan)                                                          |`tests/test_jobs.py`                      |real lifespan + JWT fixtures + negative cases (401s)|
+
+## Batch 2 — Security (P0/P1)  ✅
+
+|Fix                                                                                                              |File                          |
+|-----------------------------------------------------------------------------------------------------------------|------------------------------|
+|**`shell=True` RCE removed** → `shlex.split` + command allowlist + `shell=False` + 30s timeout + path confinement|`mcp/mcp_server.py`           |
+|File ops sandboxed to a workspace root; `db_query` forced read-only                                              |`mcp/mcp_server.py`           |
+|CORS `["*"]` + credentials → explicit origin allowlist                                                           |`app/config.py`, `app/main.py`|
+|`/seed` was public → now JWT-gated                                                                               |`app/main.py`                 |
+|Prod refuses to boot on default `SECRET_KEY`/`AB_PASSWORD`                                                       |`app/main.py` (lifespan)      |
+|WebSocket auth optional → **mandatory** (close 4001)                                                             |`app/routers/websocket.py`    |
+|Login brute-force → 5-try / 5-min lockout (429)                                                                  |`app/routers/auth.py`         |
+
+## Batch 3 — Deploy / CI (P2)  ✅ proven
+
+|Fix                                                          |File                                                                                 |
+|-------------------------------------------------------------|-------------------------------------------------------------------------------------|
+|`npm ci` with no lockfile → **`package-lock.json` generated**|`autoboros-cockpit/`                                                                 |
+|n8n callback hardcoded `localhost` → `settings.api_base_url` |`app/services/n8n_bridge.py`, `app/config.py`                                        |
+|Pages build injected no API/WS/base; SPA pathing             |`vite.config.js` (`base`), `.github/workflows/deploy.yml` (VITE_* + static-host note)|
+|Compose: API healthcheck + MCP waits on healthy DB           |`docker-compose.yml`                                                                 |
+
+## Batch 4 — Correctness (P2/P3)  ✅ proven
+
+|Fix                                                                                        |File                                                                                      |
+|-------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+|Optimistic action had no rollback on API failure → reverts to pre-action job               |`src/context/AppContext.jsx`                                                              |
+|L4 autonomous `done` never notified n8n → now fires on `(approve/ok & L≥3) OR (done & L≥4)`|`app/routers/jobs.py`                                                                     |
+|Literal `"now"` timestamps everywhere → **real UTC ISO-8601** (front + back)               |`jobs.py`, `n8n.py`, `seed.py`, `models/{job,activity}.py`, `schemas.py`, `AppContext.jsx`|
+|Relative-time rendering + stable Feed keys                                                 |`src/utils/formatTime.js` (`formatRelative`), `src/components/Feed.jsx`                   |
+|**Alembic introduced** (async env wired to models) + autogenerated initial migration       |`alembic.ini`, `alembic/env.py`, `alembic/versions/d2550116f6ce_initial_schema.py`        |
+
+## Batch 5 — Polish  ✅
+
+|Fix                                                                                                                    |File                                               |
+|-----------------------------------------------------------------------------------------------------------------------|---------------------------------------------------|
+|Dead code removed (0 imports; React auto-escapes)                                                                      |~`src/utils/escapeHtml.js`~ deleted                |
+|Duplicated `EVERMYSTIC_JOBS` could drift → CLI seeder now **imports the canonical list** from the router (170→56 lines)|`scripts/seed_evermystic.py`                       |
+|Tokenless WS reconnect loop on login screen → connect gated on token                                                   |`src/hooks/useWebSocket.js`                        |
+|Env parity for onboarding                                                                                              |`.env.example` (backend + frontend, real var names)|
+|`est` field — **kept** (audit note was wrong; it’s wired `schemas→jobs→n8n→seed`)                                      |—                                                  |
+
+-----
+
+## Known remaining (non-blocking)
+
+- Pydantic v2 `class Config` → `ConfigDict` deprecation warnings (cosmetic) in `schemas.py`, `config.py`.
+- GitHub Pages serves **static only** — the deployed cockpit needs a publicly reachable API/WS (set `VITE_API_URL`/`VITE_WS_URL` repo vars). Documented in the workflow.
+- MCP command allowlist is intentionally conservative — extend `ALLOWED_COMMANDS` deliberately.
