@@ -85,10 +85,9 @@ const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, undefined, init);
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, login, logout } = useAuth();
   const initRef = useRef(false);
 
-  // Load initial data from API
   useEffect(() => {
     if (authLoading || initRef.current) return;
     initRef.current = true;
@@ -103,20 +102,17 @@ export function AppProvider({ children }) {
       } catch (e) {
         console.error('Failed to load data:', e);
         dispatch({ type: 'SYNC_ERROR', payload: e.message });
-        // Fall back to offline cache if available
       }
     }
     load();
   }, [authLoading]);
 
-  // Persist to offline cache
   useEffect(() => {
     if (state.initialized) {
       saveOffline(state);
     }
   }, [state.jobs, state.activity, state.groupBy]);
 
-  // WebSocket handler
   const handleWS = useCallback((msg) => {
     switch (msg.event) {
       case 'job_created':
@@ -145,12 +141,10 @@ export function AppProvider({ children }) {
     setTimeout(() => dispatch({ type: 'HIDE_TOAST' }), 2600);
   }, []);
 
-  // Optimistic actions with API sync
   const act = useCallback(async (id, kind, draftText = null) => {
     const j = state.jobs.find(x => x.id === id);
     if (!j) return;
 
-    // Optimistic update
     const optimistic = getOptimisticUpdate(j, kind, draftText);
     if (optimistic) {
       dispatch({ type: 'JOB_UPDATED', payload: { ...j, ...optimistic } });
@@ -158,13 +152,13 @@ export function AppProvider({ children }) {
 
     try {
       const result = await api.jobs.action(id, kind, draftText);
-      // Server is source of truth — it will broadcast via WS, but we also update directly
       dispatch({ type: 'JOB_UPDATED', payload: result });
       showToast(getToastMessage(kind));
     } catch (e) {
       console.error('Action failed:', e);
       showToast('Failed — check connection');
-      // Revert would require snapshotting — for now, next WS sync or refresh fixes it
+      // B4.1 — roll the optimistic update back to the pre-action job state
+      if (optimistic) dispatch({ type: 'JOB_UPDATED', payload: j });
     }
 
     dispatch({ type: 'CLOSE_DRAWER' });
@@ -200,6 +194,7 @@ export function AppProvider({ children }) {
       state, dispatch, showToast, act, createJob, deleteJob,
       filteredJobs, needsYou, LADDER, STATUS_ORDER, CLIENT_ORDER,
       user, authLoading,
+      login, logout, loading: authLoading,
     }}>
       {children}
     </AppContext.Provider>
@@ -212,16 +207,14 @@ export function useApp() {
   return ctx;
 }
 
-// --- helpers ---
-
 function getOptimisticUpdate(job, kind, draftText) {
   switch (kind) {
-    case 'approve': return { status: 'Done', actor: 'Agent', esc: false, last: { ag: 'Sent after your approval', ts: 'now' } };
-    case 'reject': return { status: 'Done', actor: 'You', last: { ag: 'Draft rejected by you — closed', ts: 'now' } };
-    case 'ok': return { last: { ag: 'You confirmed — agent continuing', ts: 'now' } };
-    case 'veto': return { status: 'Waiting on you', actor: 'You', last: { ag: 'Vetoed — handed to you', ts: 'now' } };
-    case 'done': return { status: 'Done', esc: false, last: { ag: 'Marked done by you', ts: 'now' } };
-    case 'flag': return { last: { ag: 'Flagged by you for review', ts: 'now' } };
+    case 'approve': return { status: 'Done', actor: 'Agent', esc: false, last: { ag: 'Sent after your approval', ts: new Date().toISOString() } };
+    case 'reject': return { status: 'Done', actor: 'You', last: { ag: 'Draft rejected by you — closed', ts: new Date().toISOString() } };
+    case 'ok': return { last: { ag: 'You confirmed — agent continuing', ts: new Date().toISOString() } };
+    case 'veto': return { status: 'Waiting on you', actor: 'You', last: { ag: 'Vetoed — handed to you', ts: new Date().toISOString() } };
+    case 'done': return { status: 'Done', esc: false, last: { ag: 'Marked done by you', ts: new Date().toISOString() } };
+    case 'flag': return { last: { ag: 'Flagged by you for review', ts: new Date().toISOString() } };
     default: return null;
   }
 }
