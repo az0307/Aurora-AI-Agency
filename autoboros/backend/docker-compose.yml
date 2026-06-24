@@ -1,0 +1,74 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: autoboros
+      POSTGRES_PASSWORD: autoboros
+      POSTGRES_DB: autoboros
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autoboros"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://autoboros:autoboros@db:5432/autoboros
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - N8N_WEBHOOK_URL=http://n8n:5678/webhook/autoboros
+      - API_BASE_URL=http://api:8000
+      - SECRET_KEY=${SECRET_KEY:-dev-key-change-in-production}
+      - AB_PASSWORD=${AB_PASSWORD:-autoboros}
+      - N8N_API_KEY=${N8N_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    image: n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=admin
+      - WEBHOOK_URL=http://localhost:5678/
+    volumes:
+      - n8ndata:/home/node/.n8n
+
+  mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://autoboros:autoboros@db:5432/autoboros
+    volumes:
+      - ./mcp:/app/mcp
+    depends_on:
+      db:
+        condition: service_healthy
+    command: python /app/mcp/mcp_http_bridge.py
+
+volumes:
+  pgdata:
+  n8ndata:

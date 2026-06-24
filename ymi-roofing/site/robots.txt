@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ymiroofing.com.au/sitemap.xml
+
+# Y.M.I Roofing — Melbourne Roof Tiling Specialists
+# ACN: 695 710 055

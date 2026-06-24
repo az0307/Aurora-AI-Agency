@@ -1,0 +1,50 @@
+INVOICE
+
+Aurora AI Agency
+[Your Address]
+ABN: [Your ABN]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Invoice #:    AURORA-0001
+Date:         [Date]
+Due Date:     [Date + 7 days]
+To:           Ben Breheny / Y.M.I Roofing Pty Ltd
+              ACN: 695 710 055
+              [Ben's Address]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DESCRIPTION                              QTY    RATE       AMOUNT
+─────────────────────────────────────────────────────────────────
+Y.M.I Roofing Ignite Package Setup        1    $700.00    $700.00
+  (Website build + n8n automation setup)
+
+Monthly Retainer — Months 1-2             2    $350.00    $700.00
+  (Lead capture, review machine, chatbot,
+   hosting, maintenance, monthly reporting)
+
+─────────────────────────────────────────────────────────────────
+                                          SUBTOTAL:        $1,400.00
+                                          GST:             $0.00*
+                                          TOTAL DUE:       $1,400.00
+
+* GST-free supply (under threshold)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PAYMENT DETAILS
+Bank Transfer:
+  Account Name: [Your Account Name]
+  BSB:          [Your BSB]
+  Account #:    [Your Account Number]
+  Reference:    AURORA-0001-YMI
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TERMS
+Payment due within 7 days. Services commence upon receipt of payment.
+
+This invoice is issued under the Services Agreement dated [Date].
+
+Thank you for choosing Aurora AI Agency.

@@ -1,0 +1,51 @@
+{
+  "name": "AutoBoros: Approve & Send",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "webhook-in",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "autoboros-approve"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract job context from webhook\nconst body = $input.first().json.body;\nreturn [{\n  json: {\n    job_id: body.job_id,\n    action: body.action,\n    payload: body.payload,\n    callback_url: body.callback_url\n  }\n}];"
+      },
+      "id": "parse",
+      "name": "Parse Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.callback_url }}",
+        "body": {
+          "job_id": "={{ $json.job_id }}",
+          "result": {
+            "status": "Done",
+            "actor": "Agent",
+            "last_ag": "n8n workflow completed — sent via MCP",
+            "activity_text": "n8n completed approved action"
+          }
+        }
+      },
+      "id": "callback",
+      "name": "Callback to FastAPI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{"node": "Parse Input", "type": "main", "index": 0}]] },
+    "Parse Input": { "main": [[{"node": "Callback to FastAPI", "type": "main", "index": 0}]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": ["autoboros"]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Y.M.I Roofing",
+  "short_name": "YMI Roofing",
+  "description": "Melbourne's trusted roof tiling and high-pressure cleaning specialists. 20+ years experience.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#06101E",
+  "theme_color": "#06101E",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["business", "home services"],
+  "lang": "en-AU"
+}

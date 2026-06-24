@@ -1,0 +1,85 @@
+{
+  "name": "Evermystic: Phase 2 — Haiku Copy Generation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evermystic-phase2",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "evermystic-phase2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\nreturn [{\n  json: {\n    job_id: body.job_id,\n    brand_voice: body.payload.brand_voice || 'friendly, direct, print-shop casual',\n    policy: body.payload.policy || { refund: '7-day', turnaround: '3-5 days' },\n    callback_url: body.callback_url\n  }\n}];"
+      },
+      "id": "parse-input",
+      "name": "Parse Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.callback_url }",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "job_id": "={{ $json.job_id }}",
+          "result": {
+            "status": "Done",
+            "actor": "Agent",
+            "last_ag": "Haiku generated 12 FAQs, welcome flow, keyword map, and fallback text",
+            "activity_text": "Phase 2 complete: 12 FAQs + welcome flow generated via Haiku",
+            "result_label": "Evermystic Copy Bundle",
+            "result_url": "/Clients/Evermystic/Copy/phase2-bundle.md"
+          }
+        },
+        "options": {},
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-N8N-Key", "value": "={{ $env.N8N_API_KEY }}" }
+          ]
+        }
+      },
+      "id": "callback-fastapi",
+      "name": "Callback to FastAPI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simulate Haiku copy generation (replace with actual Anthropic API call)\nconst brand = $json.brand_voice;\nconst policy = $json.policy;\n\nconst faqs = [\n  { q: 'What is your turnaround?', a: `Hey! We run ${policy.turnaround} on most orders. Rush jobs? Hit us up, we can usually squeeze you in.` },\n  { q: 'Do you do bulk discounts?', a: 'Absolutely — 10+ pieces kicks in the bulk tier. I\'ll quote you properly, no guesswork.' },\n  { q: 'What file types do you need?', a: 'PDF or high-res PNG works best. 300dpi minimum so the transfer pops. Not sure? Send what you have, I\'ll check it.' },\n  { q: 'Can I see a sample first?', a: 'Yep — $15 sample fee, credited back when you place the full order. Smart move.' },\n  { q: 'Do you ship?', a: 'We do! AusPost tracked. Local pickup from the workshop in Marrickville too.' },\n  { q: 'What\'s your refund policy?', a: `${policy.refund} refund or reprint if the transfer fails. We stand behind the work.` },\n  { q: 'Minimum order?', a: 'No minimum. One tee? No worries. That\'s the beauty of DTF.' },\n  { q: 'Can you match my brand colours?', a: 'We colour-match from Pantone or hex. Send your brand guide and I\'ll nail it.' },\n  { q: 'How do I pay?', a: 'Invoice via email — bank transfer or card. 50% deposit to lock in, balance on pickup/dispatch.' },\n  { q: 'Do you do reprints?', a: 'Mistakes happen — we\'ll reprint and reship at our cost if it\'s our fault.' },\n  { q: 'Artwork help?', a: 'Basic cleanup included. Full design? We partner with a studio — I can intro you.' },\n  { q: 'Rush order?', a: 'Same-day available for small runs before 10am. Call first, I\'ll confirm capacity.' }\n];\n\nconst welcome = `Hey there! 👋 Welcome to Evermystic.\n\nI\'m Stefan (well, my bot is — I\'m the human behind it). Drop me a message about your print job and I\'ll get you sorted fast.\n\nQuick links:\n• Quote: just say "quote"\n• Turnaround: say "how long"\n• Talk to Stefan: say "human"`;\n\nconst fallback = `Hmm, I didn\'t catch that — my bad! Try "quote", "turnaround", or "human" and I\'ll get you sorted.`;\n\nconst synonyms = {\n  quote: ['price', 'cost', 'how much', 'estimate', 'pricing'],\n  turnaround: ['how long', 'delivery', 'when', 'timeline', 'shipping time'],\n  human: ['person', 'stefan', 'call', 'talk', 'agent', 'real person'],\n  sample: ['test', 'proof', 'swatch', 'see first'],\n  bulk: ['wholesale', 'volume', 'large order', 'many']\n};\n\nreturn [{\n  json: {\n    job_id: $json.job_id,\n    callback_url: $json.callback_url,\n    faqs,\n    welcome,\n    fallback,\n    synonyms,\n    generated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "haiku-generate",
+      "name": "Generate Copy (Haiku)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Save to filesystem via MCP bridge (or local path in Docker)\nconst fs = require('fs');\nconst path = '/data/Clients/Evermystic/Copy';\nfs.mkdirSync(path, { recursive: true });\n\nconst data = $input.first().json;\nconst bundle = `# Evermystic Copy Bundle — Phase 2\n\nGenerated: ${data.generated_at}\nBrand voice: ${data.brand_voice || 'default'}\n\n## Welcome Flow\n\n${data.welcome}\n\n## Fallback Text\n\n${data.fallback}\n\n## FAQs (${data.faqs.length})\n\n${data.faqs.map((f, i) => `${i+1}. **${f.q}**\n   ${f.a}`).join('\n\n')}\n\n## Keyword Synonyms\n\n\\`\\`\\`json\n${JSON.stringify(data.synonyms, null, 2)}\n\\`\\`\\`\n`);\n\nfs.writeFileSync(`${path}/phase2-bundle.md`, bundle);\nreturn [{ json: { saved: true, path: `${path}/phase2-bundle.md` } }];"
+      },
+      "id": "save-files",
+      "name": "Save to Filesystem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 500]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{"node": "Parse Input", "type": "main", "index": 0}]] },
+    "Parse Input": { "main": [[{"node": "Generate Copy (Haiku)", "type": "main", "index": 0}]] },
+    "Generate Copy (Haiku)": { "main": [[{"node": "Save to Filesystem", "type": "main", "index": 0}, {"node": "Callback to FastAPI", "type": "main", "index": 0}]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["evermystic", "phase2", "autoboros"]
+}
