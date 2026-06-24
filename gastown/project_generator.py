@@ -233,25 +233,74 @@ class ProjectGenerator:
 
     # Stub file content generators
     def _stub_readme(self):
+        descriptions = {
+            "web_frontend": "A web frontend application",
+            "api_backend": "A REST API backend service",
+            "cli_tool": "A command-line tool",
+            "ml_project": "A machine learning project",
+            "data_project": "A data pipeline and analytics project",
+            "mobile_app": "A mobile application",
+            "general": "A general-purpose application",
+        }
+        install_steps = {
+            "web_frontend": "```bash\nnpm install\nnpm start\n```",
+            "api_backend": "```bash\nnpm install\nnpm run dev\n```",
+            "cli_tool": "```bash\npip install -r requirements.txt\n```",
+            "ml_project": "```bash\npip install -r requirements.txt\n```",
+            "data_project": "```bash\npip install -r requirements.txt\n```",
+            "mobile_app": "```bash\nnpm install\nnpx react-native run-android\n# or\nnpx react-native run-ios\n```",
+            "general": "```bash\npip install -r requirements.txt\n```",
+        }
+        usage_examples = {
+            "web_frontend": "```bash\nnpm start\n# Open http://localhost:3000 in your browser\n```",
+            "api_backend": "```bash\nnpm run dev\n# API available at http://localhost:3000\n```",
+            "cli_tool": "```bash\npython src/main.py --help\n```",
+            "ml_project": "```bash\npython src/train.py\n```",
+            "data_project": "```bash\npython src/pipeline/extract.py\n```",
+            "mobile_app": "```bash\nnpx react-native start\n```",
+            "general": "```bash\npython src/main.py\n```",
+        }
+        structures = {
+            "web_frontend": "- `src/components/` — React components\n- `src/styles/` — CSS stylesheets\n- `src/utils/` — Utility helpers\n- `public/` — Static assets\n- `tests/` — Test files",
+            "api_backend": "- `src/routes/` — API route definitions\n- `src/controllers/` — Request handlers\n- `src/models/` — Data models\n- `src/middleware/` — Express middleware\n- `src/config/` — Configuration files",
+            "cli_tool": "- `src/commands/` — CLI command implementations\n- `src/utils/` — Utility helpers\n- `tests/` — Test files",
+            "ml_project": "- `data/raw/` — Raw training data\n- `data/processed/` — Preprocessed data\n- `notebooks/` — Jupyter exploration notebooks\n- `src/models/` — Model definitions\n- `src/preprocessing/` — Data preprocessing scripts",
+            "data_project": "- `data/raw/` — Raw input data\n- `data/processed/` — Transformed output\n- `src/pipeline/` — ETL pipeline scripts\n- `src/config/` — Pipeline configuration\n- `sql/` — Database schema and queries",
+            "mobile_app": "- `src/screens/` — App screens\n- `src/components/` — Reusable UI components\n- `src/navigation/` — Navigation configuration\n- `src/styles/` — Theme and styles\n- `assets/` — Images and static files",
+            "general": "- `src/` — Source code\n- `tests/` — Test files\n- `docs/` — Documentation",
+        }
+
+        description = descriptions.get(self.project_type, "A software project")
+        install = install_steps.get(self.project_type, "```bash\n# Install dependencies\n```")
+        usage = usage_examples.get(self.project_type, "```bash\n# Run the application\n```")
+        structure = structures.get(self.project_type, "- `src/` — Source code")
+
         return f"""# {self.project_idea.title()}
 
 ## Description
-TODO: Add project description
+{description} built for: {self.project_idea}.
 
 ## Installation
-TODO: Add installation instructions
+
+{install}
 
 ## Usage
-TODO: Add usage examples
+
+{usage}
 
 ## Project Structure
-TODO: Describe the project structure
+
+{structure}
 
 ## Contributing
-TODO: Add contribution guidelines
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m 'Add my feature'`)
+4. Push to the branch (`git push origin feature/my-feature`)
+5. Open a pull request
 
 ## License
-TODO: Add license information
+MIT
 """
 
     def _stub_react_component(self, name="App"):
