@@ -18,7 +18,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-  <!-- Google Analytics: Replace G-XXXXXXXXXX with real GA4 ID when available -->
+  <!-- ─── AGENCY NOTE ────────────────────────────────────────────────────────
+    Google Analytics: Replace G-XXXXXXXXXX with Ben's real GA4 Measurement ID
+    once his Google Analytics property is created. Remove this block if GA not needed.
+  ─────────────────────────────────────────────────────────────────────────── -->
   <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -28,219 +31,985 @@
   </script> -->
 
   <style>
+    /* ─── RESET ────────────────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; font-size: 16px; }
     body { font-family: 'Barlow', sans-serif; background: #06101E; color: #FFFFFF; min-height: 100vh; }
     a { text-decoration: none; color: inherit; }
     img { max-width: 100%; display: block; }
     ::selection { background: #1B68B4; color: #fff; }
+
+    /* ─── TOKENS ───────────────────────────────────────────────────────────── */
     :root {
-      --bg: #06101E; --navy: #0A1628; --navy-light: #0F2040;
-      --blue: #1B68B4; --blue-bright: #2E8AF6; --silver: #B8C8D8;
-      --muted: #6B829A; --white: #FFFFFF; --dark: #030810;
-      --green: #22C55E; --radius: 10px; --shadow: 0 24px 64px rgba(3,8,16,0.7);
+      --bg:          #06101E;
+      --navy:        #0A1628;
+      --navy-light:  #0F2040;
+      --blue:        #1B68B4;
+      --blue-bright: #2E8AF6;
+      --silver:      #B8C8D8;
+      --muted:       #6B829A;
+      --white:       #FFFFFF;
+      --dark:        #030810;
+      --green:       #22C55E;
+      --radius:      10px;
+      --shadow:      0 24px 64px rgba(3,8,16,0.7);
     }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
-    @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(46,138,246,0.4); } 50% { box-shadow: 0 0 0 14px rgba(46,138,246,0); } }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .fade-up { animation: fadeUp 0.8s ease both; }
-    .fade-up-d { animation: fadeUp 0.8s 0.2s ease both; }
-    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
-    .section { padding: 88px 0; }
-    .label-chip { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--blue); margin-bottom: 12px; }
-    .section-title { font-family: 'Oswald', sans-serif; font-size: clamp(34px, 4vw, 44px); font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; }
-    .section-sub { font-size: 16px; color: var(--silver); font-weight: 300; line-height: 1.7; margin-top: 14px; max-width: 520px; }
-    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 8px; font-family: 'Barlow', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; border: none; text-decoration: none; transition: all 0.22s ease; }
-    .btn-primary { background: var(--blue); color: var(--white); }
-    .btn-primary:hover { background: var(--blue-bright); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(27,104,180,0.5); }
-    .btn-outline { background: transparent; color: var(--white); border: 1px solid rgba(27,104,180,0.5); }
-    .btn-outline:hover { background: rgba(27,104,180,0.15); border-color: var(--blue-bright); transform: translateY(-2px); }
-    .card { background: linear-gradient(160deg, var(--navy-light), var(--navy)); border: 1px solid rgba(27,104,180,0.2); border-radius: 14px; padding: 28px; }
+
+    /* ─── ANIMATIONS ───────────────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes shimmer {
+      0%   { background-position: -200% center; }
+      100% { background-position:  200% center; }
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0   rgba(46,138,246,0.4); }
+      50%       { box-shadow: 0 0 0 14px rgba(46,138,246,0); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ─── UTILITY ──────────────────────────────────────────────────────────── */
+    .fade-up    { animation: fadeUp 0.8s ease both; }
+    .fade-up-d  { animation: fadeUp 0.8s 0.2s ease both; }
+    .container  { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .section    { padding: 88px 0; }
+    .label-chip {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--blue); margin-bottom: 12px;
+    }
+    .section-title {
+      font-family: 'Oswald', sans-serif; font-size: clamp(34px, 4vw, 44px);
+      font-weight: 700; letter-spacing: -0.01em; line-height: 1.1;
+    }
+    .section-sub {
+      font-size: 16px; color: var(--silver); font-weight: 300;
+      line-height: 1.7; margin-top: 14px; max-width: 520px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 28px; border-radius: 8px; font-family: 'Barlow', sans-serif;
+      font-size: 15px; font-weight: 700; cursor: pointer; border: none;
+      text-decoration: none; transition: all 0.22s ease;
+    }
+    .btn-primary {
+      background: var(--blue); color: var(--white);
+    }
+    .btn-primary:hover {
+      background: var(--blue-bright);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(27,104,180,0.5);
+    }
+    .btn-outline {
+      background: transparent; color: var(--white);
+      border: 1px solid rgba(27,104,180,0.5);
+    }
+    .btn-outline:hover {
+      background: rgba(27,104,180,0.15);
+      border-color: var(--blue-bright);
+      transform: translateY(-2px);
+    }
+    .card {
+      background: linear-gradient(160deg, var(--navy-light), var(--navy));
+      border: 1px solid rgba(27,104,180,0.2);
+      border-radius: 14px; padding: 28px;
+    }
+
+    /* ─── HONEYPOT (anti-spam) ─────────────────────────────────────────────── */
     .hp-field { display: none !important; visibility: hidden; }
-    #nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; transition: all 0.35s ease; padding: 0 24px; }
-    #nav.scrolled { background: rgba(3,8,16,0.94); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(27,104,180,0.25); }
-    .nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 68px; }
+
+    /* ─── NAV ──────────────────────────────────────────────────────────────── */
+    #nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      transition: all 0.35s ease;
+      padding: 0 24px;
+    }
+    #nav.scrolled {
+      background: rgba(3,8,16,0.94);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(27,104,180,0.25);
+    }
+    .nav-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 68px;
+    }
     .nav-logo { display: flex; align-items: center; gap: 12px; }
-    .nav-logo-badge { background: linear-gradient(135deg, var(--blue), var(--blue-bright)); border-radius: 6px; padding: 5px 12px; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: 0.06em; color: var(--white); }
+    .nav-logo-badge {
+      background: linear-gradient(135deg, var(--blue), var(--blue-bright));
+      border-radius: 6px; padding: 5px 12px;
+      font-family: 'Oswald', sans-serif; font-weight: 700;
+      font-size: 17px; letter-spacing: 0.06em; color: var(--white);
+    }
     .nav-logo-text { line-height: 1.2; }
-    .nav-logo-text strong { display: block; font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.12em; }
-    .nav-logo-text small { font-size: 8px; color: var(--silver); letter-spacing: 0.06em; text-transform: uppercase; }
+    .nav-logo-text strong {
+      display: block; font-family: 'Oswald', sans-serif;
+      font-size: 13px; font-weight: 600; letter-spacing: 0.12em;
+    }
+    .nav-logo-text small {
+      font-size: 8px; color: var(--silver); letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
     .nav-links { display: flex; align-items: center; gap: 28px; }
-    .nav-link { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--silver); background: none; border: none; cursor: pointer; transition: color 0.2s ease; font-family: 'Barlow', sans-serif; }
+    .nav-link {
+      font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--silver);
+      background: none; border: none; cursor: pointer;
+      transition: color 0.2s ease; font-family: 'Barlow', sans-serif;
+    }
     .nav-link:hover { color: var(--blue-bright); }
-    .nav-cta { animation: pulse 2.5s infinite; font-size: 13px !important; padding: 9px 20px !important; }
-    .hamburger { display: none; background: none; border: 1px solid rgba(27,104,180,0.4); border-radius: 6px; padding: 8px 10px; cursor: pointer; color: var(--white); font-size: 20px; }
-    #mobile-nav { display: none; position: fixed; top: 68px; left: 0; right: 0; background: rgba(3,8,16,0.97); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(27,104,180,0.25); padding: 20px 24px; z-index: 199; flex-direction: column; gap: 16px; }
+    .nav-cta {
+      animation: pulse 2.5s infinite;
+      font-size: 13px !important; padding: 9px 20px !important;
+    }
+    .hamburger {
+      display: none; background: none;
+      border: 1px solid rgba(27,104,180,0.4);
+      border-radius: 6px; padding: 8px 10px;
+      cursor: pointer; color: var(--white); font-size: 20px;
+    }
+    /* Mobile nav drawer */
+    #mobile-nav {
+      display: none; position: fixed; top: 68px; left: 0; right: 0;
+      background: rgba(3,8,16,0.97); backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(27,104,180,0.25);
+      padding: 20px 24px; z-index: 199;
+      flex-direction: column; gap: 16px;
+    }
     #mobile-nav.open { display: flex; }
     #mobile-nav .nav-link { font-size: 15px; }
     #mobile-nav .btn { width: 100%; justify-content: center; }
-    #hero { min-height: 100vh; display: flex; align-items: center; padding: 120px 24px 80px; background: radial-gradient(ellipse at 75% 40%, rgba(27,104,180,0.12) 0%, transparent 55%), radial-gradient(ellipse at 15% 85%, rgba(15,32,64,0.8) 0%, transparent 50%), linear-gradient(175deg, var(--dark) 0%, var(--bg) 100%); position: relative; overflow: hidden; }
-    .hero-grid { display: grid; grid-template-columns: 1fr 420px; gap: 60px; align-items: center; width: 100%; }
-    .hero-grid-bg { position: absolute; inset: 0; opacity: 0.035; pointer-events: none; background-image: repeating-linear-gradient(0deg, transparent, transparent 64px, var(--blue) 64px, var(--blue) 65px), repeating-linear-gradient(90deg, transparent, transparent 64px, var(--blue) 64px, var(--blue) 65px); }
-    .hero-glow { position: absolute; top: 15%; right: 8%; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(27,104,180,0.09) 0%, transparent 70%); pointer-events: none; }
-    .hero-fade-bottom { position: absolute; bottom: 0; left: 0; right: 0; height: 120px; background: linear-gradient(to top, var(--bg), transparent); pointer-events: none; }
-    .hero-eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+
+    /* ─── HERO ─────────────────────────────────────────────────────────────── */
+    #hero {
+      min-height: 100vh; display: flex; align-items: center;
+      padding: 120px 24px 80px;
+      background:
+        radial-gradient(ellipse at 75% 40%, rgba(27,104,180,0.12) 0%, transparent 55%),
+        radial-gradient(ellipse at 15% 85%, rgba(15,32,64,0.8) 0%,  transparent 50%),
+        linear-gradient(175deg, var(--dark) 0%, var(--bg) 100%);
+      position: relative; overflow: hidden;
+    }
+    .hero-grid {
+      display: grid; grid-template-columns: 1fr 420px;
+      gap: 60px; align-items: center; width: 100%;
+    }
+    .hero-grid-bg {
+      position: absolute; inset: 0; opacity: 0.035; pointer-events: none;
+      background-image:
+        repeating-linear-gradient(0deg,   transparent, transparent 64px, var(--blue) 64px, var(--blue) 65px),
+        repeating-linear-gradient(90deg, transparent, transparent 64px, var(--blue) 64px, var(--blue) 65px);
+    }
+    .hero-glow {
+      position: absolute; top: 15%; right: 8%;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(27,104,180,0.09) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-fade-bottom {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 120px;
+      background: linear-gradient(to top, var(--bg), transparent);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 22px;
+    }
     .hero-eyebrow-line { width: 44px; height: 2px; background: var(--blue); }
-    .hero-eyebrow-text { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; color: var(--blue); text-transform: uppercase; }
-    .hero-h1 { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: clamp(42px, 5.5vw, 70px); line-height: 1.04; letter-spacing: -0.01em; margin-bottom: 22px; }
-    .hero-h1-shimmer { background: linear-gradient(90deg, #fff 0%, var(--blue-bright) 50%, #fff 100%); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shimmer 3.5s linear infinite; }
-    .hero-sub { font-size: 17px; color: var(--silver); line-height: 1.75; font-weight: 300; margin-bottom: 36px; max-width: 520px; }
+    .hero-eyebrow-text {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.22em;
+      color: var(--blue); text-transform: uppercase;
+    }
+    .hero-h1 {
+      font-family: 'Oswald', sans-serif; font-weight: 700;
+      font-size: clamp(42px, 5.5vw, 70px); line-height: 1.04;
+      letter-spacing: -0.01em; margin-bottom: 22px;
+    }
+    .hero-h1-shimmer {
+      background: linear-gradient(90deg, #fff 0%, var(--blue-bright) 50%, #fff 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      animation: shimmer 3.5s linear infinite;
+    }
+    .hero-sub {
+      font-size: 17px; color: var(--silver); line-height: 1.75;
+      font-weight: 300; margin-bottom: 36px; max-width: 520px;
+    }
     .hero-btns { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 36px; }
     .trust-badges { display: flex; flex-wrap: wrap; gap: 0; }
-    .trust-badge { font-size: 12px; color: var(--silver); font-weight: 500; padding-right: 20px; margin-bottom: 6px; }
+    .trust-badge {
+      font-size: 12px; color: var(--silver); font-weight: 500;
+      padding-right: 20px; margin-bottom: 6px;
+    }
     .trust-badge:not(:last-child) { border-right: 1px solid rgba(27,104,180,0.3); }
     .trust-badge:not(:first-child) { padding-left: 20px; }
-    .contact-card { background: linear-gradient(160deg, var(--navy-light), var(--navy)); border: 1px solid rgba(27,104,180,0.35); border-radius: 18px; padding: 36px; box-shadow: 0 32px 80px rgba(3,8,16,0.8), 0 0 0 1px rgba(27,104,180,0.12), inset 0 1px 0 rgba(255,255,255,0.05); }
-    .contact-card-label { font-size: 10px; font-weight: 700; letter-spacing: 0.18em; color: var(--blue); text-transform: uppercase; margin-bottom: 20px; }
-    .contact-card-name { font-family: 'Oswald', sans-serif; font-size: 30px; font-weight: 700; margin-bottom: 4px; }
-    .contact-card-role { font-size: 13px; color: var(--silver); margin-bottom: 28px; display: flex; align-items: center; gap: 8px; }
-    .online-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); display: inline-block; }
+
+    /* Contact card */
+    .contact-card {
+      background: linear-gradient(160deg, var(--navy-light), var(--navy));
+      border: 1px solid rgba(27,104,180,0.35); border-radius: 18px; padding: 36px;
+      box-shadow: 0 32px 80px rgba(3,8,16,0.8), 0 0 0 1px rgba(27,104,180,0.12), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .contact-card-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
+      color: var(--blue); text-transform: uppercase; margin-bottom: 20px;
+    }
+    .contact-card-name {
+      font-family: 'Oswald', sans-serif; font-size: 30px;
+      font-weight: 700; margin-bottom: 4px;
+    }
+    .contact-card-role {
+      font-size: 13px; color: var(--silver); margin-bottom: 28px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .online-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 8px var(--green);
+      display: inline-block;
+    }
     .phone-block { display: block; margin-bottom: 18px; }
-    .phone-block-label { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 3px; }
-    .phone-block-num { font-family: 'Oswald', sans-serif; font-size: 26px; font-weight: 600; color: var(--white); letter-spacing: 0.04em; transition: color 0.2s; }
+    .phone-block-label {
+      font-size: 10px; color: var(--muted); letter-spacing: 0.08em;
+      text-transform: uppercase; margin-bottom: 3px;
+    }
+    .phone-block-num {
+      font-family: 'Oswald', sans-serif; font-size: 26px;
+      font-weight: 600; color: var(--white); letter-spacing: 0.04em;
+      transition: color 0.2s;
+    }
     .phone-block:hover .phone-block-num { color: var(--blue-bright); }
-    .contact-card-divider { border-top: 1px solid rgba(27,104,180,0.2); padding-top: 18px; margin-top: 4px; margin-bottom: 22px; }
-    .contact-card-email-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .contact-card-divider {
+      border-top: 1px solid rgba(27,104,180,0.2);
+      padding-top: 18px; margin-top: 4px; margin-bottom: 22px;
+    }
+    .contact-card-email-label {
+      font-size: 10px; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.08em; margin-bottom: 6px;
+    }
     .contact-card-email { font-size: 13px; color: var(--silver); }
-    .contact-card-response { font-size: 11px; color: var(--muted); text-align: center; margin-top: 16px; }
+    .contact-card-response {
+      font-size: 11px; color: var(--muted); text-align: center; margin-top: 16px;
+    }
+
+    /* ─── STATS BAR ────────────────────────────────────────────────────────── */
     #stats-bar { background: var(--blue); padding: 22px 24px; }
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
-    .stat-item { text-align: center; padding: 6px 0; border-right: 1px solid rgba(255,255,255,0.18); }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+    }
+    .stat-item {
+      text-align: center; padding: 6px 0;
+      border-right: 1px solid rgba(255,255,255,0.18);
+    }
     .stat-item:last-child { border-right: none; }
-    .stat-val { font-family: 'Oswald', sans-serif; font-size: 32px; font-weight: 700; line-height: 1; }
-    .stat-label { font-size: 11px; letter-spacing: 0.1em; opacity: 0.8; text-transform: uppercase; margin-top: 4px; }
+    .stat-val {
+      font-family: 'Oswald', sans-serif; font-size: 32px;
+      font-weight: 700; line-height: 1;
+    }
+    .stat-label {
+      font-size: 11px; letter-spacing: 0.1em; opacity: 0.8;
+      text-transform: uppercase; margin-top: 4px;
+    }
+
+    /* ─── SERVICES ─────────────────────────────────────────────────────────── */
     #services { background: var(--bg); }
-    .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-    .svc-card { background: linear-gradient(160deg, var(--navy-light), var(--navy)); border: 1px solid rgba(27,104,180,0.18); border-radius: 14px; padding: 28px; transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease; }
-    .svc-card:hover { transform: translateY(-5px); border-color: var(--blue); box-shadow: 0 16px 48px rgba(27,104,180,0.15); }
+    .services-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+    }
+    .svc-card {
+      background: linear-gradient(160deg, var(--navy-light), var(--navy));
+      border: 1px solid rgba(27,104,180,0.18);
+      border-radius: 14px; padding: 28px;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .svc-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--blue);
+      box-shadow: 0 16px 48px rgba(27,104,180,0.15);
+    }
     .svc-icon { font-size: 36px; margin-bottom: 16px; }
-    .svc-name { font-family: 'Oswald', sans-serif; font-size: 19px; font-weight: 600; letter-spacing: 0.03em; margin-bottom: 10px; }
+    .svc-name {
+      font-family: 'Oswald', sans-serif; font-size: 19px;
+      font-weight: 600; letter-spacing: 0.03em; margin-bottom: 10px;
+    }
     .svc-desc { font-size: 13px; color: var(--silver); line-height: 1.65; font-weight: 300; }
     .services-cta { text-align: center; margin-top: 44px; }
     .services-cta p { font-size: 15px; color: var(--silver); margin-bottom: 20px; }
-    #why-us { background: linear-gradient(175deg, var(--navy) 0%, var(--bg) 100%); position: relative; }
-    .why-divider { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 600px; height: 1px; background: linear-gradient(90deg, transparent, rgba(27,104,180,0.4), transparent); }
+
+    /* ─── WHY US ───────────────────────────────────────────────────────────── */
+    #why-us {
+      background: linear-gradient(175deg, var(--navy) 0%, var(--bg) 100%);
+      position: relative;
+    }
+    .why-divider {
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(27,104,180,0.4), transparent);
+    }
     .why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; }
     .why-intro { font-size: 16px; color: var(--silver); line-height: 1.75; font-weight: 300; margin-bottom: 36px; }
     .why-point { display: flex; gap: 14px; margin-bottom: 22px; align-items: flex-start; }
-    .why-tick { width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--blue-bright)); flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+    .why-tick {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue), var(--blue-bright));
+      flex-shrink: 0; margin-top: 2px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+    }
     .why-point-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
     .why-point-desc { font-size: 13px; color: var(--silver); line-height: 1.6; font-weight: 300; }
     .why-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .why-stat { background: linear-gradient(160deg, var(--navy-light), var(--navy)); border: 1px solid rgba(27,104,180,0.18); border-radius: 14px; padding: 28px 24px; text-align: center; transition: transform 0.2s, border-color 0.2s; }
+    .why-stat {
+      background: linear-gradient(160deg, var(--navy-light), var(--navy));
+      border: 1px solid rgba(27,104,180,0.18);
+      border-radius: 14px; padding: 28px 24px; text-align: center;
+      transition: transform 0.2s, border-color 0.2s;
+    }
     .why-stat:hover { transform: translateY(-3px); border-color: var(--blue); }
-    .why-stat-num { font-family: 'Oswald', sans-serif; font-size: 42px; font-weight: 700; color: var(--blue); line-height: 1; margin-bottom: 10px; white-space: pre-line; }
+    .why-stat-num {
+      font-family: 'Oswald', sans-serif; font-size: 42px; font-weight: 700;
+      color: var(--blue); line-height: 1; margin-bottom: 10px; white-space: pre-line;
+    }
     .why-stat-label { font-size: 12px; color: var(--silver); line-height: 1.5; font-weight: 300; }
+
+    /* ─── HOW IT WORKS ─────────────────────────────────────────────────────── */
     #process { background: var(--blue); padding: 56px 24px; }
     .process-header { text-align: center; margin-bottom: 44px; }
-    .process-title { font-family: 'Oswald', sans-serif; font-size: 36px; font-weight: 700; letter-spacing: 0.02em; }
+    .process-title {
+      font-family: 'Oswald', sans-serif; font-size: 36px;
+      font-weight: 700; letter-spacing: 0.02em;
+    }
     .process-sub { font-size: 15px; opacity: 0.8; margin-top: 10px; }
     .process-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
-    .process-step { padding: 10px 36px; border-right: 1px solid rgba(255,255,255,0.18); }
+    .process-step {
+      padding: 10px 36px;
+      border-right: 1px solid rgba(255,255,255,0.18);
+    }
     .process-step:last-child { border-right: none; }
-    .process-num { font-family: 'Oswald', sans-serif; font-size: 56px; font-weight: 700; opacity: 0.2; line-height: 1; margin-bottom: 8px; }
-    .process-step-title { font-family: 'Oswald', sans-serif; font-size: 19px; font-weight: 700; letter-spacing: 0.03em; margin-bottom: 10px; }
+    .process-num {
+      font-family: 'Oswald', sans-serif; font-size: 56px;
+      font-weight: 700; opacity: 0.2; line-height: 1; margin-bottom: 8px;
+    }
+    .process-step-title {
+      font-family: 'Oswald', sans-serif; font-size: 19px;
+      font-weight: 700; letter-spacing: 0.03em; margin-bottom: 10px;
+    }
     .process-step-desc { font-size: 14px; opacity: 0.85; line-height: 1.65; font-weight: 300; }
+
+    /* ─── CONTACT ──────────────────────────────────────────────────────────── */
     #contact { background: var(--bg); }
     .contact-grid { display: grid; grid-template-columns: 1fr 380px; gap: 36px; align-items: start; }
-    .form-card { background: linear-gradient(160deg, var(--navy-light), var(--navy)); border: 1px solid rgba(27,104,180,0.25); border-radius: 16px; padding: 36px; }
+    .form-card {
+      background: linear-gradient(160deg, var(--navy-light), var(--navy));
+      border: 1px solid rgba(27,104,180,0.25); border-radius: 16px; padding: 36px;
+    }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
     .form-group { margin-bottom: 0; }
-    .form-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--silver); text-transform: uppercase; margin-bottom: 7px; }
-    .form-control { width: 100%; background: rgba(3,8,16,0.6); border: 1px solid rgba(27,104,180,0.25); border-radius: 8px; padding: 11px 14px; font-size: 14px; color: var(--white); font-family: 'Barlow', sans-serif; transition: border-color 0.2s, box-shadow 0.2s; }
+    .form-label {
+      display: block; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.08em; color: var(--silver); text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+    .form-control {
+      width: 100%; background: rgba(3,8,16,0.6);
+      border: 1px solid rgba(27,104,180,0.25); border-radius: 8px;
+      padding: 11px 14px; font-size: 14px; color: var(--white);
+      font-family: 'Barlow', sans-serif;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
     .form-control::placeholder { color: var(--muted); }
-    .form-control:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(27,104,180,0.2); }
+    .form-control:focus {
+      outline: none; border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(27,104,180,0.2);
+    }
     .form-control.error { border-color: #EF4444; }
     .form-control.success { border-color: var(--green); }
     select.form-control { background-color: var(--navy-light); }
     textarea.form-control { resize: vertical; min-height: 110px; line-height: 1.6; }
-    .form-footer-note { font-size: 11px; color: var(--muted); text-align: center; margin-top: 12px; }
-    .spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; animation: spin 0.7s linear infinite; display: none; }
-    #form-success { background: linear-gradient(160deg, var(--navy-light), var(--navy)); border: 1px solid rgba(34,197,94,0.3); border-radius: 16px; padding: 52px 36px; text-align: center; display: none; }
+    .form-footer-note {
+      font-size: 11px; color: var(--muted); text-align: center; margin-top: 12px;
+    }
+    /* Submit button loading spinner */
+    .spinner {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    /* Success / Error state */
+    #form-success {
+      background: linear-gradient(160deg, var(--navy-light), var(--navy));
+      border: 1px solid rgba(34,197,94,0.3); border-radius: 16px;
+      padding: 52px 36px; text-align: center; display: none;
+    }
     #form-success .success-icon { font-size: 56px; margin-bottom: 20px; }
-    #form-success h3 { font-family: 'Oswald', sans-serif; font-size: 28px; font-weight: 700; margin-bottom: 12px; color: var(--green); }
+    #form-success h3 {
+      font-family: 'Oswald', sans-serif; font-size: 28px;
+      font-weight: 700; margin-bottom: 12px; color: var(--green);
+    }
     #form-success p { font-size: 15px; color: var(--silver); line-height: 1.7; }
+    /* Right column cards */
     .contact-side { display: flex; flex-direction: column; gap: 14px; }
-    .side-card { background: linear-gradient(160deg, var(--navy-light), var(--navy)); border: 1px solid rgba(27,104,180,0.25); border-radius: 14px; padding: 22px; }
-    .side-card-label { font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px; }
-    .side-phone-num { font-family: 'Oswald', sans-serif; font-size: 24px; font-weight: 600; color: var(--white); transition: color 0.2s; }
+    .side-card {
+      background: linear-gradient(160deg, var(--navy-light), var(--navy));
+      border: 1px solid rgba(27,104,180,0.25); border-radius: 14px; padding: 22px;
+    }
+    .side-card-label {
+      font-size: 10px; font-weight: 700; color: var(--muted);
+      letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px;
+    }
+    .side-phone-num {
+      font-family: 'Oswald', sans-serif; font-size: 24px;
+      font-weight: 600; color: var(--white); transition: color 0.2s;
+    }
     .side-phone-num:hover { color: var(--blue-bright); }
-    .side-phone-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+    .side-phone-label {
+      font-size: 10px; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.06em; margin-bottom: 3px;
+    }
     .side-email { font-size: 13px; color: var(--silver); }
-    .response-card { background: rgba(27,104,180,0.1); border: 1px solid rgba(27,104,180,0.3); border-radius: 14px; padding: 20px; }
-    .response-card-title { font-family: 'Oswald', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .response-card {
+      background: rgba(27,104,180,0.1);
+      border: 1px solid rgba(27,104,180,0.3); border-radius: 14px; padding: 20px;
+    }
+    .response-card-title {
+      font-family: 'Oswald', sans-serif; font-size: 17px;
+      font-weight: 700; margin-bottom: 8px;
+    }
     .response-card-text { font-size: 13px; color: var(--silver); line-height: 1.65; font-weight: 300; }
-    .acn-card { background: linear-gradient(160deg, var(--navy-light), var(--navy)); border: 1px solid rgba(27,104,180,0.18); border-radius: 14px; padding: 20px; }
-    footer { background: var(--dark); padding: 52px 0 24px; border-top: 1px solid rgba(27,104,180,0.15); }
+    .acn-card {
+      background: linear-gradient(160deg, var(--navy-light), var(--navy));
+      border: 1px solid rgba(27,104,180,0.18); border-radius: 14px; padding: 20px;
+    }
+
+    /* ─── FOOTER ───────────────────────────────────────────────────────────── */
+    footer {
+      background: var(--dark); padding: 52px 0 24px;
+      border-top: 1px solid rgba(27,104,180,0.15);
+    }
     .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; margin-bottom: 40px; }
     .footer-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
-    .footer-logo-badge { background: var(--blue); border-radius: 6px; padding: 5px 12px; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 0.06em; }
-    .footer-col-title { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: var(--silver); text-transform: uppercase; margin-bottom: 16px; }
-    .footer-link { display: block; font-size: 13px; color: var(--muted); margin-bottom: 9px; font-weight: 300; transition: color 0.2s; }
+    .footer-logo-badge {
+      background: var(--blue); border-radius: 6px; padding: 5px 12px;
+      font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 16px;
+      letter-spacing: 0.06em;
+    }
+    .footer-col-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+      color: var(--silver); text-transform: uppercase; margin-bottom: 16px;
+    }
+    .footer-link {
+      display: block; font-size: 13px; color: var(--muted);
+      margin-bottom: 9px; font-weight: 300; transition: color 0.2s;
+    }
     .footer-link:hover { color: var(--silver); }
-    .footer-bottom { border-top: 1px solid rgba(27,104,180,0.12); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .footer-bottom {
+      border-top: 1px solid rgba(27,104,180,0.12); padding-top: 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 8px;
+    }
     .footer-copy { font-size: 12px; color: var(--muted); }
     .footer-credit { font-size: 12px; color: var(--muted); }
     .footer-credit span { color: var(--blue); font-weight: 600; }
-    @media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; } .contact-card { display: none; } .services-grid { grid-template-columns: 1fr 1fr; } .why-grid { grid-template-columns: 1fr; } .contact-grid { grid-template-columns: 1fr; } .footer-grid { grid-template-columns: 1fr 1fr; } .process-grid { grid-template-columns: 1fr; } .process-step { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.15); padding: 24px 0; } .process-step:last-child { border-bottom: none; } }
-    @media (max-width: 600px) { .nav-links { display: none; } .hamburger { display: block; } .services-grid { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } .stats-grid { grid-template-columns: 1fr 1fr; } .stat-item:nth-child(2) { border-right: none; } .stat-item:nth-child(3) { border-right: 1px solid rgba(255,255,255,0.18); border-top: 1px solid rgba(255,255,255,0.12); } .stat-item:last-child { border-top: 1px solid rgba(255,255,255,0.12); } .footer-grid { grid-template-columns: 1fr; } .why-stats { grid-template-columns: 1fr 1fr; } .trust-badges { flex-direction: column; } .trust-badge { border-right: none !important; padding-left: 0 !important; } }
+
+    /* ─── RESPONSIVE ───────────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .hero-grid     { grid-template-columns: 1fr; }
+      .contact-card  { display: none; }
+      .services-grid { grid-template-columns: 1fr 1fr; }
+      .why-grid      { grid-template-columns: 1fr; }
+      .contact-grid  { grid-template-columns: 1fr; }
+      .footer-grid   { grid-template-columns: 1fr 1fr; }
+      .process-grid  { grid-template-columns: 1fr; }
+      .process-step  { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.15); padding: 24px 0; }
+      .process-step:last-child { border-bottom: none; }
+    }
+    @media (max-width: 600px) {
+      .nav-links   { display: none; }
+      .hamburger   { display: block; }
+      .services-grid { grid-template-columns: 1fr; }
+      .form-row    { grid-template-columns: 1fr; }
+      .stats-grid  { grid-template-columns: 1fr 1fr; }
+      .stat-item:nth-child(2)  { border-right: none; }
+      .stat-item:nth-child(3)  { border-right: 1px solid rgba(255,255,255,0.18); border-top: 1px solid rgba(255,255,255,0.12); }
+      .stat-item:last-child    { border-top: 1px solid rgba(255,255,255,0.12); }
+      .footer-grid { grid-template-columns: 1fr; }
+      .why-stats   { grid-template-columns: 1fr 1fr; }
+      .trust-badges { flex-direction: column; }
+      .trust-badge { border-right: none !important; padding-left: 0 !important; }
+    }
   </style>
 </head>
 <body>
-<nav id="nav"><div class="nav-inner"><a href="#hero" class="nav-logo"><div class="nav-logo-badge">Y.M.I</div><div class="nav-logo-text"><strong>ROOFING</strong><small>For all your roof tiling needs</small></div></a><div class="nav-links"><button class="nav-link" onclick="scrollTo('services')">Services</button><button class="nav-link" onclick="scrollTo('why-us')">Why Us</button><button class="nav-link" onclick="scrollTo('contact')">Contact</button><a href="tel:0422093241" class="btn btn-primary nav-cta">📞 0422 093 241</a></div><button class="hamburger" id="hamburger" onclick="toggleMobileNav()" aria-label="Menu">☰</button></div></nav>
-<div id="mobile-nav"><button class="nav-link" onclick="scrollTo('services')">Services</button><button class="nav-link" onclick="scrollTo('why-us')">Why Us</button><button class="nav-link" onclick="scrollTo('contact')">Contact</button><a href="tel:0422093241" class="btn btn-primary">📞 0422 093 241</a></div>
-<section id="hero"><div class="hero-grid-bg"></div><div class="hero-glow"></div><div class="hero-fade-bottom"></div><div class="container"><div class="hero-grid"><div class="fade-up"><div class="hero-eyebrow"><div class="hero-eyebrow-line"></div><span class="hero-eyebrow-text">Melbourne's Trusted Roof Tilers</span></div><h1 class="hero-h1">Roof Tiling<br><span class="hero-h1-shimmer">Done Right.</span><br>Guaranteed.</h1><p class="hero-sub">Over 20 years of expert roof tiling across Melbourne. New roofs, repairs, re-bedding &amp; pointing — quality work with a 100% workmanship guarantee on every job.</p><div class="hero-btns"><a href="tel:0422093241" class="btn btn-primary">📞 Call for a Free Quote</a><button class="btn btn-outline" onclick="scrollTo('contact')">Get a Quote Online →</button></div><div class="trust-badges"><span class="trust-badge">✓ 20+ Years Experience</span><span class="trust-badge">✓ 100% Guaranteed</span><span class="trust-badge">✓ Free Quotes</span><span class="trust-badge">✓ Licensed &amp; ACN Registered</span></div></div><div class="contact-card fade-up-d"><p class="contact-card-label">Speak Directly With</p><h2 class="contact-card-name">Ben Breheny</h2><div class="contact-card-role"><span class="online-dot"></span>Director — Y.M.I Roofing</div><a href="tel:0422093241" class="phone-block"><div class="phone-block-label">Primary</div><div class="phone-block-num">0422 093 241</div></a><a href="tel:0423858503" class="phone-block"><div class="phone-block-label">Secondary</div><div class="phone-block-num">0423 858 503</div></a><div class="contact-card-divider"><p class="contact-card-email-label">Email</p><a href="mailto:y.m.iroofing@outlook.com" class="contact-card-email">y.m.iroofing@outlook.com</a></div><a href="tel:0422093241" class="btn btn-primary" style="width:100%; justify-content:center;">Call for a Free Quote</a><p class="contact-card-response">Response within 1 hour · Available 7 days</p></div></div></div></section>
-<div id="stats-bar"><div class="container"><div class="stats-grid"><div class="stat-item"><div class="stat-val">20+</div><div class="stat-label">Years Experience</div></div><div class="stat-item"><div class="stat-val">100%</div><div class="stat-label">Quality Guaranteed</div></div><div class="stat-item"><div class="stat-val">Free</div><div class="stat-label">Quotes &amp; Inspections</div></div><div class="stat-item"><div class="stat-val">Licensed</div><div class="stat-label">ACN Registered</div></div></div></div></div>
-<section id="services" class="section"><div class="container"><div style="text-align:center; margin-bottom:56px;"><span class="label-chip">What We Do</span><h2 class="section-title">Roofing Services</h2><p class="section-sub" style="margin: 14px auto 0;">Full roof tiling services for residential properties across Melbourne. New roofs to emergency repairs — all tile types.</p></div><div class="services-grid"><div class="svc-card"><div class="svc-icon">🏠</div><h3 class="svc-name">New Roof Tiling</h3><p class="svc-desc">Complete tile roof installations for new builds and full replacements. All tile types — concrete, terracotta, slate.</p></div><div class="svc-card"><div class="svc-icon">🔧</div><h3 class="svc-name">Re-Bedding &amp; Re-Pointing</h3><p class="svc-desc">Restore crumbling mortar and loose ridge caps before small cracks become expensive water damage.</p></div><div class="svc-card"><div class="svc-icon">🛠️</div><h3 class="svc-name">Roof Repairs</h3><p class="svc-desc">Broken, cracked or slipped tiles fixed fast. Leak diagnosis and same-week repairs wherever possible.</p></div><div class="svc-card"><div class="svc-icon">🏗️</div><h3 class="svc-name">Tile Replacement</h3><p class="svc-desc">Single tile or full section replacement matched to your existing roof colour and profile.</p></div><div class="svc-card"><div class="svc-icon">📐</div><h3 class="svc-name">Ridge Capping</h3><p class="svc-desc">New ridge cap installation, re-bedding and pointing for a fully weathertight seal on every ridge line.</p></div><div class="svc-card"><div class="svc-icon">🔍</div><h3 class="svc-name">Roof Inspections</h3><p class="svc-desc">Pre-purchase or annual condition reports. Written assessment with photos — know exactly what you're dealing with.</p></div></div><div class="services-cta"><p>Not sure what you need? Call Ben and he'll diagnose it over the phone — free.</p><a href="tel:0422093241" class="btn btn-outline">📞 0422 093 241</a></div></div></section>
-<section id="why-us" class="section"><div class="why-divider"></div><div class="container"><div class="why-grid"><div><span class="label-chip">Why Choose YMI</span><h2 class="section-title">20 Years of Roofs<br>Done Right</h2><p class="why-intro" style="margin-top:20px;">Ben Breheny has been tiling roofs across Melbourne for over two decades. Not a franchise, not a call centre — you deal directly with the tradie doing the work.</p><div class="why-point"><div class="why-tick">✓</div><div><div class="why-point-title">100% Workmanship Guarantee</div><div class="why-point-desc">Every job is backed by a written guarantee. If it's not right, Ben fixes it — no arguments, no delays.</div></div></div><div class="why-point"><div class="why-tick">✓</div><div><div class="why-point-title">Direct With the Director</div><div class="why-point-desc">You call Ben's mobile. Ben quotes the job. Ben does the work. No subcontracting, no surprises.</div></div></div><div class="why-point"><div class="why-tick">✓</div><div><div class="why-point-title">Free Written Quotes</div><div class="why-point-desc">No pressure and no hidden costs. Get a clear, itemised written quote before a single tile is touched.</div></div></div><div class="why-point"><div class="why-tick">✓</div><div><div class="why-point-title">Fully Licensed &amp; ACN Registered</div><div class="why-point-desc">ACN 695 710 055. Properly licensed, insured, and registered. Everything above board.</div></div></div></div><div class="why-stats"><div class="why-stat"><div class="why-stat-num">20+</div><div class="why-stat-label">Years tiling roofs across Melbourne</div></div><div class="why-stat"><div class="why-stat-num">100%</div><div class="why-stat-label">Guaranteed workmanship on every job</div></div><div class="why-stat"><div class="why-stat-num">Free</div><div class="why-stat-label">Quote and roof inspection for all jobs</div></div><div class="why-stat"><div class="why-stat-num">Same Week</div><div class="why-stat-label">Repairs booked as fast as possible</div></div></div></div></div></section>
-<div id="process"><div class="container"><div class="process-header"><h2 class="process-title">Getting Started Is Simple</h2><p class="process-sub">Three steps from enquiry to job complete.</p></div><div class="process-grid"><div class="process-step"><div class="process-num">01</div><div class="process-step-title">Call or Enquire</div><div class="process-step-desc">Call Ben directly on 0422 093 241, or submit an enquiry online. Same-day response guaranteed.</div></div><div class="process-step"><div class="process-num">02</div><div class="process-step-title">Free Quote</div><div class="process-step-desc">Ben visits, inspects the roof, and gives you a clear written quote. No pressure. No obligation.</div></div><div class="process-step"><div class="process-num">03</div><div class="process-step-title">Job Done Right</div><div class="process-step-desc">Work starts on schedule. Completed to spec. 100% guaranteed. You inspect before Ben leaves.</div></div></div></div></div>
-<section id="contact" class="section"><div class="container"><div style="text-align:center; margin-bottom:56px;"><span class="label-chip">Get In Touch</span><h2 class="section-title">Request a Free Quote</h2><p class="section-sub" style="margin: 14px auto 0;">Fill in your details and Ben will call you back within the hour.</p></div><div class="contact-grid"><div><div class="form-card" id="form-wrap"><div class="hp-field" aria-hidden="true"><label for="website_hp">Leave this blank</label><input type="text" id="website_hp" name="website_hp" tabindex="-1" autocomplete="off"></div><form id="quote-form" novalidate><div class="form-row"><div class="form-group"><label class="form-label" for="f-name">Your Name *</label><input class="form-control" type="text" id="f-name" name="name" placeholder="John Smith" required></div><div class="form-group"><label class="form-label" for="f-phone">Phone Number *</label><input class="form-control" type="tel" id="f-phone" name="phone" placeholder="0400 000 000" required></div></div><div class="form-row"><div class="form-group"><label class="form-label" for="f-suburb">Suburb</label><input class="form-control" type="text" id="f-suburb" name="suburb" placeholder="e.g. Croydon"></div><div class="form-group"><label class="form-label" for="f-service">Service Needed</label><select class="form-control" id="f-service" name="service"><option value="" disabled selected>Select a service</option><option>New Roof Tiling</option><option>Re-Bedding &amp; Re-Pointing</option><option>Roof Repairs</option><option>Tile Replacement</option><option>Ridge Capping</option><option>Roof Inspections</option><option>Not sure yet</option></select></div></div><div class="form-group" style="margin-bottom:24px;"><label class="form-label" for="f-message">Tell Us About Your Roof</label><textarea class="form-control" id="f-message" name="message" placeholder="Brief description of the work needed, age of roof, any visible damage…"></textarea></div><button type="submit" class="btn btn-primary" id="submit-btn" style="width:100%; justify-content:center; font-size:15px; padding:15px;"><span id="btn-text">Send Quote Request →</span><div class="spinner" id="btn-spinner"></div></button><p class="form-footer-note">Your details are only used to contact you about your quote. We don't spam.</p></form></div><div id="form-success"><div class="success-icon">✅</div><h3>Quote Request Sent!</h3><p id="success-msg">Ben will call you back within the hour.<br>If it's after hours, expect a call first thing in the morning.</p><a href="tel:0422093241" class="btn btn-primary" style="margin: 24px auto 0; justify-content:center;">📞 0422 093 241</a><p style="font-size:13px; color:var(--muted); margin-top:14px;">Can't wait? Call Ben direct.</p></div></div><div class="contact-side"><div class="side-card"><div class="side-card-label">Call Ben Direct</div><div style="margin-bottom:14px;"><div class="side-phone-label">Primary</div><a href="tel:0422093241" class="side-phone-num" style="display:block;">0422 093 241</a></div><div><div class="side-phone-label">Secondary</div><a href="tel:0423858503" class="side-phone-num" style="display:block;">0423 858 503</a></div></div><div class="side-card"><div class="side-card-label">Email</div><a href="mailto:y.m.iroofing@outlook.com" class="side-email">y.m.iroofing@outlook.com</a></div><div class="response-card"><div class="response-card-title">⚡ Response Guarantee</div><div class="response-card-text">Submit your enquiry and Ben calls back within <strong style="color:#fff;">1 hour</strong> during business hours. After hours? First call of the morning.</div></div><div class="acn-card"><div class="side-card-label">Registered Business</div><div style="font-size:13px; color:var(--silver);">ACN: 695 710 055</div><div style="font-size:12px; color:var(--muted); margin-top:4px;">Y.M.I Roofing Pty Ltd</div></div></div></div></div></section>
-<footer><div class="container"><div class="footer-grid"><div><div class="footer-logo"><div class="footer-logo-badge">Y.M.I</div><div><div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:13px;letter-spacing:0.12em;">ROOFING</div><div style="font-size:8px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">For all your roof tiling needs</div></div></div><p style="font-size:13px;color:var(--muted);line-height:1.7;max-width:320px;font-weight:300;">Melbourne's trusted roof tiling specialists. 20+ years of quality work, 100% guaranteed on every job.</p><div style="margin-top:16px;font-size:12px;color:var(--muted);">Director: Ben Breheny · ACN: 695 710 055</div></div><div><div class="footer-col-title">Services</div><span class="footer-link">New Roof Tiling</span><span class="footer-link">Re-Bedding &amp; Re-Pointing</span><span class="footer-link">Roof Repairs</span><span class="footer-link">Tile Replacement</span><span class="footer-link">Ridge Capping</span><span class="footer-link">Roof Inspections</span></div><div><div class="footer-col-title">Contact</div><a href="tel:0422093241" class="footer-link">0422 093 241</a><a href="tel:0423858503" class="footer-link">0423 858 503</a><a href="mailto:y.m.iroofing@outlook.com" class="footer-link" style="word-break:break-all;">y.m.iroofing@outlook.com</a><a href="tel:0422093241" class="btn btn-primary" style="margin-top:16px;font-size:13px;padding:10px 20px;">Free Quote</a></div></div><div class="footer-bottom"><p class="footer-copy">© 2025 Y.M.I Roofing. All rights reserved.</p><p class="footer-credit">Website by <span>Aurora AI Agency</span></p></div></div></footer>
+
+<!-- ─── NAV ──────────────────────────────────────────────────────────────── -->
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="#hero" class="nav-logo">
+      <div class="nav-logo-badge">Y.M.I</div>
+      <div class="nav-logo-text">
+        <strong>ROOFING</strong>
+        <small>For all your roof tiling needs</small>
+      </div>
+    </a>
+    <div class="nav-links">
+      <button class="nav-link" onclick="scrollTo('services')">Services</button>
+      <button class="nav-link" onclick="scrollTo('why-us')">Why Us</button>
+      <button class="nav-link" onclick="scrollTo('contact')">Contact</button>
+      <a href="tel:0422093241" class="btn btn-primary nav-cta">📞 0422 093 241</a>
+    </div>
+    <button class="hamburger" id="hamburger" onclick="toggleMobileNav()" aria-label="Menu">☰</button>
+  </div>
+</nav>
+
+<!-- Mobile nav drawer -->
+<div id="mobile-nav">
+  <button class="nav-link" onclick="scrollTo('services')">Services</button>
+  <button class="nav-link" onclick="scrollTo('why-us')">Why Us</button>
+  <button class="nav-link" onclick="scrollTo('contact')">Contact</button>
+  <a href="tel:0422093241" class="btn btn-primary">📞 0422 093 241</a>
+</div>
+
+<!-- ─── HERO ──────────────────────────────────────────────────────────────── -->
+<section id="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-fade-bottom"></div>
+  <div class="container">
+    <div class="hero-grid">
+
+      <!-- Left -->
+      <div class="fade-up">
+        <div class="hero-eyebrow">
+          <div class="hero-eyebrow-line"></div>
+          <span class="hero-eyebrow-text">Melbourne's Trusted Roof Tilers</span>
+        </div>
+        <h1 class="hero-h1">
+          Roof Tiling<br>
+          <span class="hero-h1-shimmer">Done Right.</span><br>
+          Guaranteed.
+        </h1>
+        <p class="hero-sub">
+          Over 20 years of expert roof tiling across Melbourne. New roofs, repairs, re-bedding &amp; pointing — quality work with a 100% workmanship guarantee on every job.
+        </p>
+        <div class="hero-btns">
+          <a href="tel:0422093241" class="btn btn-primary">📞 Call for a Free Quote</a>
+          <button class="btn btn-outline" onclick="scrollTo('contact')">Get a Quote Online →</button>
+        </div>
+        <div class="trust-badges">
+          <span class="trust-badge">✓ 20+ Years Experience</span>
+          <span class="trust-badge">✓ 100% Guaranteed</span>
+          <span class="trust-badge">✓ Free Quotes</span>
+          <span class="trust-badge">✓ Licensed &amp; ACN Registered</span>
+        </div>
+      </div>
+
+      <!-- Right — contact card -->
+      <div class="contact-card fade-up-d">
+        <p class="contact-card-label">Speak Directly With</p>
+        <h2 class="contact-card-name">Ben Breheny</h2>
+        <div class="contact-card-role">
+          <span class="online-dot"></span>
+          Director — Y.M.I Roofing
+        </div>
+        <a href="tel:0422093241" class="phone-block">
+          <div class="phone-block-label">Primary</div>
+          <div class="phone-block-num">0422 093 241</div>
+        </a>
+        <a href="tel:0423858503" class="phone-block">
+          <div class="phone-block-label">Secondary</div>
+          <div class="phone-block-num">0423 858 503</div>
+        </a>
+        <div class="contact-card-divider">
+          <p class="contact-card-email-label">Email</p>
+          <a href="mailto:y.m.iroofing@outlook.com" class="contact-card-email">y.m.iroofing@outlook.com</a>
+        </div>
+        <a href="tel:0422093241" class="btn btn-primary" style="width:100%; justify-content:center;">Call for a Free Quote</a>
+        <p class="contact-card-response">Response within 1 hour · Available 7 days</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── STATS BAR ─────────────────────────────────────────────────────────── -->
+<div id="stats-bar">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-val">20+</div><div class="stat-label">Years Experience</div></div>
+      <div class="stat-item"><div class="stat-val">100%</div><div class="stat-label">Quality Guaranteed</div></div>
+      <div class="stat-item"><div class="stat-val">Free</div><div class="stat-label">Quotes &amp; Inspections</div></div>
+      <div class="stat-item"><div class="stat-val">Licensed</div><div class="stat-label">ACN Registered</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SERVICES ──────────────────────────────────────────────────────────── -->
+<section id="services" class="section">
+  <div class="container">
+    <div style="text-align:center; margin-bottom:56px;">
+      <span class="label-chip">What We Do</span>
+      <h2 class="section-title">Roofing Services</h2>
+      <p class="section-sub" style="margin: 14px auto 0;">Full roof tiling services for residential properties across Melbourne. New roofs to emergency repairs — all tile types.</p>
+    </div>
+    <div class="services-grid">
+      <div class="svc-card"><div class="svc-icon">🏠</div><h3 class="svc-name">New Roof Tiling</h3><p class="svc-desc">Complete tile roof installations for new builds and full replacements. All tile types — concrete, terracotta, slate.</p></div>
+      <div class="svc-card"><div class="svc-icon">🔧</div><h3 class="svc-name">Re-Bedding &amp; Re-Pointing</h3><p class="svc-desc">Restore crumbling mortar and loose ridge caps before small cracks become expensive water damage.</p></div>
+      <div class="svc-card"><div class="svc-icon">🛠️</div><h3 class="svc-name">Roof Repairs</h3><p class="svc-desc">Broken, cracked or slipped tiles fixed fast. Leak diagnosis and same-week repairs wherever possible.</p></div>
+      <div class="svc-card"><div class="svc-icon">🏗️</div><h3 class="svc-name">Tile Replacement</h3><p class="svc-desc">Single tile or full section replacement matched to your existing roof colour and profile.</p></div>
+      <div class="svc-card"><div class="svc-icon">📐</div><h3 class="svc-name">Ridge Capping</h3><p class="svc-desc">New ridge cap installation, re-bedding and pointing for a fully weathertight seal on every ridge line.</p></div>
+      <div class="svc-card"><div class="svc-icon">🔍</div><h3 class="svc-name">Roof Inspections</h3><p class="svc-desc">Pre-purchase or annual condition reports. Written assessment with photos — know exactly what you're dealing with.</p></div>
+    </div>
+    <div class="services-cta">
+      <p>Not sure what you need? Call Ben and he'll diagnose it over the phone — free.</p>
+      <a href="tel:0422093241" class="btn btn-outline">📞 0422 093 241</a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── WHY US ─────────────────────────────────────────────────────────────── -->
+<section id="why-us" class="section">
+  <div class="why-divider"></div>
+  <div class="container">
+    <div class="why-grid">
+      <div>
+        <span class="label-chip">Why Choose YMI</span>
+        <h2 class="section-title">20 Years of Roofs<br>Done Right</h2>
+        <p class="why-intro" style="margin-top:20px;">Ben Breheny has been tiling roofs across Melbourne for over two decades. Not a franchise, not a call centre — you deal directly with the tradie doing the work.</p>
+        <div class="why-point">
+          <div class="why-tick">✓</div>
+          <div><div class="why-point-title">100% Workmanship Guarantee</div><div class="why-point-desc">Every job is backed by a written guarantee. If it's not right, Ben fixes it — no arguments, no delays.</div></div>
+        </div>
+        <div class="why-point">
+          <div class="why-tick">✓</div>
+          <div><div class="why-point-title">Direct With the Director</div><div class="why-point-desc">You call Ben's mobile. Ben quotes the job. Ben does the work. No subcontracting, no surprises.</div></div>
+        </div>
+        <div class="why-point">
+          <div class="why-tick">✓</div>
+          <div><div class="why-point-title">Free Written Quotes</div><div class="why-point-desc">No pressure and no hidden costs. Get a clear, itemised written quote before a single tile is touched.</div></div>
+        </div>
+        <div class="why-point">
+          <div class="why-tick">✓</div>
+          <div><div class="why-point-title">Fully Licensed &amp; ACN Registered</div><div class="why-point-desc">ACN 695 710 055. Properly licensed, insured, and registered. Everything above board.</div></div>
+        </div>
+      </div>
+      <div class="why-stats">
+        <div class="why-stat"><div class="why-stat-num">20+</div><div class="why-stat-label">Years tiling roofs across Melbourne</div></div>
+        <div class="why-stat"><div class="why-stat-num">100%</div><div class="why-stat-label">Guaranteed workmanship on every job</div></div>
+        <div class="why-stat"><div class="why-stat-num">Free</div><div class="why-stat-label">Quote and roof inspection for all jobs</div></div>
+        <div class="why-stat"><div class="why-stat-num">Same Week</div><div class="why-stat-label">Repairs booked as fast as possible</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PROCESS ────────────────────────────────────────────────────────────── -->
+<div id="process">
+  <div class="container">
+    <div class="process-header">
+      <h2 class="process-title">Getting Started Is Simple</h2>
+      <p class="process-sub">Three steps from enquiry to job complete.</p>
+    </div>
+    <div class="process-grid">
+      <div class="process-step">
+        <div class="process-num">01</div>
+        <div class="process-step-title">Call or Enquire</div>
+        <div class="process-step-desc">Call Ben directly on 0422 093 241, or submit an enquiry online. Same-day response guaranteed.</div>
+      </div>
+      <div class="process-step">
+        <div class="process-num">02</div>
+        <div class="process-step-title">Free Quote</div>
+        <div class="process-step-desc">Ben visits, inspects the roof, and gives you a clear written quote. No pressure. No obligation.</div>
+      </div>
+      <div class="process-step">
+        <div class="process-num">03</div>
+        <div class="process-step-title">Job Done Right</div>
+        <div class="process-step-desc">Work starts on schedule. Completed to spec. 100% guaranteed. You inspect before Ben leaves.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CONTACT ────────────────────────────────────────────────────────────── -->
+<section id="contact" class="section">
+  <div class="container">
+    <div style="text-align:center; margin-bottom:56px;">
+      <span class="label-chip">Get In Touch</span>
+      <h2 class="section-title">Request a Free Quote</h2>
+      <p class="section-sub" style="margin: 14px auto 0;">Fill in your details and Ben will call you back within the hour.</p>
+    </div>
+
+    <div class="contact-grid">
+
+      <!-- Form -->
+      <div>
+        <div class="form-card" id="form-wrap">
+
+          <!-- ⚠️ ANTI-SPAM HONEYPOT — DO NOT REMOVE -->
+          <div class="hp-field" aria-hidden="true">
+            <label for="website_hp">Leave this blank</label>
+            <input type="text" id="website_hp" name="website_hp" tabindex="-1" autocomplete="off">
+          </div>
+
+          <form id="quote-form" novalidate>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="f-name">Your Name *</label>
+                <input class="form-control" type="text" id="f-name" name="name" placeholder="John Smith" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="f-phone">Phone Number *</label>
+                <input class="form-control" type="tel" id="f-phone" name="phone" placeholder="0400 000 000" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="f-suburb">Suburb</label>
+                <input class="form-control" type="text" id="f-suburb" name="suburb" placeholder="e.g. Croydon">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="f-service">Service Needed</label>
+                <select class="form-control" id="f-service" name="service">
+                  <option value="" disabled selected>Select a service</option>
+                  <option>New Roof Tiling</option>
+                  <option>Re-Bedding &amp; Re-Pointing</option>
+                  <option>Roof Repairs</option>
+                  <option>Tile Replacement</option>
+                  <option>Ridge Capping</option>
+                  <option>Roof Inspections</option>
+                  <option>Not sure yet</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:24px;">
+              <label class="form-label" for="f-message">Tell Us About Your Roof</label>
+              <textarea class="form-control" id="f-message" name="message" placeholder="Brief description of the work needed, age of roof, any visible damage…"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" id="submit-btn" style="width:100%; justify-content:center; font-size:15px; padding:15px;">
+              <span id="btn-text">Send Quote Request →</span>
+              <div class="spinner" id="btn-spinner"></div>
+            </button>
+            <p class="form-footer-note">Your details are only used to contact you about your quote. We don't spam.</p>
+          </form>
+        </div>
+
+        <!-- Success state -->
+        <div id="form-success">
+          <div class="success-icon">✅</div>
+          <h3>Quote Request Sent!</h3>
+          <p id="success-msg">Ben will call you back within the hour.<br>If it's after hours, expect a call first thing in the morning.</p>
+          <a href="tel:0422093241" class="btn btn-primary" style="margin: 24px auto 0; justify-content:center;">📞 0422 093 241</a>
+          <p style="font-size:13px; color:var(--muted); margin-top:14px;">Can't wait? Call Ben direct.</p>
+        </div>
+      </div>
+
+      <!-- Right side -->
+      <div class="contact-side">
+        <div class="side-card">
+          <div class="side-card-label">Call Ben Direct</div>
+          <div style="margin-bottom:14px;">
+            <div class="side-phone-label">Primary</div>
+            <a href="tel:0422093241" class="side-phone-num" style="display:block;">0422 093 241</a>
+          </div>
+          <div>
+            <div class="side-phone-label">Secondary</div>
+            <a href="tel:0423858503" class="side-phone-num" style="display:block;">0423 858 503</a>
+          </div>
+        </div>
+        <div class="side-card">
+          <div class="side-card-label">Email</div>
+          <a href="mailto:y.m.iroofing@outlook.com" class="side-email">y.m.iroofing@outlook.com</a>
+        </div>
+        <div class="response-card">
+          <div class="response-card-title">⚡ Response Guarantee</div>
+          <div class="response-card-text">Submit your enquiry and Ben calls back within <strong style="color:#fff;">1 hour</strong> during business hours. After hours? First call of the morning.</div>
+        </div>
+        <div class="acn-card">
+          <div class="side-card-label">Registered Business</div>
+          <div style="font-size:13px; color:var(--silver);">ACN: 695 710 055</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:4px;">Y.M.I Roofing Pty Ltd</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─────────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-logo">
+          <div class="footer-logo-badge">Y.M.I</div>
+          <div>
+            <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:13px;letter-spacing:0.12em;">ROOFING</div>
+            <div style="font-size:8px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">For all your roof tiling needs</div>
+          </div>
+        </div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.7;max-width:320px;font-weight:300;">Melbourne's trusted roof tiling specialists. 20+ years of quality work, 100% guaranteed on every job.</p>
+        <div style="margin-top:16px;font-size:12px;color:var(--muted);">Director: Ben Breheny · ACN: 695 710 055</div>
+      </div>
+      <div>
+        <div class="footer-col-title">Services</div>
+        <span class="footer-link">New Roof Tiling</span>
+        <span class="footer-link">Re-Bedding &amp; Re-Pointing</span>
+        <span class="footer-link">Roof Repairs</span>
+        <span class="footer-link">Tile Replacement</span>
+        <span class="footer-link">Ridge Capping</span>
+        <span class="footer-link">Roof Inspections</span>
+      </div>
+      <div>
+        <div class="footer-col-title">Contact</div>
+        <a href="tel:0422093241" class="footer-link">0422 093 241</a>
+        <a href="tel:0423858503" class="footer-link">0423 858 503</a>
+        <a href="mailto:y.m.iroofing@outlook.com" class="footer-link" style="word-break:break-all;">y.m.iroofing@outlook.com</a>
+        <a href="tel:0422093241" class="btn btn-primary" style="margin-top:16px;font-size:13px;padding:10px 20px;">Free Quote</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2025 Y.M.I Roofing. All rights reserved.</p>
+      <p class="footer-credit">Website by <span>Aurora AI Agency</span></p>
+    </div>
+  </div>
+</footer>
+
+<!-- ─── SCRIPTS ────────────────────────────────────────────────────────────── -->
 <script>
+  // ── AGENCY CONFIG ─────────────────────────────────────────────────────────
+  // Replace this URL with your live n8n production webhook endpoint
   const WEBHOOK_URL = 'https://YOUR-N8N-DOMAIN/webhook/ymi-roofing-lead';
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ── NAV: scroll detection
   const nav = document.getElementById('nav');
-  window.addEventListener('scroll', () => { nav.classList.toggle('scrolled', window.scrollY > 60); }, { passive: true });
-  function scrollTo(id) { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); closeMobileNav(); }
-  function toggleMobileNav() { document.getElementById('mobile-nav').classList.toggle('open'); }
-  function closeMobileNav() { document.getElementById('mobile-nav').classList.remove('open'); }
-  function validateAUPhone(raw) { const clean = raw.replace(/[\s\-()]/g, ''); return /^(?:\+?61|0)[2-478](?:\d){8}$/.test(clean); }
-  function sanitizePhone(raw) { let clean = raw.replace(/[\s\-()]/g, ''); if (clean.startsWith('0')) clean = '+61' + clean.slice(1); if (!clean.startsWith('+')) clean = '+61' + clean; return clean; }
-  document.getElementById('f-phone').addEventListener('input', function() { this.classList.remove('error', 'success'); if (this.value.length > 5) { this.classList.add(validateAUPhone(this.value) ? 'success' : 'error'); } });
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 60);
+  }, { passive: true });
+
+  // ── NAV: smooth scroll helper
+  function scrollTo(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    closeMobileNav();
+  }
+
+  // ── NAV: mobile toggle
+  function toggleMobileNav() {
+    document.getElementById('mobile-nav').classList.toggle('open');
+  }
+  function closeMobileNav() {
+    document.getElementById('mobile-nav').classList.remove('open');
+  }
+
+  // ── PHONE VALIDATION: AU format (strip spaces/dashes, test regex)
+  function validateAUPhone(raw) {
+    const clean = raw.replace(/[\s\-()]/g, '');
+    return /^(?:\+?61|0)[2-478](?:\d){8}$/.test(clean);
+  }
+
+  // Sanitize phone to +614XXXXXXXX for n8n payload
+  function sanitizePhone(raw) {
+    let clean = raw.replace(/[\s\-()]/g, '');
+    if (clean.startsWith('0')) clean = '+61' + clean.slice(1);
+    if (!clean.startsWith('+')) clean = '+61' + clean;
+    return clean;
+  }
+
+  // Real-time phone validation feedback
+  document.getElementById('f-phone').addEventListener('input', function() {
+    this.classList.remove('error', 'success');
+    if (this.value.length > 5) {
+      this.classList.add(validateAUPhone(this.value) ? 'success' : 'error');
+    }
+  });
+
+  // ── FORM SUBMISSION
   document.getElementById('quote-form').addEventListener('submit', async function(e) {
     e.preventDefault();
-    if (document.getElementById('website_hp').value !== '') return;
-    const name = document.getElementById('f-name').value.trim();
-    const phone = document.getElementById('f-phone').value.trim();
-    const suburb = document.getElementById('f-suburb').value.trim();
+
+    // 1. Honeypot check — silent discard if bot filled it
+    if (document.getElementById('website_hp').value !== '') {
+      console.warn('[Aurora] Honeypot triggered — bot submission discarded.');
+      return;
+    }
+
+    const name    = document.getElementById('f-name').value.trim();
+    const phone   = document.getElementById('f-phone').value.trim();
+    const suburb  = document.getElementById('f-suburb').value.trim();
     const service = document.getElementById('f-service').value;
     const message = document.getElementById('f-message').value.trim();
+
+    // 2. Required field validation
     let valid = true;
-    const nameEl = document.getElementById('f-name');
+    const nameEl  = document.getElementById('f-name');
     const phoneEl = document.getElementById('f-phone');
-    if (!name) { nameEl.classList.add('error'); valid = false; } else nameEl.classList.remove('error');
-    if (!phone || !validateAUPhone(phone)) { phoneEl.classList.add('error'); valid = false; } else phoneEl.classList.remove('error');
+
+    if (!name)  { nameEl.classList.add('error');  valid = false; }
+    else          nameEl.classList.remove('error');
+
+    if (!phone || !validateAUPhone(phone)) { phoneEl.classList.add('error'); valid = false; }
+    else phoneEl.classList.remove('error');
+
     if (!valid) return;
-    const btn = document.getElementById('submit-btn');
+
+    // 3. Loading state
+    const btn     = document.getElementById('submit-btn');
     const btnText = document.getElementById('btn-text');
     const spinner = document.getElementById('btn-spinner');
-    btn.disabled = true; btnText.textContent = 'Sending…'; spinner.style.display = 'block';
-    const payload = { name, phone: sanitizePhone(phone), raw_phone: phone, suburb, service: service || 'Not specified', message: message || 'None provided', source: 'ymi-roofing-website', submitted_at: new Date().toISOString() };
+    btn.disabled = true;
+    btnText.textContent = 'Sending…';
+    spinner.style.display = 'block';
+
+    const payload = {
+      name,
+      phone: sanitizePhone(phone),  // normalized AU format for Twilio
+      raw_phone: phone,
+      suburb,
+      service: service || 'Not specified',
+      message: message || 'None provided',
+      source: 'ymi-roofing-website',
+      submitted_at: new Date().toISOString(),
+    };
+
     try {
-      const res = await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const res = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
       if (!res.ok) throw new Error('Server error: ' + res.status);
-      if (typeof gtag !== 'undefined') { gtag('event', 'generate_lead', { event_category: 'Form', event_label: 'Roofing Quote — ' + (service || 'General') }); }
+
+      // 4. Google Analytics lead event (fires if GA4 is installed)
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'generate_lead', {
+          event_category: 'Form',
+          event_label: 'Roofing Quote — ' + (service || 'General'),
+        });
+      }
+
+      // 5. Success UI
       const firstName = name.split(' ')[0];
-      document.getElementById('success-msg').innerHTML = `Thanks ${firstName}! Ben will call you back on <strong>${phone}</strong> within the hour.<br>If it's after hours, expect a call first thing in the morning.`;
+      document.getElementById('success-msg').innerHTML =
+        `Thanks ${firstName}! Ben will call you back on <strong>${phone}</strong> within the hour.<br>If it's after hours, expect a call first thing in the morning.`;
       document.getElementById('form-wrap').style.display = 'none';
       const successEl = document.getElementById('form-success');
-      successEl.style.display = 'block'; successEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      successEl.style.display = 'block';
+      successEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
     } catch (err) {
       console.error('[Aurora] Webhook error:', err);
+      // Fallback: don't leave user stranded — show phone number
       alert('⚠️ Having trouble connecting right now. Please call Ben directly on 0422 093 241 for immediate assistance.');
-      btn.disabled = false; btnText.textContent = 'Send Quote Request →'; spinner.style.display = 'none';
+      btn.disabled = false;
+      btnText.textContent = 'Send Quote Request →';
+      spinner.style.display = 'none';
     }
   });
 </script>
+
 </body>
 </html>

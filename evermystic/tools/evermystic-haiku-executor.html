@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evermystic Haiku Executor</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      padding: 24px;
+      line-height: 1.6;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    header {
+      margin-bottom: 30px;
+      border-bottom: 2px solid #333;
+      padding-bottom: 20px;
+    }
+    h1 { font-size: 28px; margin-bottom: 8px; color: #fff; }
+    .subtitle { color: #888; font-size: 14px; margin-bottom: 12px; }
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    button:hover:not(:disabled) { background: #0052a3; }
+    button:disabled {
+      background: #333;
+      cursor: not-allowed;
+      color: #888;
+    }
+    .secondary { background: #444; }
+    .secondary:hover:not(:disabled) { background: #555; }
+    .success { background: #00aa44; }
+    .success:hover { background: #008833; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      padding: 16px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #0066cc;
+      margin-bottom: 4px;
+    }
+    .stat-label { font-size: 12px; color: #888; }
+    .progress-bar {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .progress-bar.active { display: block; }
+    .progress-fill {
+      background: #0066cc;
+      height: 8px;
+      border-radius: 4px;
+      width: 0%;
+      transition: width 0.3s;
+      margin-top: 12px;
+    }
+    .progress-text { font-size: 12px; color: #888; margin-bottom: 8px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .task-card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .task-card.pending { }
+    .task-card.loading {
+      border-color: #0066cc;
+      background: #0a1426;
+    }
+    .task-card.complete {
+      border-color: #00aa44;
+      background: #0a1a0f;
+    }
+    .task-card.error {
+      border-color: #cc2200;
+      background: #1a0a0a;
+    }
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .task-title {
+      font-weight: 600;
+      color: #fff;
+      font-size: 13px;
+      flex: 1;
+    }
+    .task-status {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: #333;
+      color: #aaa;
+      white-space: nowrap;
+      margin-left: 8px;
+    }
+    .task-status.loading {
+      background: #0066cc;
+      color: #fff;
+      animation: pulse 1.5s infinite;
+    }
+    .task-status.complete {
+      background: #00aa44;
+      color: #fff;
+    }
+    .task-status.error {
+      background: #cc2200;
+      color: #fff;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .task-output {
+      font-size: 11px;
+      background: #0f0f0f;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      color: #ccc;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-family: 'Monaco', 'Courier New', monospace;
+      line-height: 1.4;
+    }
+    .export-section {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 20px;
+      margin-top: 30px;
+      display: none;
+    }
+    .export-section.active { display: block; }
+    .export-section h2 {
+      font-size: 16px;
+      margin-bottom: 16px;
+      color: #fff;
+    }
+    .export-output {
+      background: #0f0f0f;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 16px;
+      max-height: 600px;
+      overflow-y: auto;
+      font-size: 11px;
+      color: #ccc;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-family: 'Monaco', 'Courier New', monospace;
+      margin-top: 12px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 4px;
+      height: 4px;
+      background: #0066cc;
+      border-radius: 50%;
+      animation: spin 1s infinite;
+      margin-left: 4px;
+    }
+    @keyframes spin {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🚀 Evermystic Haiku Executor</h1>
+      <p class="subtitle">8 tasks → Claude Haiku → Ready for ManyChat</p>
+      <p class="subtitle" style="color: #666; margin-bottom: 0;">Est. cost: $0.02 | Time: 1-3 minutes</p>
+    </header>
+
+    <div class="controls">
+      <button onclick="executeAll()" id="executeBtn">▶️ Execute All 8 Tasks NOW</button>
+      <button class="secondary" onclick="clearAll()" id="clearBtn">🔄 Clear</button>
+      <button class="secondary" style="display: none;" id="exportBtn" onclick="showExport()">📋 View Output</button>
+    </div>
+
+    <div class="progress-bar" id="progressBar">
+      <div class="progress-text">Progress: <span id="progressCount">0</span>/8 tasks</div>
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value" id="totalCount">8</div>
+        <div class="stat-label">Total Tasks</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="completeCount">0</div>
+        <div class="stat-label">Complete</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="errorCount">0</div>
+        <div class="stat-label">Errors</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="elapsedTime">0s</div>
+        <div class="stat-label">Elapsed</div>
+      </div>
+    </div>
+
+    <div class="grid" id="taskGrid"></div>
+
+    <div class="export-section" id="exportSection">
+      <h2>📄 Compiled Output (Copy to ManyChat)</h2>
+      <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+        <button class="success" onclick="copyToClipboard()">📋 Copy All</button>
+        <button class="success" onclick="downloadMarkdown()">💾 Download</button>
+      </div>
+      <div class="export-output" id="exportOutput"></div>
+    </div>
+  </div>
+
+  <script>
+    const TASKS = [
+      {
+        id: 1,
+        title: "FAQ Responses (12x)",
+        system: "You are a friendly Australian small business chatbot writer. Write for Instagram DMs — short, warm, casual. Use emoji sparingly (1-2 max). Keep responses under 4 sentences.",
+        prompt: `Write chatbot FAQ responses for these 12 questions (one response per question, just the text, no labels or numbering):
+
+1. What is DTF printing? (Answer: Direct-to-Film transfer process, high durability)
+2. What can you print on? (Answer: Cotton, poly, blends, nylon, canvas)
+3. Turnaround time? (Answer: 2-3 days transfers, 3-5 with pressing)
+4. File format needed? (Answer: PNG transparent, 300 DPI)
+5. Pricing? (Answer: A5 $3-5, A4 $5-8, A3 $8-15)
+6. Minimum order? (Answer: No minimum, single prints OK)
+7. Durability? (Answer: 50+ washes, wash inside out cold)
+8. Do you supply garments? (Answer: Yes or BYO)
+9. Design help? (Answer: Basic cleanup included, custom quoted)
+10. How to order? (Answer: Send artwork + size + quantity)
+11. Pickup or delivery? (Answer: Melbourne pickup free, $10 shipping, free over $100)
+12. Colour matching? (Answer: Accurate from digital file, no exact Pantone)`
+      },
+      {
+        id: 2,
+        title: "Keyword Synonym Expansion",
+        system: "You are helping build an Instagram chatbot keyword trigger system. Generate realistic short phrases. Australian English. Casual, often misspelled.",
+        prompt: `For each of these 10 topics, list 15 ways a customer might phrase it in an Instagram DM. Include typos, slang, abbreviations people actually use. Format as TOPIC: [name] then bullet list.
+
+Topics:
+- Asking about pricing
+- Asking about turnaround time
+- Asking about file requirements
+- Wanting to place an order
+- Asking what DTF is
+- Wanting to see examples
+- Needing help with design
+- Wanting to speak to a human
+- Asking about shipping
+- Asking about minimum orders`
+      },
+      {
+        id: 3,
+        title: "Welcome Message Variants (5x)",
+        system: "You write Instagram DM welcome messages for Australian small businesses. Keep under 3 lines. Warm. 1-2 emoji max.",
+        prompt: `Write 5 different welcome messages for Evermystic Designs (DTF printing, Melbourne). Each should greet, state what they do (one line), feel different. No buttons. Label A-E.`
+      },
+      {
+        id: 4,
+        title: "Email Notification Templates",
+        system: "Write short, clear email templates for a busy small business owner. No fluff. Scan in 5 seconds.",
+        prompt: `Create email templates for:
+1. HOT LEAD — completed quote with artwork ready
+2. WARM LEAD — completed quote, no artwork
+3. BULK ORDER — 50+ pieces
+4. NEEDS DESIGN — wants design help
+5. HUMAN HANDOFF — requested to speak to owner
+
+Each: Subject (with emoji) + Body (6 lines max). Use: {{name}}, {{product}}, {{size}}, {{quantity}}, {{email}}, {{question}}, {{timestamp}}`
+      },
+      {
+        id: 5,
+        title: "After-Hours Messages (3x)",
+        system: "Instagram chatbot writer. Australian tone.",
+        prompt: `Write 3 after-hours auto-replies for Evermystic Designs. Acknowledge they messaged outside hours. Tell them when they'll hear back (by 9am AEST). Reassure message is saved. Offer self-serve options. Under 4 lines each. Label A, B, C.`
+      },
+      {
+        id: 6,
+        title: "Comment-to-DM Auto Responses",
+        system: "Write Instagram auto-DM messages triggered by comments. Feel personal, not spammy. Under 3 lines.",
+        prompt: `Write auto-DM responses for:
+1. Comments "INFO" or "INTERESTED" on portfolio post
+2. Comments "PRICE" or "HOW MUCH" on portfolio post
+3. Comments "YES" or "DEAL" on promotion post
+4. Replies to Instagram Story
+
+Each: Reference the comment, feel natural, include soft CTA, under 3 lines.`
+      },
+      {
+        id: 7,
+        title: "Returning User Messages (3x)",
+        system: "Instagram chatbot writer. Recognises returning customers.",
+        prompt: `Write 3 "welcome back" message variants for Evermystic Designs chatbot. Use {{customer_name}}. Under 2 lines each. Casual Australian tone.`
+      },
+      {
+        id: 8,
+        title: "Fallback & Error Messages",
+        system: "Chatbot UX writer. Keep errors friendly, never make customer feel stupid.",
+        prompt: `Write fallback messages for Evermystic Designs:
+1. First unrecognised input — gently redirect to menu
+2. Second unrecognised input — offer human handoff
+3. User sends image when not expected — acknowledge and redirect
+4. User sends voice note — explain text-only, offer help
+
+Each under 2 lines. Friendly.`
+      }
+    ];
+
+    let results = {};
+    let startTime = Date.now();
+    let elapsedInterval = null;
+
+    function initializeUI() {
+      const grid = document.getElementById('taskGrid');
+      grid.innerHTML = TASKS.map(t => `
+        <div class="task-card pending" id="task-${t.id}">
+          <div class="task-header">
+            <div class="task-title">Task ${t.id}: ${t.title}</div>
+            <div class="task-status" id="status-${t.id}">Pending</div>
+          </div>
+          <div class="task-output" id="output-${t.id}">Waiting to execute...</div>
+        </div>
+      `).join('');
+    }
+
+    async function executeTask(task) {
+      const statusEl = document.getElementById(`status-${task.id}`);
+      const outputEl = document.getElementById(`output-${task.id}`);
+      const cardEl = document.getElementById(`task-${task.id}`);
+
+      statusEl.textContent = 'Running';
+      statusEl.className = 'task-status loading';
+      cardEl.classList.remove('pending', 'error');
+      cardEl.classList.add('loading');
+      outputEl.textContent = '⏳ Calling Claude Haiku...';
+
+      try {
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 2000,
+            system: task.system,
+            messages: [{ role: "user", content: task.prompt }]
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.content && data.content[0] && data.content[0].text) {
+          const result = data.content[0].text;
+          results[task.id] = result;
+          outputEl.textContent = result;
+          
+          statusEl.textContent = '✓ Complete';
+          statusEl.className = 'task-status complete';
+          cardEl.classList.remove('loading');
+          cardEl.classList.add('complete');
+        } else {
+          throw new Error(data.error?.message || "Invalid response");
+        }
+      } catch (error) {
+        outputEl.textContent = `❌ Error: ${error.message}`;
+        statusEl.textContent = '✗ Error';
+        statusEl.className = 'task-status error';
+        cardEl.classList.remove('loading');
+        cardEl.classList.add('error');
+      }
+
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const complete = Object.keys(results).length;
+      document.getElementById('completeCount').textContent = complete;
+      document.getElementById('errorCount').textContent = document.querySelectorAll('.task-card.error').length;
+      document.getElementById('progressCount').textContent = complete;
+      document.getElementById('progressFill').style.width = (complete / 8) * 100 + '%';
+
+      if (complete === 8) {
+        clearInterval(elapsedInterval);
+        document.getElementById('executeBtn').disabled = false;
+        document.getElementById('exportBtn').style.display = 'inline-block';
+        compileOutput();
+      }
+    }
+
+    function compileOutput() {
+      let markdown = `# Evermystic Designs - Haiku Task Results\n\nGenerated: ${new Date().toLocaleString()}\n\n`;
+      
+      TASKS.forEach(task => {
+        if (results[task.id]) {
+          markdown += `## Task ${task.id}: ${task.title}\n\n${results[task.id]}\n\n---\n\n`;
+        }
+      });
+
+      document.getElementById('exportOutput').textContent = markdown;
+      document.getElementById('exportSection').classList.add('active');
+    }
+
+    async function executeAll() {
+      document.getElementById('executeBtn').disabled = true;
+      document.getElementById('progressBar').classList.add('active');
+      results = {};
+      startTime = Date.now();
+
+      elapsedInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('elapsedTime').textContent = elapsed + 's';
+      }, 1000);
+
+      for (const task of TASKS) {
+        await executeTask(task);
+        await new Promise(r => setTimeout(r, 200));
+      }
+    }
+
+    function clearAll() {
+      results = {};
+      document.getElementById('executeBtn').disabled = false;
+      document.getElementById('exportBtn').style.display = 'none';
+      document.getElementById('progressBar').classList.remove('active');
+      document.getElementById('exportSection').classList.remove('active');
+      document.getElementById('completeCount').textContent = '0';
+      document.getElementById('errorCount').textContent = '0';
+      document.getElementById('elapsedTime').textContent = '0s';
+      initializeUI();
+    }
+
+    function showExport() {
+      document.getElementById('exportSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function copyToClipboard() {
+      const text = document.getElementById('exportOutput').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('✓ Copied to clipboard!');
+      });
+    }
+
+    function downloadMarkdown() {
+      const text = document.getElementById('exportOutput').textContent;
+      const blob = new Blob([text], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `evermystic-haiku-${Date.now()}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    window.addEventListener('load', initializeUI);
+  </script>
+</body>
+</html>
