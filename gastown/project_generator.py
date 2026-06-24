@@ -294,17 +294,32 @@ body {
         return """// Utility helper functions
 
 /**
- * TODO: Add helper functions
+ * Format a date into a human-readable string.
+ * @param {Date|string|number} date - The date to format
+ * @param {Object} [options] - Intl.DateTimeFormat options
+ * @returns {string} The formatted date string
  */
-
-export const formatDate = (date) => {
-  // TODO: Implement date formatting
-  return date;
+export const formatDate = (date, options = { year: 'numeric', month: 'short', day: 'numeric' }) => {
+  const d = new Date(date);
+  if (isNaN(d.getTime())) {
+    return 'Invalid Date';
+  }
+  return d.toLocaleDateString(undefined, options);
 };
 
+/**
+ * Create a debounced version of a function that delays invocation
+ * until after `wait` milliseconds have elapsed since the last call.
+ * @param {Function} func - The function to debounce
+ * @param {number} wait - The debounce delay in milliseconds
+ * @returns {Function} The debounced function
+ */
 export const debounce = (func, wait) => {
-  // TODO: Implement debounce
-  return func;
+  let timeout;
+  return function (...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
 };
 """
 
