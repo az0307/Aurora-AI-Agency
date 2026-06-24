@@ -81,8 +81,7 @@ export default function NewJobModal() {
           </div>
           {input('Source', 'src', 'text', 'Email, Slack, ManyChat…')}
           {input('Skill tag (optional)', 'skill', 'text', 'e.g. quote-responder')}
-          {input('Steps (one per line)', 'steps', 'textarea', '1. Do this
-2. Then that')}
+          {input('Steps (one per line)', 'steps', 'textarea', '1. Do this\n2. Then that')}
           {input('Ask / human action', 'ask', 'textarea', 'What does the human need to do?')}
           {input('Draft content (optional)', 'draft', 'textarea', 'Pre-written draft for L2 jobs')}
           <div className="modal-actions">

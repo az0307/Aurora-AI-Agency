@@ -15,7 +15,12 @@ export function useWebSocket(onMessage) {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
     const token = localStorage.getItem('ab_token');
-    const url = token ? `${WS_URL}?token=${encodeURIComponent(token)}` : WS_URL;
+    if (!token) {
+      // B5 — WS auth is mandatory; don't open a tokenless socket (server closes 4001).
+      reconnectTimer.current = setTimeout(connect, RECONNECT_DELAY);
+      return;
+    }
+    const url = `${WS_URL}?token=${encodeURIComponent(token)}`;
 
     const ws = new WebSocket(url);
     wsRef.current = ws;

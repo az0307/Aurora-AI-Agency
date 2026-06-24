@@ -4,3 +4,18 @@ export function formatTimeSaved(mins) {
   const rem = mins % 60;
   return hrs > 0 ? `${hrs}h ${rem}m` : `${rem}m`;
 }
+
+// B4.3 — turn an ISO timestamp into a human-relative label. Falls back gracefully
+// for the old literal "now" / empty values so nothing renders as a raw datetime.
+export function formatRelative(value) {
+  if (!value || value === 'now') return 'just now';
+  const then = new Date(value).getTime();
+  if (Number.isNaN(then)) return value;
+  const secs = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  if (secs < 60) return 'just now';
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}

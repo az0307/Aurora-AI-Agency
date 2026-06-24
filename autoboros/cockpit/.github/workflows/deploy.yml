@@ -24,7 +24,15 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
+      # NOTE: GitHub Pages serves the static SPA only. It CANNOT reach a localhost API.
+      # Set repo Variables VITE_API_URL / VITE_WS_URL to a PUBLICLY hosted backend, else the
+      # cockpit loads but every request fails. VITE_BASE = '/<repo>/' for project pages.
+      - name: Build
+        run: npm run build
+        env:
+          VITE_BASE: ${{ vars.VITE_BASE || '/' }}
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_WS_URL: ${{ vars.VITE_WS_URL }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
