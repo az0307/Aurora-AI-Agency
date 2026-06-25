@@ -1,0 +1,221 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "title": "Red Team Stack — Operations Dashboard",
+  "uid": "rt-ops-2026",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "LLM Cost Today (USD)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "options": {
+        "colorMode": "background",
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {"color": "green", "value": null},
+            {"color": "yellow", "value": 5},
+            {"color": "red", "value": 9}
+          ]
+        }
+      },
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "sum(increase(hexstrike_llm_cost_usd_total[24h]))",
+          "legendFormat": "Total Cost"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Active MCP Servers",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "options": {"colorMode": "value"},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "count(up{job=~\"hexstrike|kali-mcp|vulngpt|stride-gpt\"} == 1)",
+          "legendFormat": "Online"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Scans Running",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "hexstrike_active_scans_total",
+          "legendFormat": "Active"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Findings This Session",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "options": {
+        "colorMode": "background",
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {"color": "green", "value": null},
+            {"color": "orange", "value": 1},
+            {"color": "red", "value": 5}
+          ]
+        }
+      },
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "hexstrike_findings_critical_total + hexstrike_findings_high_total",
+          "legendFormat": "Crit+High"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "LLM Token Usage (24h)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "options": {"legend": {"displayMode": "list"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "rate(hexstrike_llm_input_tokens_total[5m]) * 60",
+          "legendFormat": "Input tokens/min"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "rate(hexstrike_llm_output_tokens_total[5m]) * 60",
+          "legendFormat": "Output tokens/min"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Cost by Model (24h)",
+      "type": "piechart",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "sum by (model) (increase(hexstrike_llm_cost_usd_total[24h]))",
+          "legendFormat": "{{model}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Tool Invocations per Minute",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "sum by (tool) (rate(hexstrike_tool_invocations_total[1m]))",
+          "legendFormat": "{{tool}}"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Kali MCP — Command Execution Rate",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "rate(kali_mcp_commands_total[1m])",
+          "legendFormat": "Commands/sec"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "rate(kali_mcp_commands_failed_total[1m])",
+          "legendFormat": "Failures/sec"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Findings by Severity",
+      "type": "barchart",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 20},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "hexstrike_findings_critical_total",
+          "legendFormat": "Critical"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "hexstrike_findings_high_total",
+          "legendFormat": "High"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "hexstrike_findings_medium_total",
+          "legendFormat": "Medium"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "hexstrike_findings_low_total",
+          "legendFormat": "Low"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Redis Cache Hit Rate",
+      "type": "gauge",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 20},
+      "options": {
+        "thresholds": {
+          "steps": [
+            {"color": "red", "value": null},
+            {"color": "yellow", "value": 40},
+            {"color": "green", "value": 70}
+          ]
+        }
+      },
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total) * 100",
+          "legendFormat": "Hit %"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Service Health",
+      "type": "table",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 20},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "expr": "up{job=~\"hexstrike|kali-mcp|vulngpt|stride-gpt|pentestagent|redis|postgres|prometheus\"}",
+          "legendFormat": "{{job}}",
+          "instant": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+# hexstrike-allowlist.yaml
+# HexStrike AI — Scope Enforcement Configuration
+# Copy to: hexstrike-ai/config/allowlist.yaml
+# Per-engagement: update In Scope section before testing
+
+---
+
+# ── GLOBAL NEVER-SCAN LIST ────────────────────────────────────────
+# These are ALWAYS blocked regardless of engagement scope
+# Do not modify this section
+
+always_blocked:
+  # Loopback / localhost
+  - "127.0.0.0/8"
+  - "::1/128"
+  - "localhost"
+
+  # Cloud metadata endpoints (only unblock if explicitly testing SSRF)
+  - "169.254.169.254"    # AWS/Azure/GCP instance metadata
+  - "fd00:ec2::254"      # AWS IPv6 metadata
+  - "metadata.google.internal"
+
+  # Private networks (add to scope explicitly if testing internal)
+  # Uncomment to enforce:
+  # - "10.0.0.0/8"
+  # - "172.16.0.0/12"
+  # - "192.168.0.0/16"
+
+  # Never scan third-party providers (they have their own programs)
+  - "*.amazonaws.com"
+  - "*.cloudflare.com"
+  - "*.fastly.com"
+  - "*.akamai.com"
+  - "*.cloudfront.net"
+  - "*.google.com"
+  - "*.microsoft.com"
+  - "*.apple.com"
+  - "*.github.com"
+  - "*.gitlab.com"
+
+# ── AUTHORIZED SCOPE (per engagement) ────────────────────────────
+# Replace with actual authorized targets before testing
+# Supports: exact domains, wildcards, CIDR ranges, IP addresses
+
+in_scope:
+  # Example entries — REPLACE before testing
+  # - "target.com"
+  # - "*.target.com"
+  # - "api.target.com"
+  # - "10.10.10.0/24"
+  # - "192.168.1.100"
+
+# ── OUT OF SCOPE (per engagement) ─────────────────────────────────
+# Explicitly excluded assets within otherwise in-scope ranges
+# Example: partner subdomains, third-party services
+
+out_of_scope:
+  # Example entries
+  # - "partners.target.com"
+  # - "staging-external.target.com"
+  # - "*.stripe.com"
+
+# ── RATE LIMITING ─────────────────────────────────────────────────
+rate_limits:
+  # Global default: requests per second across all tools
+  default_rps: 50
+
+  # Per-tool overrides
+  tools:
+    nmap:
+      max_rate: 1000       # Packets per second (--min-rate)
+      timing: 4            # T4 (aggressive but not insane)
+
+    nuclei:
+      rate_limit: 150      # Requests per second
+      bulk_size: 25        # Concurrent templates
+
+    ffuf:
+      rate: 100            # Requests per second
+
+    sqlmap:
+      delay: 0             # Seconds between requests (0 = fast)
+      threads: 5
+
+    hydra:
+      tasks: 4             # Parallel connections
+
+    gobuster:
+      threads: 10
+
+    # More conservative for auth endpoints
+    hydra_auth:
+      tasks: 1
+      wait: 3              # Seconds between attempts (avoid lockout)
+
+# ── BEHAVIOR FLAGS ─────────────────────────────────────────────────
+behavior:
+  # Abort if target seems out of scope mid-scan
+  enforce_scope_mid_scan: true
+
+  # Alert and pause if scope check fails
+  scope_violation_action: "pause"  # or "abort"
+
+  # Log all tool invocations
+  audit_log: true
+  audit_log_path: "./logs/hexstrike_audit.log"
+
+  # Prompt injection detection (scan tool output for instructions)
+  prompt_injection_detection: true
+
+  # Maximum scan duration (prevent runaway scans)
+  max_scan_duration_minutes: 120

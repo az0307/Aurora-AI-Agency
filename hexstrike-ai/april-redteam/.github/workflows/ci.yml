@@ -1,0 +1,196 @@
+name: Red Team Stack CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+
+  # ── Validate docker-compose ────────────────────────────────
+  validate-compose:
+    name: Validate Docker Compose
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate docker-compose.yml
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
+          echo "✓ docker-compose.yml valid"
+
+  # ── Lint shell scripts ────────────────────────────────────
+  lint-scripts:
+    name: Lint Shell Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+      - name: Lint all shell scripts
+        run: |
+          find scripts/ kali-mcp/ -name "*.sh" -print0 | \
+            xargs -0 shellcheck --severity=warning
+          echo "✓ All shell scripts pass shellcheck"
+
+  # ── Validate JSON configs ─────────────────────────────────
+  validate-json:
+    name: Validate JSON Files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate claude.json
+        run: |
+          python3 -c "
+          import json, sys
+          files = ['claude.json']
+          for f in files:
+              try:
+                  with open(f) as fp:
+                      json.load(fp)
+                  print(f'✓ {f} valid JSON')
+              except json.JSONDecodeError as e:
+                  print(f'✗ {f}: {e}', file=sys.stderr)
+                  sys.exit(1)
+          "
+      - name: Validate grafana dashboard JSON
+        run: |
+          python3 -c "
+          import json, glob, sys
+          for f in glob.glob('grafana/**/*.json', recursive=True):
+              try:
+                  json.load(open(f))
+                  print(f'✓ {f}')
+              except Exception as e:
+                  print(f'✗ {f}: {e}', file=sys.stderr)
+                  sys.exit(1)
+          "
+
+  # ── Secret scanning ───────────────────────────────────────
+  secret-scan:
+    name: Scan for Committed Secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for secret scanning
+      - name: Check .env not committed
+        run: |
+          if git ls-files | grep -q "^\.env$"; then
+            echo "ERROR: .env committed — remove immediately"
+            exit 1
+          fi
+          echo "✓ .env not in git"
+      - name: Check loot/ not committed
+        run: |
+          if git ls-files | grep -q "^loot/[^R]"; then
+            echo "ERROR: loot/ contents committed — check .gitignore"
+            git ls-files loot/ | grep -v "README\|REPORT_TEMPLATE\|mission-template"
+            exit 1
+          fi
+          echo "✓ loot/ contents not committed"
+      - name: Scan for API key patterns
+        run: |
+          # Check tracked files only (not .gitignore'd)
+          git ls-files | xargs grep -l \
+            -e "sk-ant-api" \
+            -e "sk-proj-" \
+            -e "AKIAIOSFODNN7" \
+            -e "ghp_[A-Za-z0-9]" \
+            -e "sk-[A-Za-z0-9]\{48\}" \
+            2>/dev/null && {
+            echo "ERROR: Potential API keys found in tracked files"
+            exit 1
+          } || echo "✓ No API key patterns detected"
+
+  # ── Validate YAML configs ─────────────────────────────────
+  validate-yaml:
+    name: Validate YAML Files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install yamllint
+        run: pip install yamllint
+      - name: Validate YAML files
+        run: |
+          yamllint -d relaxed docker-compose.yml litellm_config.yaml \
+            grafana/provisioning/datasources/prometheus.yml \
+            grafana/provisioning/dashboards/dashboards.yml \
+            docs/prometheus.yml
+          echo "✓ All YAML files valid"
+
+  # ── Check playbook structure ──────────────────────────────
+  validate-playbooks:
+    name: Validate Playbook Structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check all playbooks have required sections
+        run: |
+          python3 << 'PYEOF'
+          import os, sys
+          errors = []
+          playbook_dir = "playbooks"
+          required_sections = ["PHASE", "Evidence"]
+
+          for fname in os.listdir(playbook_dir):
+              if not fname.endswith(".md"):
+                  continue
+              path = os.path.join(playbook_dir, fname)
+              content = open(path).read()
+              for section in required_sections:
+                  if section not in content:
+                      errors.append(f"{fname}: missing '{section}'")
+
+          if errors:
+              print("Playbook validation errors:")
+              for e in errors:
+                  print(f"  ✗ {e}")
+              sys.exit(1)
+          else:
+              print(f"✓ All {len(os.listdir(playbook_dir))} playbooks valid")
+          PYEOF
+
+  # ── Python syntax check ───────────────────────────────────
+  python-syntax:
+    name: Python Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Python files
+        run: |
+          find . -name "*.py" -not -path "./.git/*" | while read f; do
+            python3 -m py_compile "$f" && echo "✓ $f" || exit 1
+          done
+
+  # ── Makefile targets ──────────────────────────────────────
+  validate-makefile:
+    name: Validate Makefile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Makefile syntax
+        run: |
+          make --dry-run help 2>&1 | head -5
+          echo "✓ Makefile parses correctly"
+
+  # ── Summary ───────────────────────────────────────────────
+  ci-summary:
+    name: CI Summary
+    needs:
+      - validate-compose
+      - lint-scripts
+      - validate-json
+      - secret-scan
+      - validate-yaml
+      - validate-playbooks
+      - python-syntax
+      - validate-makefile
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Report result
+        run: |
+          echo "CI pipeline complete"
+          echo "All checks must pass before merging to main"

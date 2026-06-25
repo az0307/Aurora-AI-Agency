@@ -1,0 +1,138 @@
+{
+  "name": "Aurora: Social Ad Copy Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aurora-ad-generator",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "webhookId": "aurora-ad-generator"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json.body;\nif (!b.business || !b.offer) throw new Error('business and offer required');\nreturn [{\n  json: {\n    job_id: b.job_id || null,\n    business: b.business,\n    offer: b.offer,\n    target_audience: b.target_audience || 'local homeowners',\n    platforms: b.platforms || ['facebook', 'instagram'],\n    tone: b.tone || 'casual and trustworthy',\n    cta: b.cta || 'Call now for a free quote',\n    callback_url: b.callback_url || null\n  }\n}];"
+      },
+      "id": "parse-input",
+      "name": "Parse Brief",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "model": "claude-sonnet-4-6",
+          "max_tokens": 2500,
+          "messages": [
+            {
+              "role": "user",
+              "content": "You are Aurora AI Agency's senior ad copywriter. Generate a complete social media ad package in JSON format.\n\nBusiness: {{ $json.business }}\nOffer: {{ $json.offer }}\nTarget audience: {{ $json.target_audience }}\nPlatforms: {{ $json.platforms.join(', ') }}\nTone: {{ $json.tone }}\nCTA: {{ $json.cta }}\n\nReturn ONLY valid JSON with this exact structure:\n{\n  \"facebook\": {\n    \"primary_text\": \"(125 chars max, hook first)\",\n    \"headline\": \"(40 chars max)\",\n    \"description\": \"(25 chars max)\",\n    \"variations\": [\"alt headline 1\", \"alt headline 2\"]\n  },\n  \"instagram\": {\n    \"caption\": \"(150 chars with emoji, strong hook)\",\n    \"hashtags\": [\"#tag1\", \"#tag2\", \"#tag3\", \"#tag4\", \"#tag5\"],\n    \"story_text\": \"(short punchy text for Story overlay, max 80 chars)\"\n  },\n  \"google_rsa\": {\n    \"headlines\": [\"h1 30chars\", \"h2 30chars\", \"h3 30chars\"],\n    \"descriptions\": [\"d1 90chars\", \"d2 90chars\"]\n  },\n  \"notes\": \"brief copywriter notes on angle and why it works\"\n}"
+            }
+          ]
+        }
+      },
+      "id": "generate-ads",
+      "name": "Generate Ad Copy (Sonnet)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.content[0].text.trim();\nlet ads;\ntry {\n  const match = raw.match(/\\{[\\s\\S]*\\}/);\n  ads = JSON.parse(match ? match[0] : raw);\n} catch (e) {\n  ads = { raw_text: raw, parse_error: e.message };\n}\nconst prev = $('parse-input').item.json;\nreturn [{ json: { job_id: prev.job_id, business: prev.business, offer: prev.offer, platforms: prev.platforms, ads, callback_url: prev.callback_url, generated_at: new Date().toISOString() } }];"
+      },
+      "id": "parse-ads-json",
+      "name": "Parse Ad JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [{ "value1": "={{ $json.callback_url }}", "operation": "isNotEmpty" }]
+        }
+      },
+      "id": "has-callback",
+      "name": "Has Callback?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.callback_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "X-N8N-Key", "value": "={{ $env.N8N_API_KEY }}" }]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "job_id": "={{ $json.job_id }}",
+          "result": {
+            "status": "Done",
+            "actor": "Agent",
+            "last_ag": "Ad copy generated for {{ $json.business }}: {{ $json.platforms.join(', ') }}",
+            "activity_text": "Social ad copy package generated",
+            "result_label": "Ad Copy Package",
+            "result_url": "={{ $env.AUTOBOROS_API_URL }}/artifacts/ads-{{ $json.job_id }}.json"
+          }
+        }
+      },
+      "id": "callback-autoboros",
+      "name": "Callback to AutoBoros",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1200, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, business: $json.business, platforms: $json.platforms, ads: $json.ads, generated_at: $json.generated_at } }}"
+      },
+      "id": "respond",
+      "name": "Respond to Caller",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1200, 380]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Parse Brief", "type": "main", "index": 0 }]] },
+    "Parse Brief": { "main": [[{ "node": "Generate Ad Copy (Sonnet)", "type": "main", "index": 0 }]] },
+    "Generate Ad Copy (Sonnet)": { "main": [[{ "node": "Parse Ad JSON", "type": "main", "index": 0 }]] },
+    "Parse Ad JSON": { "main": [[{ "node": "Has Callback?", "type": "main", "index": 0 }]] },
+    "Has Callback?": {
+      "main": [
+        [{ "node": "Callback to AutoBoros", "type": "main", "index": 0 }],
+        [{ "node": "Respond to Caller", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["aurora-internal", "content-ops"],
+  "meta": {
+    "description": "POST {business, offer, target_audience?, platforms?, tone?, cta?, job_id?, callback_url?} → generates Facebook, Instagram, and Google RSA ad copy via Claude Sonnet. Returns structured JSON. Optionally callbacks to AutoBoros.",
+    "requiredEnvVars": ["ANTHROPIC_API_KEY", "N8N_API_KEY", "AUTOBOROS_API_URL"]
+  }
+}

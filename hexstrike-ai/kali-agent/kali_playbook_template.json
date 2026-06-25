@@ -1,0 +1,216 @@
+{
+  "playbook_id": "KALI-PLAYBOOK-001",
+  "name": "Full External Penetration Test",
+  "description": "Complete pentest engagement from reconnaissance through reporting",
+  "trigger_patterns": [
+    "pentest", "penetration test", "security assessment", "red team",
+    "hack this", "find vulnerabilities", "security audit", "test security"
+  ],
+  "engagement_types": ["external", "webapp", "internal", "redteam", "ctf"],
+  
+  "playbook_variants": {
+    "external_pentest": {
+      "phases": [
+        {
+          "step": 1,
+          "skill": "scope-guard",
+          "action": "init_engagement",
+          "description": "Define and validate engagement scope",
+          "requires_approval": true,
+          "blocking": true,
+          "params": { "config_source": "operator_input" }
+        },
+        {
+          "step": 2,
+          "skill": "audit-logger",
+          "action": "init_audit_trail",
+          "description": "Initialize compliance audit logging",
+          "requires_approval": false,
+          "blocking": false,
+          "params": {}
+        },
+        {
+          "step": 3,
+          "skill": "recon-osint",
+          "action": "passive_recon",
+          "description": "Passive reconnaissance — DNS, WHOIS, subdomain enumeration, OSINT",
+          "requires_approval": false,
+          "blocking": false,
+          "params": { "mode": "passive" },
+          "tools": ["subfinder", "theHarvester", "whois", "dig"],
+          "mcp_calls": ["hexstrike.recon_target", "shodan.search_host"]
+        },
+        {
+          "step": 4,
+          "skill": "recon-osint",
+          "action": "active_recon",
+          "description": "Active reconnaissance — port scanning, service detection, fingerprinting",
+          "requires_approval": false,
+          "blocking": false,
+          "params": { "mode": "active" },
+          "tools": ["nmap", "whatweb", "amass"],
+          "mcp_calls": ["hexstrike.port_scan", "hexstrike.recon_target"]
+        },
+        {
+          "step": 5,
+          "skill": "threat-intel",
+          "action": "enrich_recon",
+          "description": "Enrich recon findings with CVE data, EPSS, KEV status",
+          "requires_approval": false,
+          "blocking": false,
+          "params": {},
+          "tools": ["searchsploit"],
+          "mcp_calls": ["shodan.cve_lookup"]
+        },
+        {
+          "step": 6,
+          "skill": "vuln-analysis",
+          "action": "automated_scan",
+          "description": "Automated vulnerability scanning — Nuclei, Nikto, CMS-specific",
+          "requires_approval": false,
+          "blocking": false,
+          "params": { "templates": "cves,exposures,misconfiguration" },
+          "tools": ["nuclei", "nikto", "wpscan"],
+          "mcp_calls": ["hexstrike.vuln_scan"]
+        },
+        {
+          "step": 7,
+          "skill": "web-app-security",
+          "action": "owasp_testing",
+          "description": "OWASP Top 10 testing — injection, auth, XSS, SSRF",
+          "requires_approval": false,
+          "blocking": false,
+          "condition": "engagement_type in ['external', 'webapp']",
+          "params": {},
+          "tools": ["sqlmap", "ffuf", "XSStrike", "commix"],
+          "mcp_calls": ["hexstrike.web_enum"]
+        },
+        {
+          "step": 8,
+          "skill": "threat-intel",
+          "action": "prioritize_findings",
+          "description": "Prioritize findings using CVSS × EPSS × context scoring",
+          "requires_approval": false,
+          "blocking": false,
+          "params": {}
+        },
+        {
+          "step": 9,
+          "skill": "exploit-dev",
+          "action": "research_exploits",
+          "description": "Research exploits for P0/P1 findings — ExploitDB, Metasploit, GitHub PoC",
+          "requires_approval": true,
+          "blocking": true,
+          "approval_message": "⚠️ EXPLOITATION PHASE — Operator must approve each exploit attempt",
+          "params": {},
+          "tools": ["searchsploit", "msfconsole"],
+          "mcp_calls": ["hexstrike.exploit_search"]
+        },
+        {
+          "step": 10,
+          "skill": "payload-craft",
+          "action": "generate_payloads",
+          "description": "Generate and encode payloads for confirmed exploits",
+          "requires_approval": true,
+          "blocking": true,
+          "params": {},
+          "tools": ["msfvenom"]
+        },
+        {
+          "step": 11,
+          "skill": "scope-guard",
+          "action": "revalidate_scope",
+          "description": "Re-validate all exploitation targets against scope before execution",
+          "requires_approval": false,
+          "blocking": true,
+          "params": {}
+        },
+        {
+          "step": 12,
+          "skill": "post-exploit",
+          "action": "post_exploitation",
+          "description": "Privilege escalation, credential harvesting, internal enumeration",
+          "requires_approval": true,
+          "blocking": true,
+          "condition": "exploitation_successful == true",
+          "params": {},
+          "tools": ["linpeas", "winpeas", "mimikatz", "secretsdump"]
+        },
+        {
+          "step": 13,
+          "skill": "credential-attack",
+          "action": "crack_hashes",
+          "description": "Crack harvested password hashes",
+          "requires_approval": false,
+          "blocking": false,
+          "condition": "hashes_collected > 0",
+          "params": {},
+          "tools": ["hashcat", "john"]
+        },
+        {
+          "step": 14,
+          "skill": "active-directory",
+          "action": "domain_attacks",
+          "description": "Active Directory enumeration and attacks",
+          "requires_approval": true,
+          "blocking": true,
+          "condition": "engagement_type in ['internal', 'redteam'] and ad_detected == true",
+          "params": {},
+          "tools": ["bloodhound-python", "impacket", "crackmapexec", "certipy"]
+        },
+        {
+          "step": 15,
+          "skill": "red-team-report",
+          "action": "generate_report",
+          "description": "Generate full pentest report — executive summary + technical findings",
+          "requires_approval": false,
+          "blocking": false,
+          "params": { "format": "markdown" },
+          "mcp_calls": ["hexstrike.generate_report"]
+        }
+      ],
+      "cross_cutting": [
+        {
+          "skill": "tool-output-sanitizer",
+          "trigger": "every_tool_output",
+          "description": "Sanitize all tool output before AI processing"
+        },
+        {
+          "skill": "audit-logger",
+          "trigger": "every_action",
+          "description": "Log all actions to JSONL audit trail"
+        },
+        {
+          "skill": "scope-guard",
+          "trigger": "every_active_tool",
+          "description": "Validate target against scope before execution"
+        }
+      ]
+    },
+
+    "ctf_quick": {
+      "description": "Streamlined CTF/lab playbook — no approval gates",
+      "phases": [
+        { "step": 1, "skill": "scope-guard", "action": "init_ctf", "params": { "mode": "ctf" } },
+        { "step": 2, "skill": "recon-osint", "action": "full_recon", "params": { "mode": "active" } },
+        { "step": 3, "skill": "vuln-analysis", "action": "full_scan", "params": {} },
+        { "step": 4, "skill": "exploit-dev", "action": "auto_exploit", "params": {} },
+        { "step": 5, "skill": "post-exploit", "action": "full_post", "params": {} },
+        { "step": 6, "skill": "red-team-report", "action": "ctf_writeup", "params": { "format": "markdown" } }
+      ]
+    },
+
+    "webapp_only": {
+      "description": "Web application assessment — no infrastructure testing",
+      "phases": [
+        { "step": 1, "skill": "scope-guard", "action": "init_engagement", "params": {} },
+        { "step": 2, "skill": "recon-osint", "action": "web_recon", "params": { "mode": "passive" } },
+        { "step": 3, "skill": "web-app-security", "action": "full_owasp", "params": {} },
+        { "step": 4, "skill": "vuln-analysis", "action": "web_scan", "params": { "templates": "cves,exposures,xss" } },
+        { "step": 5, "skill": "threat-intel", "action": "enrich_and_prioritize", "params": {} },
+        { "step": 6, "skill": "exploit-dev", "action": "web_exploits", "requires_approval": true, "params": {} },
+        { "step": 7, "skill": "red-team-report", "action": "webapp_report", "params": {} }
+      ]
+    }
+  }
+}

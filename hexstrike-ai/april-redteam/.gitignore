@@ -1,0 +1,71 @@
+# ─────────────────────────────────────────────────────────────
+# .gitignore — April 2026 Red Team Stack
+# ─────────────────────────────────────────────────────────────
+
+# Environment — NEVER commit
+.env
+*.env.local
+
+# Loot — contains evidence, credentials, shells
+loot/
+!loot/.gitkeep
+!loot/README.md
+
+# Cloned tool repos (installed separately)
+hexstrike-ai/
+pentestagent/
+pentestthinking/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# SSH keys
+*.pem
+*.key
+id_rsa
+id_ed25519
+kali_mcp_*
+!kali_mcp_*.pub  # Public keys OK to commit
+
+# Docker volumes (local)
+.docker-volumes/
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Scan outputs
+*.xml
+*.json.bak
+*.nmap
+*.gnmap
+
+# Compressed archives
+*.tar.gz
+*.zip
+*.7z
+!wordlists/*.gz  # Wordlists are OK
+
+# Secrets
+*_secret*
+*_token*
+*_key.txt
+credentials.txt
+passwords.txt

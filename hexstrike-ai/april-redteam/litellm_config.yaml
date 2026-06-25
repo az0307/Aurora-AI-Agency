@@ -1,0 +1,134 @@
+# litellm_config.yaml
+# Provider-neutral LLM routing for the entire stack
+# Used by: HexStrike AI, PentestAgent, AutoGPT, PentestGPT
+# Docs: https://docs.litellm.ai/docs/proxy/configs
+
+model_list:
+
+  # ── PRIMARY: Claude (best reasoning, HITL-friendly) ───────────
+  - model_name: claude-opus
+    litellm_params:
+      model: anthropic/claude-opus-4-20250514
+      api_key: os.environ/ANTHROPIC_API_KEY
+      max_tokens: 8096
+      temperature: 0.3
+    model_info:
+      tier: premium
+      cost_per_1k_input: 0.015
+      cost_per_1k_output: 0.075
+      use_for: [exploit_design, report_writing, complex_reasoning]
+
+  - model_name: claude-sonnet
+    litellm_params:
+      model: anthropic/claude-sonnet-4-20250514
+      api_key: os.environ/ANTHROPIC_API_KEY
+      max_tokens: 8096
+      temperature: 0.3
+    model_info:
+      tier: standard
+      cost_per_1k_input: 0.003
+      cost_per_1k_output: 0.015
+      use_for: [orchestration, tool_parsing, recon_analysis]
+
+  # ── BULK: DeepSeek (37x cheaper, great for large contexts) ────
+  - model_name: deepseek-bulk
+    litellm_params:
+      model: deepseek/deepseek-chat
+      api_key: os.environ/DEEPSEEK_API_KEY
+      max_tokens: 4096
+    model_info:
+      tier: budget
+      cost_per_1k_input: 0.00027
+      cost_per_1k_output: 0.0011
+      use_for: [log_analysis, large_scan_triage, monitoring, osint_parsing]
+
+  - model_name: deepseek-reasoner
+    litellm_params:
+      model: deepseek/deepseek-reasoner
+      api_key: os.environ/DEEPSEEK_API_KEY
+      max_tokens: 8096
+    model_info:
+      tier: budget-reasoning
+      use_for: [attack_planning_budget, ctf_low_cost]
+
+  # ── LOCAL: Ollama (zero cost, zero egress, privacy) ────────────
+  - model_name: ollama-gemma2
+    litellm_params:
+      model: ollama/gemma2:9b
+      api_base: os.environ/OLLAMA_BASE_URL
+    model_info:
+      tier: local
+      cost_per_1k_input: 0.0
+      cost_per_1k_output: 0.0
+      use_for: [sensitive_data, pii_processing, offline_mode]
+
+  - model_name: ollama-llama3
+    litellm_params:
+      model: ollama/llama3.1:8b
+      api_base: os.environ/OLLAMA_BASE_URL
+    model_info:
+      tier: local
+      cost_per_1k_input: 0.0
+      use_for: [simple_tasks, format_conversion, local_testing]
+
+  # ── FAST: Groq (low-latency inference) ─────────────────────────
+  - model_name: groq-llama
+    litellm_params:
+      model: groq/llama-3.1-70b-versatile
+      api_key: os.environ/GROQ_API_KEY
+    model_info:
+      tier: fast
+      use_for: [time_sensitive, interactive_ctf, quick_triage]
+
+# ── ROUTING RULES ─────────────────────────────────────────────────
+router_settings:
+  routing_strategy: usage-based-routing
+  set_verbose: false
+  num_retries: 3
+  timeout: 120
+  fallbacks:
+    # If Opus fails → fall back to Sonnet
+    - claude-opus:
+        - claude-sonnet
+    # If DeepSeek fails → fall back to Sonnet
+    - deepseek-bulk:
+        - claude-sonnet
+    # If Groq fails → fall back to Sonnet
+    - groq-llama:
+        - claude-sonnet
+
+  context_window_fallbacks:
+    # If context too long for Sonnet → use DeepSeek (200k context)
+    - claude-sonnet:
+        - deepseek-bulk
+
+# ── BUDGET ENFORCEMENT ────────────────────────────────────────────
+litellm_settings:
+  # Daily spend cap — force DeepSeek above threshold
+  max_budget: 10.0               # USD per day
+  budget_duration: 1d
+  budget_fallback_model: deepseek-bulk
+
+  # Caching (reduces costs for repeated prompts)
+  cache: true
+  cache_params:
+    type: redis
+    host: localhost
+    port: 6379
+    ttl: 86400                   # 24h cache TTL
+
+  # Request logging to PostgreSQL
+  success_callback: ["langfuse"]
+  failure_callback: ["langfuse"]
+
+  # Cost tracking
+  callbacks: ["cost_tracking"]
+
+# ── TASK-SPECIFIC MODEL ALIASES ───────────────────────────────────
+# These are what each tool in the stack calls:
+# HexStrike:      HEXSTRIKE_LLM=claude-sonnet
+# PentestGPT:     PENTESTGPT_MODEL=claude-sonnet
+# PentestAgent:   CREW_LLM=claude-sonnet, REPORT_LLM=claude-opus
+# AutoGPT:        SMART_LLM=claude-sonnet, FAST_LLM=deepseek-bulk
+# STRIDE-GPT:     STRIDE_LLM=claude-opus (threat models are Opus-quality)
+# VulnGPT:        VULN_LLM=claude-sonnet
