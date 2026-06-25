@@ -1,0 +1,53 @@
+# docker-compose.override.yml — DEV/DEBUG MODE
+# Overrides production settings for local development
+# Usage: docker compose -f docker-compose.yml -f docker-compose.override.yml up
+# OR:    cp docker-compose.override.yml.example docker-compose.override.yml
+#        docker compose up  (auto-loads override)
+# DO NOT USE IN PRODUCTION — exposes ports and disables auth
+
+services:
+
+  # HexStrike: verbose logging + expose Flask debugger
+  hexstrike:
+    environment:
+      - FLASK_DEBUG=1
+      - HEXSTRIKE_LOG_LEVEL=DEBUG
+      - HEXSTRIKE_RATE_LIMIT_ENABLED=false
+    command: ["python3", "-m", "hexstrike.app", "--debug"]
+
+  # HexStrike MCP: disable token auth for local dev
+  hexstrike-mcp:
+    environment:
+      - MCP_AUTH_REQUIRED=false
+      - MCP_LOG_LEVEL=DEBUG
+
+  # Kali MCP: expose port to host for direct SSH (dev only)
+  kali-mcp:
+    ports:
+      - "2222:22"    # SSH direct access
+      - "8000:8000"  # MCP server
+    environment:
+      - MCP_AUTH_REQUIRED=false
+
+  # PentestAgent: debug memory graph
+  pentestagent:
+    environment:
+      - SHADOW_GRAPH_DEBUG=true
+      - LOG_LEVEL=DEBUG
+
+  # Postgres: expose for local DB tools (DBeaver, pgAdmin)
+  postgres:
+    ports:
+      - "5432:5432"
+
+  # Redis: expose for local inspection
+  redis:
+    ports:
+      - "6379:6379"
+
+  # Grafana: disable auth for quick dashboard access
+  grafana:
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_LOG_LEVEL=debug

@@ -1,0 +1,58 @@
+# HexStrike AI — systemd service
+# Install: sudo cp hexstrike.service /etc/systemd/system/
+#          sudo systemctl daemon-reload
+#          sudo systemctl enable hexstrike
+#          sudo systemctl start hexstrike
+# Logs:   journalctl -u hexstrike -f
+
+[Unit]
+Description=HexStrike AI — Kali Agent MCP Server
+Documentation=https://github.com/0x4m4/hexstrike-ai
+After=network.target docker.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=kali
+Group=kali
+WorkingDirectory=/home/kali/hexstrike-ai
+
+# Main Flask API (port 8888)
+ExecStart=/usr/bin/python3 app.py
+
+# MCP bridge as a pre-start (port 8889) — uncomment if needed
+# ExecStartPre=/usr/bin/python3 hexstrike_mcp.py &
+
+# Restart on failure
+Restart=on-failure
+RestartSec=5
+StartLimitBurst=3
+StartLimitIntervalSec=60
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/tmp/pentest /home/kali/hexstrike-ai /var/log/hexstrike
+ProtectHome=read-only
+PrivateTmp=false
+ProtectKernelModules=true
+ProtectKernelTunables=true
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryMax=2G
+CPUQuota=80%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hexstrike
+
+# Environment
+Environment=FLASK_ENV=production
+Environment=HEXSTRIKE_PORT=8888
+Environment=PENTEST_BASE=/tmp/pentest
+
+[Install]
+WantedBy=multi-user.target

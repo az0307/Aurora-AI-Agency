@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+
+# Node
+node_modules/
+package-lock.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Engagement data (NEVER commit pentest results)
+/tmp/pentest/
+*.pcap
+*.pcapng
+*.cap
+*.hccapx
+*.hc22000
+*.pot
+*.hash
+*.ntds
+
+# Secrets
+.env
+*.key
+*.pem
+*.pfx
+*.p12
+
+# Generated reports (may contain sensitive data)
+*.docx
+*.pdf
+!pentest_report_template.docx
+
+# Skill packages (generated, not source)
+*.skill
+
+# Test artifacts
+/tmp/pentest_test/
+/tmp/pentest_integration_test/
+/tmp/test_exports/

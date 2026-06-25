@@ -1,0 +1,234 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────
+# APRIL 2026 RED TEAM STACK — docker-compose.yml
+# Services: HexStrike · Kali MCP · Redis · Postgres · Grafana
+# Network: 172.25.0.0/16 (isolated bridge)
+# ─────────────────────────────────────────────────────────────
+
+services:
+
+  # ── HEXSTRIKE AI SERVER ─────────────────────────────────────
+  hexstrike:
+    image: dennisleetw/hexstrike-ai:latest
+    # OR build locally:
+    # build:
+    #   context: ./hexstrike-ai
+    #   dockerfile: Dockerfile
+    container_name: hexstrike
+    hostname: hexstrike
+    ports:
+      - "8888:8888"
+    environment:
+      - HEXSTRIKE_API_TOKEN=${HEXSTRIKE_API_TOKEN}
+      - HEXSTRIKE_HOST=0.0.0.0
+      - HEXSTRIKE_PORT=8888
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://rt:${POSTGRES_PASSWORD}@postgres:5432/redteam
+    volumes:
+      - hexstrike_loot:/app/loot
+      - hexstrike_scans:/app/scans
+    networks:
+      redteam:
+        ipv4_address: 172.25.0.10
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ── HEXSTRIKE MCP BRIDGE ────────────────────────────────────
+  hexstrike-mcp:
+    build:
+      context: ./hexstrike-ai
+      dockerfile: Dockerfile
+    container_name: hexstrike-mcp
+    command: ["python3", "hexstrike_mcp.py", "--server", "http://hexstrike:8888", "--host", "0.0.0.0", "--port", "8889"]
+    ports:
+      - "8889:8889"
+    environment:
+      - HEXSTRIKE_API_TOKEN=${HEXSTRIKE_API_TOKEN}
+    networks:
+      redteam:
+        ipv4_address: 172.25.0.11
+    depends_on:
+      - hexstrike
+    restart: unless-stopped
+
+  # ── KALI MCP SERVER ─────────────────────────────────────────
+  kali-mcp:
+    build:
+      context: ./kali-mcp
+      dockerfile: Dockerfile
+    container_name: kali-mcp
+    hostname: kali-mcp
+    ports:
+      - "8000:8000"
+      - "2222:22"    # SSH access
+    environment:
+      - KALI_USER=${KALI_USER:-kali}
+      - KALI_PASSWORD=${KALI_PASSWORD}
+      - MCP_PORT=8000
+    volumes:
+      - kali_workspace:/home/kali/workspace
+      - kali_tools:/opt/tools
+    networks:
+      redteam:
+        ipv4_address: 172.25.0.12
+    restart: unless-stopped
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+
+  # ── REDIS (SCAN CACHE) ──────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: rt-redis
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      redteam:
+        ipv4_address: 172.25.0.20
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── POSTGRES (SCAN HISTORY) ─────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: rt-postgres
+    environment:
+      POSTGRES_DB: redteam
+      POSTGRES_USER: rt
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      redteam:
+        ipv4_address: 172.25.0.21
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rt -d redteam"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── PROMETHEUS (METRICS) ────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: rt-prometheus
+    volumes:
+      - ./docs/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      redteam:
+        ipv4_address: 172.25.0.30
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=7d'
+
+  # ── GRAFANA (DASHBOARD) ─────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: rt-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-redteam}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      redteam:
+        ipv4_address: 172.25.0.31
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+# ─────────────────────────────────────────────────────────────
+# NETWORKS
+# ─────────────────────────────────────────────────────────────
+networks:
+  redteam:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.25.0.0/16
+          gateway: 172.25.0.1
+
+# ─────────────────────────────────────────────────────────────
+# VOLUMES
+# ─────────────────────────────────────────────────────────────
+volumes:
+  hexstrike_loot:
+    driver: local
+  hexstrike_scans:
+    driver: local
+  kali_workspace:
+    driver: local
+  kali_tools:
+    driver: local
+  redis_data:
+    driver: local
+  pg_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+  # ── STRIDE-GPT (ThreatGPT) ──────────────────────────────────
+  stride-gpt:
+    build:
+      context: ./stride-gpt
+      dockerfile: Dockerfile
+    container_name: rt-stride-gpt
+    hostname: stride-gpt
+    ports:
+      - "8501:8501"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    networks:
+      redteam:
+        ipv4_address: 172.25.0.40
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── VULNGPT v2 (FastAPI + Shodan) ────────────────────────────
+  vulngpt:
+    build:
+      context: ./vulngpt-v2
+    container_name: rt-vulngpt
+    hostname: vulngpt
+    ports:
+      - "8090:8080"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SHODAN_API_KEY=${SHODAN_API_KEY}
+    networks:
+      redteam:
+        ipv4_address: 172.25.0.41
+    restart: unless-stopped

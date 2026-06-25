@@ -1,0 +1,117 @@
+{
+  "mcpServers": {
+    "hs": {
+      "command": "python3",
+      "args": ["-m", "hexstrike.mcp_bridge", "--host", "localhost", "--port", "8889"],
+      "cwd": "./hexstrike-ai",
+      "env": {
+        "HEXSTRIKE_API_TOKEN": "${HEXSTRIKE_API_TOKEN}",
+        "HEXSTRIKE_API_URL": "http://localhost:8888"
+      },
+      "description": "HexStrike AI v6.0 — 150+ tools, 12 agents (full profile)"
+    },
+    "web": {
+      "command": "python3",
+      "args": ["-m", "hexstrike.mcp_bridge", "--host", "localhost", "--port", "8889", "--profile", "web"],
+      "cwd": "./hexstrike-ai",
+      "env": {
+        "HEXSTRIKE_API_TOKEN": "${HEXSTRIKE_API_TOKEN}",
+        "HEXSTRIKE_PROFILE": "BugBountyAgent"
+      },
+      "description": "HexStrike web profile — 93 web tools: nuclei, sqlmap, ffuf, wpscan, nikto"
+    },
+    "net": {
+      "command": "python3",
+      "args": ["-m", "hexstrike.mcp_bridge", "--host", "localhost", "--port", "8889", "--profile", "network"],
+      "cwd": "./hexstrike-ai",
+      "env": {
+        "HEXSTRIKE_API_TOKEN": "${HEXSTRIKE_API_TOKEN}",
+        "HEXSTRIKE_PROFILE": "NetworkScanner"
+      },
+      "description": "HexStrike network profile — 75 tools: nmap, netexec, crackmapexec, enum4linux"
+    },
+    "kali": {
+      "command": "python3",
+      "args": ["-m", "kali_mcp.server", "--host", "localhost", "--port", "8000"],
+      "cwd": "./kali-mcp",
+      "env": {
+        "KALI_SSH_HOST": "localhost",
+        "KALI_SSH_PORT": "2222",
+        "KALI_SSH_USER": "kali",
+        "KALI_SSH_KEY": "${HOME}/.ssh/kali_mcp_ed25519",
+        "MCP_AUTH_TOKEN": "${KALI_MCP_TOKEN}"
+      },
+      "description": "Kali MCP — live Kali SSH+PTY+tmux terminal, 14 tools including msfconsole"
+    },
+    "think": {
+      "command": "python3",
+      "args": ["-m", "pentest_thinking.mcp", "--port", "8890"],
+      "cwd": "./pentestthinking",
+      "env": {
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}"
+      },
+      "description": "PentestThinkingMCP — MCTS + Beam Search attack path planning, 2x HTB speed"
+    },
+    "pgpt": {
+      "command": "python3",
+      "args": ["-m", "pentestgpt.mcp", "--no-telemetry"],
+      "cwd": "./pentestgpt",
+      "env": {
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",
+        "PENTESTGPT_MODEL": "claude-sonnet-4-20250514"
+      },
+      "description": "PentestGPT — 86.5% XBOW success rate, task tree reasoning, autonomous CTF"
+    },
+    "vuln": {
+      "command": "python3",
+      "args": ["-m", "vulngpt.mcp", "--host", "localhost", "--port", "8090"],
+      "cwd": "./vulngpt-v2",
+      "env": {
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "SHODAN_API_KEY": "${SHODAN_API_KEY}",
+        "NVD_API_KEY": "${NVD_API_KEY}"
+      },
+      "description": "VulnGPT v2 — CVE intelligence, nmap analysis, Shodan exposure, NVD queries"
+    },
+    "threat": {
+      "command": "python3",
+      "args": ["-m", "stride_gpt.mcp", "--host", "localhost", "--port", "8501"],
+      "cwd": "./stride-gpt",
+      "env": {
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}"
+      },
+      "description": "STRIDE-GPT (ThreatGPT) — AI threat modeling, pre/post engagement STRIDE analysis"
+    },
+    "crew": {
+      "command": "python3",
+      "args": ["-m", "pentestagent.mcp", "--crew-mode", "--shadow-graph"],
+      "cwd": "./pentestagent",
+      "env": {
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "POSTGRES_URL": "postgresql://rtuser:${POSTGRES_PASSWORD}@localhost:5432/rtdb"
+      },
+      "description": "PentestAgent — multi-agent crew, Shadow Graph memory, RAG, loot persistence"
+    }
+  },
+  "shortcuts": {
+    "hs":     "hexstrike full profile (150+ tools)",
+    "web":    "hexstrike web/BugBounty profile",
+    "net":    "hexstrike network/scanner profile",
+    "kali":   "kali live SSH+PTY terminal",
+    "think":  "MCTS attack path planner",
+    "pgpt":   "pentestgpt autonomous agent",
+    "vuln":   "vulngpt CVE + shodan intel",
+    "threat": "stride-gpt threat modeling",
+    "crew":   "pentestagent multi-agent crew"
+  },
+  "notes": {
+    "model_routing": "See docs/model-routing.md for Opus/Sonnet/DeepSeek/Ollama decision tree",
+    "cost_targets": "See docs/cost-optimization.md for per-engagement cost estimates",
+    "auth_gate": "Confirm authorization before any hs/kali/net/pgpt scan or test",
+    "hitl": "User confirmation required before: exploits, shells, data extraction"
+  }
+}

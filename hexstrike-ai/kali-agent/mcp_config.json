@@ -1,0 +1,110 @@
+{
+  "_comment": "Desktop Commander security config for Kali Agent. Merge into claude_desktop_config.json or ~/.claude.json mcpServers block.",
+
+  "mcpServers": {
+    "desktop-commander": {
+      "command": "npx",
+      "args": ["-y", "@wonderwhy-er/desktop-commander@latest"],
+      "env": {}
+    },
+    "shodan": {
+      "command": "mcp-shodan",
+      "env": {
+        "SHODAN_API_KEY": "YOUR_SHODAN_API_KEY_HERE"
+      }
+    },
+    "hexstrike": {
+      "command": "python3",
+      "args": ["/home/kali/hexstrike-ai/hexstrike_mcp.py"],
+      "env": {
+        "PENTEST_BASE": "/tmp/pentest"
+      }
+    }
+  },
+
+  "_desktop_commander_security": {
+    "_comment": "Apply these settings in Desktop Commander's configuration",
+
+    "allowedDirectories": [
+      "/home/kali",
+      "/tmp/pentest",
+      "/usr/share/wordlists",
+      "/usr/share/seclists",
+      "/usr/share/nmap",
+      "/usr/share/exploitdb",
+      "/var/log/hexstrike",
+      "/opt"
+    ],
+
+    "blockedCommands": [
+      "rm -rf /",
+      "rm -rf /*",
+      "mkfs",
+      "dd if=/dev/zero",
+      "dd if=/dev/random",
+      "> /dev/sda",
+      ":(){ :|:& };:",
+      "chmod -R 777 /",
+      "chown -R",
+      "shutdown",
+      "reboot",
+      "init 0",
+      "init 6",
+      "systemctl stop",
+      "iptables -F",
+      "iptables -X"
+    ],
+
+    "requireApproval": [
+      "msfconsole",
+      "msfvenom",
+      "hydra",
+      "hashcat",
+      "john",
+      "aircrack-ng",
+      "airodump-ng",
+      "aireplay-ng",
+      "airmon-ng",
+      "reaver",
+      "bully",
+      "wifite",
+      "responder",
+      "ntlmrelayx",
+      "crackmapexec",
+      "netexec",
+      "evil-winrm",
+      "mimikatz",
+      "impacket-psexec",
+      "impacket-wmiexec",
+      "impacket-smbexec",
+      "impacket-ntlmrelayx",
+      "impacket-secretsdump",
+      "certipy",
+      "bloodhound-python",
+      "PetitPotam",
+      "tcpdump",
+      "tshark"
+    ],
+
+    "defaultShell": "/bin/bash",
+    "commandTimeout": 600,
+    "maxOutputSize": 1048576
+  },
+
+  "_docker_mcp_servers": {
+    "_comment": "Optional: Docker-based MCP servers from mcp-security-hub. Build first with 'docker-compose build' from the cloned repo.",
+
+    "nmap-mcp": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "--cap-add=NET_RAW", "--network=host", "nmap-mcp:latest"]
+    },
+    "nuclei-mcp": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "--network=host", "nuclei-mcp:latest"]
+    },
+    "sqlmap-mcp": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "--network=host", "sqlmap-mcp:latest"]
+    }
+  }
+}

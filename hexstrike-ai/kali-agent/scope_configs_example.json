@@ -1,0 +1,99 @@
+{
+  "_comment": "Example scope configs — copy and customize for your engagement",
+
+  "external_pentest_example": {
+    "engagement": {
+      "id": "ENG-2026-0401",
+      "client": "Example Corp Pty Ltd",
+      "type": "external_pentest",
+      "authorization": "Written authorization signed 2026-03-25 — ref: ECORP-PENTEST-2026-Q2",
+      "tester": "Az / AutoBoros.ai / Aurora AI Agency",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-14",
+      "time_window": "09:00-17:00 AEST weekdays only",
+      "emergency_contact": "security@example.com.au | +61 3 XXXX XXXX"
+    },
+    "scope": {
+      "in_scope": {
+        "domains": ["*.example.com.au", "api.example.com.au", "portal.example.com.au"],
+        "ip_ranges": ["203.0.113.0/24", "198.51.100.10/32"],
+        "urls": ["https://portal.example.com.au/*", "https://api.example.com.au/v2/*"],
+        "ports": "all"
+      },
+      "out_of_scope": {
+        "domains": ["mail.example.com.au", "intranet.example.com.au"],
+        "ip_ranges": ["203.0.113.250/32"],
+        "notes": "Production database server (203.0.113.250) is excluded. No DoS testing. No social engineering without separate approval."
+      },
+      "rules_of_engagement": [
+        "No denial-of-service or stress testing",
+        "No social engineering without separate written approval",
+        "Stop all testing immediately if production impact is detected",
+        "Report critical/exploitable findings within 24 hours via encrypted email",
+        "All testing from AutoBoros.ai source IP only",
+        "No data exfiltration — demonstrate access only"
+      ]
+    }
+  },
+
+  "ctf_hackthebox_example": {
+    "engagement": {
+      "id": "CTF-20260327",
+      "client": "HackTheBox",
+      "type": "ctf",
+      "authorization": "Platform Terms of Service accepted",
+      "tester": "Az",
+      "start_date": "2020-01-01",
+      "end_date": "2099-12-31"
+    },
+    "scope": {
+      "in_scope": {
+        "domains": ["*"],
+        "ip_ranges": ["10.10.10.0/24", "10.10.11.0/24"],
+        "urls": [],
+        "ports": "all"
+      },
+      "out_of_scope": {
+        "domains": [],
+        "ip_ranges": ["10.10.10.2/32"],
+        "notes": "10.10.10.2 is the HTB gateway — do not attack"
+      },
+      "rules_of_engagement": [
+        "CTF environment — all techniques permitted within platform rules",
+        "Do not attack other players or the platform infrastructure"
+      ]
+    }
+  },
+
+  "webapp_assessment_example": {
+    "engagement": {
+      "id": "ENG-2026-WEB-001",
+      "client": "Evermystic Designs",
+      "type": "webapp",
+      "authorization": "Verbal + written authorization from Stefan Belan — ref: EVD-SEC-2026",
+      "tester": "Az / Aurora AI Agency",
+      "start_date": "2026-04-01",
+      "end_date": "2026-04-07",
+      "time_window": "24/7 — staging environment only"
+    },
+    "scope": {
+      "in_scope": {
+        "domains": ["staging.evermysticdesigns.com.au"],
+        "ip_ranges": [],
+        "urls": ["https://staging.evermysticdesigns.com.au/*"],
+        "ports": "80,443,8080"
+      },
+      "out_of_scope": {
+        "domains": ["evermysticdesigns.com.au", "shop.evermysticdesigns.com.au"],
+        "ip_ranges": [],
+        "notes": "Production site and live shop are strictly excluded. Staging only."
+      },
+      "rules_of_engagement": [
+        "Web application testing only — no infrastructure scanning",
+        "No automated brute force against login forms",
+        "Report any data exposure immediately to Stefan",
+        "OWASP Testing Guide methodology"
+      ]
+    }
+  }
+}

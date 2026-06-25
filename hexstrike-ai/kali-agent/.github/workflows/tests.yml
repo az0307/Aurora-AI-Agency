@@ -1,0 +1,129 @@
+name: Kali Agent Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    name: Unit Tests (39)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run unit tests
+        working-directory: ./hexstrike-modules
+        run: python3 test_modules.py
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    name: Integration Tests (74)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run integration tests
+        working-directory: ./hexstrike-modules
+        run: python3 integration_test.py
+
+  skill-validation:
+    runs-on: ubuntu-latest
+    name: Validate Skills
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate SKILL.md frontmatter
+        run: |
+          echo "=== Validating SKILL.md files ==="
+          ERRORS=0
+          for skill_dir in kali-agent-skills/*/; do
+            skill_file="${skill_dir}SKILL.md"
+            if [ ! -f "$skill_file" ]; then
+              echo "FAIL: Missing SKILL.md in $skill_dir"
+              ERRORS=$((ERRORS + 1))
+              continue
+            fi
+
+            # Check frontmatter exists
+            if ! head -1 "$skill_file" | grep -q "^---$"; then
+              echo "FAIL: No YAML frontmatter in $skill_file"
+              ERRORS=$((ERRORS + 1))
+              continue
+            fi
+
+            # Check name field
+            if ! grep -q "^name:" "$skill_file"; then
+              echo "FAIL: Missing 'name' in $skill_file"
+              ERRORS=$((ERRORS + 1))
+            fi
+
+            # Check description field
+            if ! grep -q "^description:" "$skill_file"; then
+              echo "FAIL: Missing 'description' in $skill_file"
+              ERRORS=$((ERRORS + 1))
+            fi
+
+            # Check line count
+            lines=$(wc -l < "$skill_file")
+            if [ "$lines" -gt 500 ]; then
+              echo "WARN: $skill_file has $lines lines (recommended < 500)"
+            fi
+
+            echo "OK: $(basename $skill_dir) ($lines lines)"
+          done
+
+          echo ""
+          if [ $ERRORS -gt 0 ]; then
+            echo "FAILED: $ERRORS errors"
+            exit 1
+          fi
+          echo "All skills validated successfully"
+
+  security-audit:
+    runs-on: ubuntu-latest
+    name: Security Audit
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for shell=True
+        run: |
+          echo "=== Checking for shell=True in Python files ==="
+          # Only flag executable shell=True, not comments
+          if grep -rn "shell=True" hexstrike-modules/*.py | grep -v "#" | grep -v "CRITICAL\|SAFE\|never\|comment"; then
+            echo "FAIL: Found executable shell=True"
+            exit 1
+          fi
+          echo "OK: No shell=True in executable code"
+
+      - name: Check for eval/exec
+        run: |
+          echo "=== Checking for eval()/exec() ==="
+          if grep -rn "eval(\|exec(" hexstrike-modules/*.py | grep -v "#\|test\|comment"; then
+            echo "FAIL: Found eval()/exec()"
+            exit 1
+          fi
+          echo "OK: No eval()/exec() calls"
+
+      - name: Check for hardcoded secrets
+        run: |
+          echo "=== Checking for hardcoded secrets ==="
+          if grep -rni "api_key\s*=\s*['\"][a-zA-Z0-9]" hexstrike-modules/*.py hexstrike-modules/*.json | grep -v "your.*key\|YOUR.*KEY\|example\|placeholder"; then
+            echo "WARN: Possible hardcoded API key"
+            exit 1
+          fi
+          echo "OK: No hardcoded secrets detected"
