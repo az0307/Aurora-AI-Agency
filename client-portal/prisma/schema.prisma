@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+enum ClientStatus {
+  ACTIVE
+  PAUSED
+  CHURNED
+}
+
+enum JobStatus {
+  INBOX
+  IN_PROGRESS
+  REVIEW
+  DONE
+  CANCELLED
+}
+
+enum DeliverableType {
+  DOCUMENT
+  IMAGE
+  VIDEO
+  LINK
+  REPORT
+  WORKFLOW
+  OTHER
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum Role {
+  AGENCY_OWNER
+  CLIENT_ADMIN
+  CLIENT_VIEWER
+}
+
+// Aurora Agency (single record for now — multi-agency later)
+model Agency {
+  id               String   @id @default(cuid())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  name             String
+  email            String   @unique
+  logo             String?
+  stripeAccountId  String?  // Stripe Connect account
+  clients          Client[]
+}
+
+// A client of Aurora (e.g. YMI Roofing, an OnlyFans creator)
+model Client {
+  id              String       @id @default(cuid())
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  clerkOrgId      String?      @unique // Clerk org if using org-based auth
+  name            String
+  email           String       @unique
+  phone           String?
+  business        String?      // business / brand name
+  abn             String?      // Australian Business Number
+  status          ClientStatus @default(ACTIVE)
+  stripeCustomerId String?
+  agencyId        String
+  agency          Agency       @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  users           ClientUser[]
+  jobs            Job[]
+  invoices        Invoice[]
+  notes           String?      @db.Text
+
+  @@index([agencyId])
+}
+
+// A portal user belonging to a client
+model ClientUser {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  clerkId   String   @unique
+  email     String   @unique
+  name      String
+  avatarUrl String?
+  role      Role     @default(CLIENT_VIEWER)
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+}
+
+// A job / project scoped to a client — mirrors autoboros Job model
+model Job {
+  id           String        @id @default(cuid())
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  autoborosId  Int?          // links to autoboros backend job.id
+  title        String
+  description  String?       @db.Text
+  status       JobStatus     @default(INBOX)
+  skill        String?       // e.g. "Website", "Chatbot", "Ad Copy"
+  estMinutes   Int           @default(0)
+  clientId     String
+  client       Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  deliverables Deliverable[]
+  activities   JobActivity[]
+
+  @@index([clientId])
+  @@index([autoborosId])
+}
+
+// Files / outputs delivered to the client
+model Deliverable {
+  id          String          @id @default(cuid())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  name        String
+  type        DeliverableType @default(OTHER)
+  url         String
+  description String?
+  jobId       String
+  job         Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+}
+
+// Audit trail per job visible to client
+model JobActivity {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  message   String
+  actor     String   @default("Aurora")
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+}
+
+// Invoices sent to clients
+model Invoice {
+  id             String        @id @default(cuid())
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  invoiceNumber  String        @unique // e.g. AURORA-0002
+  status         InvoiceStatus @default(DRAFT)
+  amountCents    Int           // in cents (AUD)
+  description    String?       @db.Text
+  dueDate        DateTime?
+  paidAt         DateTime?
+  stripeInvoiceId String?
+  clientId       String
+  client         Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+}

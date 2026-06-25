@@ -1,0 +1,142 @@
+{
+  "name": "Aurora: AI Lead Follow-Up & Deal Rescue",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 6 }] }
+      },
+      "id": "schedule-trigger",
+      "name": "Every 6 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, t as title, client, status, created_at, updated_at, last_ag FROM jobs WHERE status IN ('Inbox', 'Next') AND updated_at < datetime('now', '-48 hours') AND esc = 0 ORDER BY created_at ASC LIMIT 20",
+        "additionalFields": {}
+      },
+      "id": "find-stalled-jobs",
+      "name": "Find Stalled Leads (48h+)",
+      "type": "n8n-nodes-base.sqlite",
+      "typeVersion": 1,
+      "position": [400, 300],
+      "credentials": { "sqlite": { "id": "autoboros-db", "name": "AutoBoros SQLite" } }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [{ "value1": "={{ $json.length }}", "operation": "larger", "value2": 0 }]
+        }
+      },
+      "id": "has-stalled",
+      "name": "Any Stalled?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => ({ json: item.json }));"
+      },
+      "id": "split-jobs",
+      "name": "Split Into Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, 220]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "model": "claude-haiku-4-5-20251001",
+          "max_tokens": 300,
+          "messages": [
+            {
+              "role": "user",
+              "content": "You are Aurora AI Agency's follow-up assistant. Write a short, warm, non-pushy SMS follow-up (max 160 chars) for a stalled lead. Client: {{ $json.client }}. Job: {{ $json.title }}. Last update: {{ $json.last_ag || 'none' }}. Days stalled: {{ Math.floor((Date.now() - new Date($json.updated_at).getTime()) / 86400000) }}. Sign off as Aurora. Only return the SMS text, nothing else."
+            }
+          ]
+        }
+      },
+      "id": "generate-followup",
+      "name": "Generate Follow-Up (Haiku)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1000, 220]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.content[0].text.trim();\nconst job = $('split-jobs').item.json;\nreturn [{ json: { job_id: job.id, client: job.client, message: body } }];"
+      },
+      "id": "extract-sms",
+      "name": "Extract SMS Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 220]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.AUTOBOROS_API_URL }}/jobs/{{ $json.job_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.AUTOBOROS_JWT }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "last_ag": "Follow-up SMS queued: {{ $json.message }}",
+          "esc": true
+        }
+      },
+      "id": "flag-escalated",
+      "name": "Mark as Escalated in AutoBoros",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1400, 220]
+    },
+    {
+      "parameters": {
+        "from": "={{ $env.TWILIO_FROM }}",
+        "to": "={{ $env.CLIENT_PHONE_LOOKUP[$json.client] || $env.AURORA_OWNER_PHONE }}",
+        "message": "={{ $('extract-sms').item.json.message }}"
+      },
+      "id": "send-sms",
+      "name": "Send SMS via Twilio",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1600, 220],
+      "credentials": { "twilioApi": { "id": "twilio-creds", "name": "Twilio" } }
+    }
+  ],
+  "connections": {
+    "Every 6 Hours": { "main": [[{ "node": "Find Stalled Leads (48h+)", "type": "main", "index": 0 }]] },
+    "Find Stalled Leads (48h+)": { "main": [[{ "node": "Any Stalled?", "type": "main", "index": 0 }]] },
+    "Any Stalled?": { "main": [[{ "node": "Split Into Items", "type": "main", "index": 0 }], []] },
+    "Split Into Items": { "main": [[{ "node": "Generate Follow-Up (Haiku)", "type": "main", "index": 0 }]] },
+    "Generate Follow-Up (Haiku)": { "main": [[{ "node": "Extract SMS Text", "type": "main", "index": 0 }]] },
+    "Extract SMS Text": { "main": [[{ "node": "Mark as Escalated in AutoBoros", "type": "main", "index": 0 }]] },
+    "Mark as Escalated in AutoBoros": { "main": [[{ "node": "Send SMS via Twilio", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["aurora-internal", "lead-ops"],
+  "meta": {
+    "description": "Runs every 6 hours. Finds jobs stalled >48h in Inbox/Next, generates a personalised Haiku follow-up SMS, marks them escalated in AutoBoros, and sends via Twilio.",
+    "requiredEnvVars": ["ANTHROPIC_API_KEY", "AUTOBOROS_API_URL", "AUTOBOROS_JWT", "TWILIO_FROM", "AURORA_OWNER_PHONE", "CLIENT_PHONE_LOOKUP"]
+  }
+}

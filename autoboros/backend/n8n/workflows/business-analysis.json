@@ -1,0 +1,161 @@
+{
+  "name": "Aurora: AI Business Analysis Report",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aurora-business-analysis",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "webhookId": "aurora-business-analysis"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\nif (!body.url) throw new Error('url required');\nreturn [{ json: { job_id: body.job_id || null, url: body.url, client: body.client || 'Unknown', callback_url: body.callback_url || null } }];"
+      },
+      "id": "parse-input",
+      "name": "Parse Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "scrape-url",
+      "name": "Scrape Target URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $json.data || '';\n// Strip tags, collapse whitespace, cap at 6000 chars\nconst text = html.replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi, '')\n  .replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, '')\n  .replace(/<[^>]+>/g, ' ')\n  .replace(/\\s+/g, ' ')\n  .trim()\n  .slice(0, 6000);\nconst prev = $('parse-input').item.json;\nreturn [{ json: { ...prev, page_text: text } }];"
+      },
+      "id": "clean-html",
+      "name": "Strip HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "model": "claude-sonnet-4-6",
+          "max_tokens": 2000,
+          "messages": [
+            {
+              "role": "user",
+              "content": "You are Aurora AI Agency's business analyst. Analyse the following business website content and produce a structured report in Markdown.\n\nURL: {{ $json.url }}\nClient context: {{ $json.client }}\n\n---\n{{ $json.page_text }}\n---\n\nReport sections:\n1. Business Overview (2-3 sentences)\n2. Target Market\n3. Core Offerings\n4. Digital Presence Score (1-10) with rationale\n5. Top 3 Automation Opportunities (specific, actionable)\n6. Top 3 SEO/Content Gaps\n7. Recommended Aurora Services\n8. Quick Wins (can implement in <1 week)\n\nBe specific and practical. Format cleanly in Markdown."
+            }
+          ]
+        }
+      },
+      "id": "generate-report",
+      "name": "Generate Report (Sonnet)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const report = $json.content[0].text;\nconst prev = $('clean-html').item.json;\nreturn [{ json: { job_id: prev.job_id, client: prev.client, url: prev.url, report, callback_url: prev.callback_url, generated_at: new Date().toISOString() } }];"
+      },
+      "id": "extract-report",
+      "name": "Extract Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [{ "value1": "={{ $json.callback_url }}", "operation": "isNotEmpty" }]
+        }
+      },
+      "id": "has-callback",
+      "name": "Has Callback?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1400, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.callback_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "X-N8N-Key", "value": "={{ $env.N8N_API_KEY }}" }]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "job_id": "={{ $json.job_id }}",
+          "result": {
+            "status": "Done",
+            "actor": "Agent",
+            "last_ag": "Business analysis complete for {{ $json.url }}",
+            "activity_text": "AI business analysis report generated",
+            "result_label": "Business Analysis Report",
+            "result_url": "={{ $env.AUTOBOROS_API_URL }}/artifacts/report-{{ $json.job_id }}.md"
+          }
+        }
+      },
+      "id": "callback-autoboros",
+      "name": "Callback to AutoBoros",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1600, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, report: $('extract-report').item.json.report, generated_at: $('extract-report').item.json.generated_at } }}"
+      },
+      "id": "respond",
+      "name": "Respond to Caller",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1600, 380]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Parse Input", "type": "main", "index": 0 }]] },
+    "Parse Input": { "main": [[{ "node": "Scrape Target URL", "type": "main", "index": 0 }]] },
+    "Scrape Target URL": { "main": [[{ "node": "Strip HTML", "type": "main", "index": 0 }]] },
+    "Strip HTML": { "main": [[{ "node": "Generate Report (Sonnet)", "type": "main", "index": 0 }]] },
+    "Generate Report (Sonnet)": { "main": [[{ "node": "Extract Report", "type": "main", "index": 0 }]] },
+    "Extract Report": { "main": [[{ "node": "Has Callback?", "type": "main", "index": 0 }]] },
+    "Has Callback?": {
+      "main": [
+        [{ "node": "Callback to AutoBoros", "type": "main", "index": 0 }],
+        [{ "node": "Respond to Caller", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["aurora-internal", "sales-tool"],
+  "meta": {
+    "description": "POST {url, client, job_id?, callback_url?} → scrapes the URL, generates a structured AI business analysis report in Markdown via Claude Sonnet. Optionally callbacks to AutoBoros when job_id provided.",
+    "requiredEnvVars": ["ANTHROPIC_API_KEY", "N8N_API_KEY", "AUTOBOROS_API_URL"]
+  }
+}

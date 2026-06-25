@@ -1,0 +1,184 @@
+{
+  "name": "Aurora: Client Onboarding Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aurora-client-onboard",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "webhookId": "aurora-client-onboard"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json.body;\nif (!b.client_name || !b.client_email) throw new Error('client_name and client_email required');\nreturn [{ json: { client_name: b.client_name, client_email: b.client_email, client_phone: b.client_phone || '', business_name: b.business_name || b.client_name, service_type: b.service_type || 'General', invoice_number: b.invoice_number || 'AURORA-TBA', invoice_amount: b.invoice_amount || 0 } }];"
+      },
+      "id": "parse-input",
+      "name": "Parse Client Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "model": "claude-haiku-4-5-20251001",
+          "max_tokens": 500,
+          "messages": [
+            {
+              "role": "user",
+              "content": "Write a warm, professional onboarding welcome email for a new Aurora AI Agency client. Keep it under 200 words. Friendly but polished. Include: what happens next (kick-off call within 24h), where to access their client portal (portal.auroraaiagency.com.au), who to contact for urgent matters (aaron@auroraaiagency.com.au). Client name: {{ $json.client_name }}. Business: {{ $json.business_name }}. Service: {{ $json.service_type }}. Sign off from 'Aaron @ Aurora AI Agency'. Only return the email body (no subject line, no formatting tags), just text."
+            }
+          ]
+        }
+      },
+      "id": "generate-welcome",
+      "name": "Generate Welcome Email (Haiku)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [600, 220]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": { "value": "={{ $env.GOOGLE_SHEET_ID }}" },
+        "sheetName": "Clients",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.client_name }}",
+            "Email": "={{ $json.client_email }}",
+            "Phone": "={{ $json.client_phone }}",
+            "Business": "={{ $json.business_name }}",
+            "Service": "={{ $json.service_type }}",
+            "Status": "Active",
+            "Onboarded": "={{ new Date().toLocaleDateString('en-AU') }}",
+            "Invoice": "={{ $json.invoice_number }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "add-to-crm-sheet",
+      "name": "Add to Google Sheets CRM",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [600, 380],
+      "credentials": { "googleSheetsOAuth2Api": { "id": "google-sheets", "name": "Google Sheets" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.AUTOBOROS_API_URL }}/jobs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "Bearer {{ $env.AUTOBOROS_JWT }}" }]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "t": "Onboarding: {{ $('parse-input').item.json.business_name }}",
+          "client": "={{ $('parse-input').item.json.client_name }}",
+          "status": "Inbox",
+          "lvl": 1,
+          "actor": "You",
+          "src": "n8n-onboarding",
+          "skill": "Onboarding",
+          "steps": ["Send welcome email", "Book kick-off call", "Set up client portal", "Create project board"],
+          "ask": "New client onboarded automatically. Review and book kick-off call."
+        }
+      },
+      "id": "create-onboarding-job",
+      "name": "Create Onboarding Job in AutoBoros",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const welcome = $('generate-welcome').item.json.content[0].text;\nconst client = $('parse-input').item.json;\nreturn [{ json: { ...client, welcome_email: welcome } }];"
+      },
+      "id": "merge-data",
+      "name": "Merge",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "aaron@auroraaiagency.com.au",
+        "toEmail": "={{ $json.client_email }}",
+        "subject": "Welcome to Aurora AI Agency, {{ $json.client_name }}!",
+        "emailType": "text",
+        "message": "={{ $json.welcome_email }}"
+      },
+      "id": "send-welcome-email",
+      "name": "Send Welcome Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1200, 300],
+      "credentials": { "smtp": { "id": "smtp-aurora", "name": "Aurora SMTP" } }
+    },
+    {
+      "parameters": {
+        "from": "={{ $env.TWILIO_FROM }}",
+        "to": "={{ $env.AURORA_OWNER_PHONE }}",
+        "message": "New client onboarded: {{ $('parse-input').item.json.client_name }} ({{ $('parse-input').item.json.business_name }}). Email sent. Job created in AutoBoros. Book kick-off call."
+      },
+      "id": "notify-owner-sms",
+      "name": "SMS Aaron",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1400, 300],
+      "credentials": { "twilioApi": { "id": "twilio-creds", "name": "Twilio" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, client: $('parse-input').item.json.client_name, message: 'Onboarding sequence complete' } }}"
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1600, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Parse Client Data", "type": "main", "index": 0 }]] },
+    "Parse Client Data": {
+      "main": [[
+        { "node": "Generate Welcome Email (Haiku)", "type": "main", "index": 0 },
+        { "node": "Add to Google Sheets CRM", "type": "main", "index": 0 }
+      ]]
+    },
+    "Generate Welcome Email (Haiku)": { "main": [[{ "node": "Create Onboarding Job in AutoBoros", "type": "main", "index": 0 }]] },
+    "Add to Google Sheets CRM": { "main": [[{ "node": "Create Onboarding Job in AutoBoros", "type": "main", "index": 0 }]] },
+    "Create Onboarding Job in AutoBoros": { "main": [[{ "node": "Merge", "type": "main", "index": 0 }]] },
+    "Merge": { "main": [[{ "node": "Send Welcome Email", "type": "main", "index": 0 }]] },
+    "Send Welcome Email": { "main": [[{ "node": "SMS Aaron", "type": "main", "index": 0 }]] },
+    "SMS Aaron": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["aurora-internal", "client-ops"],
+  "meta": {
+    "description": "POST {client_name, client_email, client_phone?, business_name?, service_type?, invoice_number?} → generates AI welcome email, adds to Google Sheets CRM, creates AutoBoros onboarding job, sends welcome email, SMS Aaron.",
+    "requiredEnvVars": ["ANTHROPIC_API_KEY", "AUTOBOROS_API_URL", "AUTOBOROS_JWT", "GOOGLE_SHEET_ID", "TWILIO_FROM", "AURORA_OWNER_PHONE"]
+  }
+}
