@@ -879,8 +879,15 @@
 <!-- ─── SCRIPTS ────────────────────────────────────────────────────────────── -->
 <script>
   // ── AGENCY CONFIG ─────────────────────────────────────────────────────────
-  // Replace this URL with your live n8n production webhook endpoint
-  const WEBHOOK_URL = 'https://YOUR-N8N-DOMAIN/webhook/ymi-roofing-lead';
+  // POST target: Cloudflare Worker proxy (ymiroofing repo → worker/cf-worker-proxy.js)
+  // The Worker keeps the real n8n webhook URL secret (stored as CF secret N8N_WEBHOOK_URL).
+  // Deploy steps:
+  //   1. cd worker && wrangler secret put N8N_WEBHOOK_URL   (paste the n8n webhook URL)
+  //   2. wrangler deploy
+  //   3. Replace REPLACE_WITH_WORKER_URL below with your deployed Worker URL:
+  //        https://ymiroofing.<your-account>.workers.dev
+  //      OR your custom domain route if configured in wrangler.toml
+  const WEBHOOK_URL = 'https://REPLACE_WITH_WORKER_URL';
   // ─────────────────────────────────────────────────────────────────────────
 
   // ── NAV: scroll detection
