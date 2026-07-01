@@ -541,6 +541,20 @@
       .trust-badges { flex-direction: column; }
       .trust-badge { border-right: none !important; padding-left: 0 !important; }
     }
+    /* Our Work gallery */
+    .gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:52px;}
+    .gallery-item{position:relative;border-radius:12px;overflow:hidden;border:1px solid rgba(27,104,180,0.25);background:#0a0f16;aspect-ratio:4/3;}
+    .gallery-item img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease;}
+    .gallery-item:hover img{transform:scale(1.06);}
+    .gallery-cap{position:absolute;left:0;right:0;bottom:0;padding:28px 14px 13px;font-family:'Barlow',sans-serif;font-size:13.5px;font-weight:600;color:#fff;line-height:1.4;background:linear-gradient(transparent,rgba(3,8,16,0.9));}
+    .gallery-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:4px;margin-bottom:7px;}
+    .tag-before{background:#7a2b2b;color:#ffdede;}
+    .tag-after{background:#1b6534;color:#daffe8;}
+    .tag-job{background:var(--blue);color:#fff;}
+    .hero-logo{width:200px;max-width:52%;height:auto;margin-bottom:24px;filter:drop-shadow(0 10px 26px rgba(0,0,0,0.55));}
+    .footer-logo-img{width:132px;height:auto;margin-bottom:16px;}
+    @media (max-width:900px){.gallery-grid{grid-template-columns:repeat(2,1fr);}}
+    @media (max-width:600px){.gallery-grid{grid-template-columns:1fr;} .hero-logo{width:156px;}}
   </style>
 </head>
 <body>
@@ -557,6 +571,7 @@
     </a>
     <div class="nav-links">
       <button class="nav-link" onclick="scrollTo('services')">Services</button>
+      <button class="nav-link" onclick="scrollTo('our-work')">Our Work</button>
       <button class="nav-link" onclick="scrollTo('why-us')">Why Us</button>
       <button class="nav-link" onclick="scrollTo('contact')">Contact</button>
       <a href="tel:0422093241" class="btn btn-primary nav-cta">📞 0422 093 241</a>
@@ -568,7 +583,8 @@
 <!-- Mobile nav drawer -->
 <div id="mobile-nav">
   <button class="nav-link" onclick="scrollTo('services')">Services</button>
-  <button class="nav-link" onclick="scrollTo('why-us')">Why Us</button>
+  <button class="nav-link" onclick="scrollTo('our-work')">Our Work</button>
+      <button class="nav-link" onclick="scrollTo('why-us')">Why Us</button>
   <button class="nav-link" onclick="scrollTo('contact')">Contact</button>
   <a href="tel:0422093241" class="btn btn-primary">📞 0422 093 241</a>
 </div>
@@ -583,6 +599,7 @@
 
       <!-- Left -->
       <div class="fade-up">
+        <img src="images/logo.png" class="hero-logo" alt="Y.M.I Roofing — for all your roof tiling needs" width="200" height="300">
         <div class="hero-eyebrow">
           <div class="hero-eyebrow-line"></div>
           <span class="hero-eyebrow-text">Melbourne's Trusted Roof Tilers</span>
@@ -603,7 +620,7 @@
           <span class="trust-badge">✓ 20+ Years Experience</span>
           <span class="trust-badge">✓ 100% Guaranteed</span>
           <span class="trust-badge">✓ Free Quotes</span>
-          <span class="trust-badge">✓ Licensed &amp; ACN Registered</span>
+          <span class="trust-badge">✓ ACN-Registered Business</span>
         </div>
       </div>
 
@@ -642,7 +659,7 @@
       <div class="stat-item"><div class="stat-val">20+</div><div class="stat-label">Years Experience</div></div>
       <div class="stat-item"><div class="stat-val">100%</div><div class="stat-label">Quality Guaranteed</div></div>
       <div class="stat-item"><div class="stat-val">Free</div><div class="stat-label">Quotes &amp; Inspections</div></div>
-      <div class="stat-item"><div class="stat-val">Licensed</div><div class="stat-label">ACN Registered</div></div>
+      <div class="stat-item"><div class="stat-val">ACN</div><div class="stat-label">Registered Company</div></div>
     </div>
   </div>
 </div>
@@ -670,6 +687,32 @@
   </div>
 </section>
 
+<!-- ─── OUR WORK ────────────────────────────────────────────────────────────────────── -->
+<section id="our-work" class="section">
+  <div class="container">
+    <div style="text-align:center;">
+      <span class="label-chip">Real Jobs, Real Roofs</span>
+      <h2 class="section-title">Our Work</h2>
+      <p class="section-sub" style="margin:14px auto 0;">Actual roofs across Melton and Melbourne's west — restorations, re-bedding &amp; pointing, and Ben's crew on the job. No stock photos.</p>
+    </div>
+    <div class="gallery-grid">
+      <div class="gallery-item"><img src="images/after-red-restoration.jpg" alt="Restored terracotta-red tile roof after roof restoration" loading="lazy" width="1280" height="960"><div class="gallery-cap"><span class="gallery-tag tag-after">After</span><br>Full roof restoration &amp; respray</div></div>
+      <div class="gallery-item"><img src="images/after-grey-restoration.jpg" alt="Charcoal grey concrete tile roof after full respray" loading="lazy" width="960" height="1280"><div class="gallery-cap"><span class="gallery-tag tag-after">After</span><br>Concrete tile roof — full respray</div></div>
+      <div class="gallery-item"><img src="images/after-valley-terracotta.jpg" alt="Clean terracotta roof with new valley flashing" loading="lazy" width="1280" height="960"><div class="gallery-cap"><span class="gallery-tag tag-after">After</span><br>New valley iron &amp; cleaned terracotta</div></div>
+      <div class="gallery-item"><img src="images/work-team.jpg" alt="Y.M.I Roofing crew working on a tiled roof" loading="lazy" width="1280" height="960"><div class="gallery-cap"><span class="gallery-tag tag-job">On the job</span><br>Ben's crew on site</div></div>
+      <div class="gallery-item"><img src="images/work-repoint-crew.jpg" alt="Re-bedding and pointing ridge caps on a tile roof" loading="lazy" width="1280" height="960"><div class="gallery-cap"><span class="gallery-tag tag-job">On the job</span><br>Re-bedding &amp; pointing ridge caps</div></div>
+      <div class="gallery-item"><img src="images/work-ridge-strip.jpg" alt="Stripping old ridge capping and bedding mortar" loading="lazy" width="1280" height="960"><div class="gallery-cap"><span class="gallery-tag tag-job">On the job</span><br>Stripping old ridge capping</div></div>
+      <div class="gallery-item"><img src="images/before-terracotta-hip.jpg" alt="Lichen-covered terracotta roof before cleaning" loading="lazy" width="1280" height="960"><div class="gallery-cap"><span class="gallery-tag tag-before">Before</span><br>Lichen-covered terracotta</div></div>
+      <div class="gallery-item"><img src="images/after-pointing-hip.jpg" alt="Fresh flexible pointing on roof hips and ridges" loading="lazy" width="960" height="1280"><div class="gallery-cap"><span class="gallery-tag tag-after">After</span><br>Fresh flexible pointing</div></div>
+      <div class="gallery-item"><img src="images/work-masking.jpg" alt="Roof masked and prepped for respray" loading="lazy" width="1280" height="960"><div class="gallery-cap"><span class="gallery-tag tag-job">On the job</span><br>Masked &amp; prepped for respray</div></div>
+    </div>
+    <div class="services-cta" style="margin-top:40px;">
+      <p>Want your roof looking like this? Ben will take a look and give you a free, no-pressure quote.</p>
+      <a href="tel:0422093241" class="btn btn-primary">📞 Call for a Free Quote</a>
+    </div>
+  </div>
+</section>
+
 <!-- ─── WHY US ─────────────────────────────────────────────────────────────────────── -->
 <section id="why-us" class="section">
   <div class="why-divider"></div>
@@ -693,7 +736,7 @@
         </div>
         <div class="why-point">
           <div class="why-tick">✓</div>
-          <div><div class="why-point-title">Fully Licensed &amp; ACN Registered</div><div class="why-point-desc">ACN 695 710 055. Properly licensed, insured, and registered. Everything above board.</div></div>
+          <div><div class="why-point-title">ACN-Registered Australian Company</div><div class="why-point-desc">Y.M.I Roofing Pty Ltd (ACN 695 710 055) is a registered Australian company. Licensing and insurance details are available on request.</div></div>
         </div>
       </div>
       <div class="why-stats">
@@ -842,6 +885,7 @@
   <div class="container">
     <div class="footer-grid">
       <div>
+        <img src="images/logo.png" class="footer-logo-img" alt="Y.M.I Roofing logo" width="132" height="198">
         <div class="footer-logo">
           <div class="footer-logo-badge">Y.M.I</div>
           <div>
