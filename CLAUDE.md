@@ -19,8 +19,10 @@ Ouroboros Foundation Ltd Pty  (AU holding company)
 
 **This repo** (`Aurora-AI-Agency`) is the client-delivery and tooling layer. It contains:
 - Internal tooling the agency uses to build projects (gastown, autoboros)
+- The AutoBoros operator cockpit (autoboros-cockpit) and the client-facing portal (client-portal)
 - Security tooling (hexstrike-ai)
 - Client deliverables (ymi-roofing)
+- Experimental/agent tooling (evermystic)
 - Organizational strategy documents (_empire)
 
 The `_empire/ARCHITECTURE_GAP_SYNTHESIS.md` document maps the full skill ecosystem, gap analysis, and strategic priorities across all organization layers.
@@ -34,10 +36,13 @@ The `_empire/ARCHITECTURE_GAP_SYNTHESIS.md` document maps the full skill ecosyst
 | **gastown** | `gastown/` | Zero-dependency Python 3 CLI — generates project scaffolding from natural language |
 | **hexstrike-ai** | `hexstrike-ai/` | AI-native red team platform — live Kali Linux integration via SSH-over-WebSocket |
 | **autoboros** | `autoboros/` | Agentic job-orchestration platform — FastAPI + n8n + MCP + React cockpit |
+| **autoboros-cockpit** | `autoboros-cockpit/` | AutoBoros Cockpit v2 — React 19 + Vite rebuild of the operator dashboard (standalone SPA) |
+| **client-portal** | `client-portal/` | Aurora client portal — Next.js 14 (App Router) + Clerk auth + Prisma + Stripe |
 | **ymi-roofing** | `ymi-roofing/` | Client delivery package — Y.M.I Roofing website, ops docs, chatbot spec |
+| **evermystic** | `evermystic/` | Experimental tooling — Evermystic Haiku executor (single self-contained HTML tool) |
 | **_empire** | `_empire/` | Org-wide strategic documents — architecture gap analysis, skill ecosystem maps |
 
-There is no shared code, test suite, linter, build system, or CI/CD pipeline across either subsystem.
+There is no shared code, test suite, linter, build system, or CI/CD pipeline across the subsystems.
 
 ---
 
@@ -418,6 +423,62 @@ See `autoboros/docs/SECONDARY_REVIEW.md` for full details. Priority items before
 
 ---
 
+## autoboros-cockpit
+
+### What it does
+
+**AutoBoros Cockpit v2** — a standalone React 19 + Vite rebuild of the original single-file HTML operator dashboard. Renders the job board, activity feed, drawers, and approval/draft UI, with `localStorage` persistence, global search, keyboard shortcuts (`/` search, `n` new job, `Esc` close), and accessibility (focus trapping, ARIA, reduced-motion). This is a self-contained SPA distinct from `autoboros/cockpit/` (it is the v2 rebuild and deploys independently).
+
+### Commands
+
+```bash
+cd autoboros-cockpit
+npm install
+npm run dev        # Vite dev server
+npm run build      # production build → dist/
+npm run preview
+npm run lint       # ESLint (js,jsx; --max-warnings 0)
+```
+
+- React 19 with `useReducer` state management; components under `src/components/`.
+- No TypeScript (plain JSX). Deploys via GitHub Actions → Pages, or Docker (`Dockerfile` + `nginx.conf`).
+
+---
+
+## client-portal
+
+### What it does
+
+**Aurora client portal** (`aurora-client-portal`) — a Next.js 14 (App Router) client-facing portal where customers view deliverables, jobs, and invoices. Auth is handled by **Clerk**, data by **Prisma** (schema in `prisma/schema.prisma`), and billing by **Stripe**. TypeScript throughout; UI on Radix primitives + Tailwind.
+
+### Commands
+
+```bash
+cd client-portal
+npm install                 # postinstall runs `prisma generate`
+npm run dev                 # next dev
+npm run build               # next build
+npm run lint                # next lint
+npm run db:push             # prisma db push (dev schema sync)
+npm run db:migrate          # prisma migrate deploy
+npm run db:studio           # prisma studio
+```
+
+### Structure & env
+
+- `src/app/(auth)/` — Clerk sign-in/sign-up routes; `src/app/(portal)/` — dashboard, deliverables, invoices, jobs (+ layout).
+- `src/app/api/webhooks/clerk/route.ts` — Clerk webhook; `src/middleware.ts` — Clerk route protection.
+- `src/lib/db.ts` — Prisma client; `prisma/schema.prisma` — data model.
+- Config via `.env.example` → `.env.local` (Clerk keys, `DATABASE_URL`, Stripe keys). Never commit real secrets.
+
+---
+
+## evermystic
+
+Experimental/agent tooling. Currently a single self-contained tool: `evermystic/tools/evermystic-haiku-executor.html` (a standalone HTML executor — no build step; open in a browser).
+
+---
+
 ## ymi-roofing
 
 ### What it does
@@ -517,8 +578,19 @@ Aurora-AI-Agency/
 │       └── pentest-proposal-template.docx ← external pentest proposal template
 ├── ymi-roofing/
 │   ├── site/                             ← static files for Cloudflare Pages
-│   ├── site/                             ← static files for Cloudflare Pages
 │   └── ops/                              ← agency-internal docs (incl. manychat-spec.md)
+├── autoboros-cockpit/                    ← AutoBoros Cockpit v2 (React 19 + Vite SPA)
+│   ├── src/components/                   ← board, drawers, modals, badges, etc.
+│   ├── Dockerfile / nginx.conf
+│   └── package.json
+├── client-portal/                        ← Aurora client portal (Next.js 14 + Clerk + Prisma + Stripe)
+│   ├── src/app/(auth)/                   ← Clerk sign-in/sign-up
+│   ├── src/app/(portal)/                 ← dashboard, deliverables, invoices, jobs
+│   ├── src/app/api/webhooks/clerk/       ← Clerk webhook
+│   ├── prisma/schema.prisma
+│   └── package.json
+├── evermystic/
+│   └── tools/evermystic-haiku-executor.html
 ├── _empire/
 │   └── ARCHITECTURE_GAP_SYNTHESIS.md     ← org-wide skill gap analysis
 └── autoboros/
