@@ -9,7 +9,7 @@
   <meta name="author" content="Aurora AI Agency" />
 
   <link rel="canonical" href="https://autoboros.ai/" />
-  <meta name="theme-color" content="#050B16" />
+  <meta name="theme-color" content="#04070F" />
   <meta name="color-scheme" content="dark" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
 
@@ -45,173 +45,321 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
+  <!-- Progressive enhancement flag: reveal choreography only runs when JS + IO exist -->
+  <script>if ('IntersectionObserver' in window) document.documentElement.classList.add('js');</script>
+
   <style>
+    /* ─── RESET ──────────────────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; font-size: 16px; }
-    body { font-family: 'Inter', sans-serif; background: #050B16; color: #FFFFFF; min-height: 100vh; overflow-x: hidden; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: #fff; min-height: 100vh; overflow-x: hidden; }
     a { text-decoration: none; color: inherit; }
     ::selection { background: #3B82F6; color: #fff; }
+    :focus-visible { outline: 2px solid var(--a3); outline-offset: 3px; border-radius: 4px; }
 
+    /* ─── TOKENS ─────────────────────────────────────────────────────────────── */
     :root {
-      --bg:          #050B16;
-      --navy:        #0A162B;
-      --navy-light:  #10233F;
-      --blue:        #2563EB;
-      --blue-bright: #3B82F6;
-      --cyan:        #22D3EE;
-      --violet:      #8B5CF6;
-      --silver:      #AEC0D6;
-      --muted:       #6B819C;
-      --white:       #FFFFFF;
-      --green:       #22C55E;
+      --bg:      #04070F;
+      --panel:   #0A1424;
+      --panel-2: #101F38;
+      --a1:      #2E8AF6;   /* aurora blue    */
+      --a2:      #7C5CFC;   /* aurora violet  */
+      --a3:      #22D3EE;   /* aurora cyan    */
+      --a4:      #34D399;   /* aurora green   */
+      --silver:  #A9BCD4;
+      --muted:   #64798F;
+      --line:    rgba(126,166,255,0.14);
+      --radius:  16px;
     }
 
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
-    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+    /* ─── KEYFRAMES ──────────────────────────────────────────────────────────── */
+    @keyframes drift-a { 0%{transform:translate(-8%,-4%) rotate(-8deg) scale(1)} 50%{transform:translate(6%,5%) rotate(6deg) scale(1.15)} 100%{transform:translate(-8%,-4%) rotate(-8deg) scale(1)} }
+    @keyframes drift-b { 0%{transform:translate(10%,6%) rotate(10deg) scale(1.1)} 50%{transform:translate(-6%,-6%) rotate(-4deg) scale(0.95)} 100%{transform:translate(10%,6%) rotate(10deg) scale(1.1)} }
+    @keyframes drift-c { 0%{transform:translate(0,8%) rotate(0) scale(1)} 50%{transform:translate(-10%,-3%) rotate(12deg) scale(1.2)} 100%{transform:translate(0,8%) rotate(0) scale(1)} }
+    @keyframes shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
+    @keyframes pulse-dot { 0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,0.55)} 55%{box-shadow:0 0 0 7px rgba(52,211,153,0)} }
+    @keyframes marquee { to { transform: translateX(-50%); } }
+    @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
 
+    /* ─── LAYOUT UTILS ───────────────────────────────────────────────────────── */
     .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
-    .section { padding: 92px 0; }
-    .fade-up { animation: fadeUp 0.8s ease both; }
-    .fade-up-d { animation: fadeUp 0.8s 0.15s ease both; }
+    .section { padding: 100px 0; position: relative; }
     .label-chip {
-      display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.22em;
-      text-transform: uppercase; color: var(--blue-bright); margin-bottom: 14px;
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.24em;
+      text-transform: uppercase; color: var(--a3); margin-bottom: 16px;
     }
+    .label-chip::before { content: ''; width: 22px; height: 1px; background: linear-gradient(90deg, var(--a3), transparent); }
     .section-title {
-      font-family: 'Space Grotesk', sans-serif; font-size: clamp(30px, 4vw, 44px);
-      font-weight: 700; letter-spacing: -0.02em; line-height: 1.1;
+      font-family: 'Space Grotesk', sans-serif; font-size: clamp(30px, 4vw, 46px);
+      font-weight: 700; letter-spacing: -0.02em; line-height: 1.08;
     }
-    .section-sub { font-size: 16px; color: var(--silver); font-weight: 300; line-height: 1.75; margin-top: 14px; max-width: 560px; }
+    .section-sub { font-size: 16px; color: var(--silver); font-weight: 300; line-height: 1.75; margin-top: 16px; max-width: 560px; }
 
+    /* Scroll-reveal choreography — only when JS present, motion allowed */
+    @media (prefers-reduced-motion: no-preference) {
+      .js .reveal { opacity: 0; transform: translateY(26px); transition: opacity .75s ease, transform .75s cubic-bezier(.16,1,.3,1); }
+      .js .reveal.in { opacity: 1; transform: none; }
+      .js .reveal[data-d="1"] { transition-delay: .1s; }
+      .js .reveal[data-d="2"] { transition-delay: .2s; }
+      .js .reveal[data-d="3"] { transition-delay: .3s; }
+    }
+
+    /* ─── BUTTONS ────────────────────────────────────────────────────────────── */
     .btn {
-      display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 9px;
-      font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer;
-      border: none; transition: all 0.22s ease;
+      position: relative; display: inline-flex; align-items: center; gap: 9px;
+      padding: 14px 28px; border-radius: 10px; font-family: 'Inter', sans-serif;
+      font-size: 15px; font-weight: 600; cursor: pointer; border: none;
+      transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
+      overflow: hidden;
     }
-    .btn-primary { background: linear-gradient(135deg, var(--blue), var(--blue-bright)); color: #fff; }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 34px rgba(37,99,235,0.45); }
-    .btn-outline { background: transparent; color: #fff; border: 1px solid rgba(59,130,246,0.5); }
-    .btn-outline:hover { background: rgba(59,130,246,0.14); border-color: var(--blue-bright); transform: translateY(-2px); }
+    .btn-primary { background: linear-gradient(120deg, var(--a1), var(--a2)); color: #fff; }
+    .btn-primary::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 60%);
+      transform: translateX(-120%); transition: transform .6s ease;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(58,110,246,0.45); }
+    .btn-primary:hover::after { transform: translateX(120%); }
+    .btn-outline { background: rgba(126,166,255,0.04); color: #fff; border: 1px solid rgba(126,166,255,0.35); }
+    .btn-outline:hover { background: rgba(126,166,255,0.12); border-color: var(--a3); transform: translateY(-2px); }
 
-    /* NAV */
-    #nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; transition: all 0.35s ease; padding: 0 24px; }
-    #nav.scrolled { background: rgba(5,11,22,0.92); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(59,130,246,0.22); }
-    .nav-inner { max-width: 1120px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 70px; }
+    /* ─── GRAIN OVERLAY ──────────────────────────────────────────────────────── */
+    .grain {
+      position: fixed; inset: -50%; z-index: 3; pointer-events: none; opacity: 0.05;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* ─── NAV ────────────────────────────────────────────────────────────────── */
+    #nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; transition: all .35s ease; padding: 0 24px; }
+    #nav.scrolled { background: rgba(4,7,15,0.82); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+    #nav.scrolled::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(46,138,246,0.5), rgba(124,92,252,0.5), transparent);
+    }
+    .nav-inner { max-width: 1120px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 72px; }
     .nav-logo { display: flex; align-items: center; gap: 11px; }
     .nav-logo-mark {
-      width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
-      background: linear-gradient(135deg, var(--blue), var(--violet));
-      display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(37,99,235,0.4);
+      width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--a1), var(--a2));
+      display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 18px rgba(58,110,246,0.45);
     }
     .nav-logo-mark svg { width: 22px; height: 22px; }
-    .nav-logo-text strong { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0.02em; }
-    .nav-logo-text small { font-size: 9px; color: var(--silver); letter-spacing: 0.16em; text-transform: uppercase; }
+    .nav-logo-text strong { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0.03em; }
+    .nav-logo-text small { font-size: 9px; color: var(--silver); letter-spacing: 0.18em; text-transform: uppercase; }
     .nav-links { display: flex; align-items: center; gap: 30px; }
-    .nav-link { font-size: 13px; font-weight: 500; color: var(--silver); background: none; border: none; cursor: pointer; font-family: 'Inter', sans-serif; transition: color 0.2s; }
-    .nav-link:hover { color: var(--blue-bright); }
-    .hamburger { display: none; background: none; border: 1px solid rgba(59,130,246,0.4); border-radius: 7px; padding: 7px 10px; cursor: pointer; color: #fff; font-size: 19px; }
-    #mobile-nav { display: none; position: fixed; top: 70px; left: 0; right: 0; background: rgba(5,11,22,0.98); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(59,130,246,0.22); padding: 20px 24px; z-index: 199; flex-direction: column; gap: 16px; }
+    .nav-link { position: relative; font-size: 13px; font-weight: 500; color: var(--silver); background: none; border: none; cursor: pointer; font-family: 'Inter', sans-serif; transition: color .2s; padding: 4px 0; }
+    .nav-link::after { content: ''; position: absolute; left: 0; right: 100%; bottom: 0; height: 1px; background: var(--a3); transition: right .25s ease; }
+    .nav-link:hover { color: #fff; }
+    .nav-link:hover::after { right: 0; }
+    .hamburger { display: none; background: none; border: 1px solid rgba(126,166,255,0.4); border-radius: 8px; padding: 7px 11px; cursor: pointer; color: #fff; font-size: 19px; }
+    #mobile-nav {
+      display: none; position: fixed; top: 72px; left: 0; right: 0; z-index: 199;
+      background: rgba(4,7,15,0.97); backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--line); padding: 22px 24px;
+      flex-direction: column; gap: 18px;
+    }
     #mobile-nav.open { display: flex; }
     #mobile-nav .btn { width: 100%; justify-content: center; }
 
-    /* HERO */
+    /* ─── HERO + AURORA ──────────────────────────────────────────────────────── */
     #hero {
-      min-height: 100vh; display: flex; align-items: center; padding: 130px 24px 80px; position: relative; overflow: hidden;
-      background:
-        radial-gradient(ellipse at 78% 30%, rgba(37,99,235,0.16) 0%, transparent 55%),
-        radial-gradient(ellipse at 12% 88%, rgba(139,92,246,0.12) 0%, transparent 52%),
-        linear-gradient(175deg, #030711 0%, #050B16 100%);
+      min-height: 100vh; display: flex; align-items: center;
+      padding: 140px 24px 90px; position: relative; overflow: hidden;
+      background: linear-gradient(180deg, #02040A 0%, var(--bg) 100%);
     }
-    .hero-grid-bg {
-      position: absolute; inset: 0; opacity: 0.04; pointer-events: none;
+    .aurora { position: absolute; inset: 0; pointer-events: none; }
+    .aurora span { position: absolute; border-radius: 50%; filter: blur(70px); mix-blend-mode: screen; opacity: 0.5; will-change: transform; }
+    .aurora .r1 { width: 60vw; height: 34vh; left: 8%;  top: -6%;  background: radial-gradient(closest-side, var(--a1), transparent 70%); animation: drift-a 26s ease-in-out infinite; }
+    .aurora .r2 { width: 52vw; height: 30vh; right: -8%; top: 6%;   background: radial-gradient(closest-side, var(--a2), transparent 70%); animation: drift-b 32s ease-in-out infinite; }
+    .aurora .r3 { width: 44vw; height: 26vh; left: 30%; top: 14%;   background: radial-gradient(closest-side, var(--a3), transparent 70%); opacity: 0.32; animation: drift-c 38s ease-in-out infinite; }
+    .aurora .r4 { width: 30vw; height: 18vh; right: 22%; top: -4%;  background: radial-gradient(closest-side, var(--a4), transparent 70%); opacity: 0.18; animation: drift-a 44s ease-in-out infinite reverse; }
+    .hero-grid-lines {
+      position: absolute; inset: 0; opacity: 0.05; pointer-events: none;
       background-image:
-        repeating-linear-gradient(0deg, transparent, transparent 62px, var(--blue) 62px, var(--blue) 63px),
-        repeating-linear-gradient(90deg, transparent, transparent 62px, var(--blue) 62px, var(--blue) 63px);
+        repeating-linear-gradient(0deg,  transparent, transparent 64px, var(--a1) 64px, var(--a1) 65px),
+        repeating-linear-gradient(90deg, transparent, transparent 64px, var(--a1) 64px, var(--a1) 65px);
+      mask-image: radial-gradient(ellipse 90% 70% at 50% 20%, #000 30%, transparent 75%);
+      -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 20%, #000 30%, transparent 75%);
     }
-    .hero-eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
-    .hero-eyebrow-line { width: 46px; height: 2px; background: var(--blue-bright); }
-    .hero-eyebrow-text { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; color: var(--blue-bright); text-transform: uppercase; }
-    .hero-h1 { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: clamp(40px, 6vw, 68px); line-height: 1.05; letter-spacing: -0.03em; margin-bottom: 24px; max-width: 900px; }
-    .hero-h1 .grad { background: linear-gradient(90deg, #fff 0%, var(--blue-bright) 45%, var(--cyan) 70%, #fff 100%); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: shimmer 4s linear infinite; }
-    .hero-sub { font-size: 18px; color: var(--silver); line-height: 1.75; font-weight: 300; margin-bottom: 36px; max-width: 620px; }
-    .hero-btns { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 40px; }
+    .hero-fade { position: absolute; bottom: 0; left: 0; right: 0; height: 140px; background: linear-gradient(to top, var(--bg), transparent); pointer-events: none; }
+    .hero-eyebrow { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 26px; border: 1px solid var(--line); border-radius: 50px; padding: 8px 18px 8px 12px; background: rgba(10,20,36,0.5); }
+    .hero-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--a4); animation: pulse-dot 2.4s infinite; }
+    .hero-eyebrow-text { font-size: 11px; font-weight: 600; letter-spacing: 0.2em; color: var(--silver); text-transform: uppercase; }
+    .hero-h1 {
+      font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+      font-size: clamp(42px, 6.2vw, 74px); line-height: 1.03; letter-spacing: -0.035em;
+      margin-bottom: 26px; max-width: 920px;
+    }
+    .hero-h1 .grad {
+      background: linear-gradient(90deg, var(--a3) 0%, var(--a1) 35%, var(--a2) 65%, var(--a3) 100%);
+      background-size: 200% auto; -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; animation: shimmer 5s linear infinite;
+    }
+    .hero-sub { font-size: 18px; color: var(--silver); line-height: 1.8; font-weight: 300; margin-bottom: 38px; max-width: 640px; }
+    .hero-btns { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 44px; }
     .hero-badges { display: flex; flex-wrap: wrap; gap: 10px; }
-    .hero-badge { font-size: 12px; color: var(--silver); font-weight: 500; border: 1px solid rgba(59,130,246,0.28); background: rgba(59,130,246,0.06); border-radius: 50px; padding: 7px 15px; }
+    .hero-badge {
+      font-size: 12px; color: var(--silver); font-weight: 500;
+      border: 1px solid var(--line); background: rgba(126,166,255,0.05);
+      border-radius: 50px; padding: 7px 15px; transition: border-color .2s, color .2s;
+    }
+    .hero-badge:hover { border-color: var(--a3); color: #fff; }
+    .hero-scroll {
+      position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+      color: var(--muted); font-size: 18px; animation: bob 2.2s ease-in-out infinite; pointer-events: none;
+    }
 
-    /* SERVICES */
+    /* ─── PRODUCT MARQUEE ────────────────────────────────────────────────────── */
+    #stack-strip { padding: 26px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(10,20,36,0.35); overflow: hidden; }
+    .marquee { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
+    .marquee-track { display: flex; width: max-content; animation: marquee 36s linear infinite; }
+    .marquee:hover .marquee-track { animation-play-state: paused; }
+    .marquee-group { display: flex; align-items: center; gap: 44px; padding-right: 44px; }
+    .mq-item { display: flex; align-items: center; gap: 44px; }
+    .mq-name { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.06em; color: var(--silver); white-space: nowrap; }
+    .mq-name em { font-style: normal; color: var(--muted); font-family: 'Inter', sans-serif; font-weight: 400; font-size: 12px; margin-left: 8px; }
+    .mq-sep { width: 5px; height: 5px; transform: rotate(45deg); background: linear-gradient(135deg, var(--a1), var(--a2)); flex-shrink: 0; }
+
+    /* ─── CARDS ──────────────────────────────────────────────────────────────── */
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
     .card {
-      background: linear-gradient(160deg, var(--navy-light), var(--navy));
-      border: 1px solid rgba(59,130,246,0.18); border-radius: 15px; padding: 28px;
-      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+      position: relative; background: linear-gradient(165deg, var(--panel-2), var(--panel));
+      border: 1px solid var(--line); border-radius: var(--radius); padding: 30px;
+      transition: transform .28s ease, border-color .28s ease, box-shadow .28s ease;
+      overflow: hidden;
     }
-    .card:hover { transform: translateY(-5px); border-color: var(--blue); box-shadow: 0 16px 48px rgba(37,99,235,0.14); }
-    .svc-icon { font-size: 30px; margin-bottom: 15px; }
-    .svc-name { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 600; margin-bottom: 10px; }
-    .svc-desc { font-size: 14px; color: var(--silver); line-height: 1.65; font-weight: 300; }
-    .svc-built { font-size: 11px; color: var(--muted); margin-top: 14px; letter-spacing: 0.04em; }
-    .svc-built span { color: var(--blue-bright); }
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(126,166,255,0.5), transparent);
+      opacity: 0; transition: opacity .28s ease;
+    }
+    .card:hover { transform: translateY(-5px); border-color: rgba(126,166,255,0.4); box-shadow: 0 22px 60px rgba(46,110,246,0.14); }
+    .card:hover::before { opacity: 1; }
+    .svc-icon {
+      width: 46px; height: 46px; border-radius: 12px; margin-bottom: 18px;
+      background: rgba(126,166,255,0.08); border: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: center; color: #8FC3FF;
+    }
+    .svc-icon svg { width: 23px; height: 23px; }
+    .svc-name { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 600; margin-bottom: 10px; letter-spacing: -0.01em; }
+    .svc-desc { font-size: 14px; color: var(--silver); line-height: 1.7; font-weight: 300; }
+    .svc-built { font-size: 11px; color: var(--muted); margin-top: 16px; letter-spacing: 0.04em; }
+    .svc-built span { color: #8FC3FF; }
 
-    /* CLIENTS */
-    #clients { background: linear-gradient(175deg, var(--navy) 0%, var(--bg) 100%); position: relative; }
+    /* ─── CLIENTS ────────────────────────────────────────────────────────────── */
+    #clients { background: linear-gradient(180deg, transparent, rgba(10,20,36,0.55) 30%, rgba(10,20,36,0.55) 70%, transparent); }
     .clients-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .client-card { background: linear-gradient(160deg, var(--navy-light), var(--navy)); border: 1px solid rgba(59,130,246,0.2); border-radius: 16px; padding: 30px; }
-    .client-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; }
-    .client-name { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; }
-    .client-status { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cyan); border: 1px solid rgba(34,211,238,0.4); border-radius: 50px; padding: 5px 12px; white-space: nowrap; }
-    .client-vertical { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
-    .client-desc { font-size: 14px; color: var(--silver); line-height: 1.7; font-weight: 300; }
+    .client-card { padding: 34px; }
+    .client-top { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+    .client-mono {
+      width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0;
+      font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 19px;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, rgba(46,138,246,0.25), rgba(124,92,252,0.25));
+      border: 1px solid var(--line); color: #CFE3FF;
+    }
+    .client-id { flex: 1; }
+    .client-name { font-family: 'Space Grotesk', sans-serif; font-size: 21px; font-weight: 700; letter-spacing: -0.01em; }
+    .client-vertical { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 3px; }
+    .client-status {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--a3); border: 1px solid rgba(34,211,238,0.4); background: rgba(34,211,238,0.06);
+      border-radius: 50px; padding: 5px 13px; white-space: nowrap;
+    }
+    .client-desc { font-size: 14px; color: var(--silver); line-height: 1.75; font-weight: 300; }
 
-    /* PRODUCTS */
-    .prod-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-    .prod-card { background: linear-gradient(160deg, var(--navy-light), var(--navy)); border: 1px solid rgba(59,130,246,0.16); border-radius: 14px; padding: 24px; }
-    .prod-name { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 600; margin-bottom: 8px; }
-    .prod-role { font-size: 13px; color: var(--silver); line-height: 1.6; font-weight: 300; }
+    /* ─── PRODUCTS ───────────────────────────────────────────────────────────── */
+    .prod-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .prod-card { padding: 26px; }
+    .prod-index { font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.14em; margin-bottom: 12px; }
+    .prod-name { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+    .prod-role { font-size: 13px; color: var(--silver); line-height: 1.65; font-weight: 300; }
 
-    /* PROCESS */
-    #process { background: var(--bg); }
-    .proc-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-top: 44px; }
-    .proc-step { position: relative; padding: 24px 18px; border-radius: 13px; background: linear-gradient(160deg, var(--navy-light), var(--navy)); border: 1px solid rgba(59,130,246,0.16); }
-    .proc-num { font-family: 'Space Grotesk', sans-serif; font-size: 30px; font-weight: 700; color: var(--blue-bright); opacity: 0.55; line-height: 1; margin-bottom: 10px; }
-    .proc-title { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-    .proc-desc { font-size: 12px; color: var(--silver); line-height: 1.55; font-weight: 300; }
+    /* ─── PROCESS TIMELINE ───────────────────────────────────────────────────── */
+    .timeline { position: relative; margin-top: 54px; }
+    .timeline::before {
+      content: ''; position: absolute; top: 23px; left: 4%; right: 4%; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--a1) 20%, var(--a2) 50%, var(--a3) 80%, transparent);
+      opacity: 0.5;
+    }
+    .proc-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; position: relative; }
+    .proc-step { text-align: center; padding: 0 8px; }
+    .proc-node {
+      width: 46px; height: 46px; margin: 0 auto 18px; border-radius: 50%;
+      background: var(--panel-2); border: 1px solid rgba(126,166,255,0.4);
+      display: flex; align-items: center; justify-content: center; position: relative; z-index: 1;
+      font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; color: #9FC8FF;
+      box-shadow: 0 0 0 6px var(--bg);
+      transition: border-color .25s, box-shadow .25s, color .25s;
+    }
+    .proc-step:hover .proc-node { border-color: var(--a3); color: #fff; box-shadow: 0 0 0 6px var(--bg), 0 0 24px rgba(34,211,238,0.35); }
+    .proc-title { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    .proc-desc { font-size: 12.5px; color: var(--silver); line-height: 1.6; font-weight: 300; }
 
-    /* CONTACT */
-    #contact { background: linear-gradient(175deg, var(--navy) 0%, var(--bg) 100%); }
-    .contact-wrap { max-width: 640px; margin: 0 auto; text-align: center; }
-    .contact-card { background: linear-gradient(160deg, var(--navy-light), var(--navy)); border: 1px solid rgba(59,130,246,0.28); border-radius: 18px; padding: 44px 36px; margin-top: 34px; }
-    .contact-email { font-family: 'Space Grotesk', sans-serif; font-size: clamp(20px, 3vw, 28px); font-weight: 600; color: #fff; word-break: break-all; }
-    .contact-email:hover { color: var(--blue-bright); }
+    /* ─── CONTACT ────────────────────────────────────────────────────────────── */
+    #contact { overflow: hidden; }
+    .contact-wrap { max-width: 660px; margin: 0 auto; text-align: center; position: relative; }
+    .contact-glow {
+      position: absolute; inset: -80px -160px; pointer-events: none; opacity: 0.4;
+      background: radial-gradient(ellipse 60% 55% at 50% 55%, rgba(58,110,246,0.22), transparent 70%);
+    }
+    .contact-card {
+      position: relative; background: linear-gradient(165deg, var(--panel-2), var(--panel));
+      border: 1px solid rgba(126,166,255,0.28); border-radius: 20px; padding: 48px 38px; margin-top: 36px;
+    }
+    .contact-card::before {
+      content: ''; position: absolute; top: 0; left: 14%; right: 14%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(140,190,255,0.7), transparent);
+    }
+    .contact-email { font-family: 'Space Grotesk', sans-serif; font-size: clamp(20px, 3vw, 28px); font-weight: 600; color: #fff; word-break: break-all; transition: color .2s; }
+    .contact-email:hover { color: var(--a3); }
 
-    /* FOOTER */
-    footer { background: #030711; padding: 48px 0 28px; border-top: 1px solid rgba(59,130,246,0.14); }
-    .footer-grid { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 28px; margin-bottom: 34px; }
-    .footer-tag { font-size: 13px; color: var(--muted); line-height: 1.7; max-width: 360px; font-weight: 300; margin-top: 14px; }
-    .footer-col-title { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: var(--silver); text-transform: uppercase; margin-bottom: 14px; }
-    .footer-link { display: block; font-size: 13px; color: var(--muted); margin-bottom: 9px; font-weight: 300; transition: color 0.2s; }
-    .footer-link:hover { color: var(--silver); }
-    .footer-bottom { border-top: 1px solid rgba(59,130,246,0.1); padding-top: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    /* ─── FOOTER ─────────────────────────────────────────────────────────────── */
+    footer { background: #02040A; padding: 52px 0 28px; border-top: 1px solid var(--line); position: relative; }
+    footer::before {
+      content: ''; position: absolute; top: -1px; left: 20%; right: 20%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(46,138,246,0.6), rgba(124,92,252,0.6), transparent);
+    }
+    .footer-grid { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 30px; margin-bottom: 36px; }
+    .footer-tag { font-size: 13px; color: var(--muted); line-height: 1.75; max-width: 370px; font-weight: 300; margin-top: 15px; }
+    .footer-col-title { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; color: var(--silver); text-transform: uppercase; margin-bottom: 15px; }
+    .footer-link { display: block; font-size: 13px; color: var(--muted); margin-bottom: 10px; font-weight: 300; transition: color .2s; }
+    .footer-link:hover { color: var(--a3); }
+    .footer-bottom { border-top: 1px solid rgba(126,166,255,0.08); padding-top: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
     .footer-copy, .footer-group { font-size: 12px; color: var(--muted); }
 
+    /* ─── RESPONSIVE ─────────────────────────────────────────────────────────── */
     @media (max-width: 900px) {
-      .grid-3 { grid-template-columns: 1fr 1fr; }
+      .grid-3, .prod-grid { grid-template-columns: 1fr 1fr; }
       .clients-grid { grid-template-columns: 1fr; }
-      .proc-grid { grid-template-columns: 1fr 1fr; }
+      .proc-grid { grid-template-columns: 1fr 1fr; row-gap: 34px; }
+      .timeline::before { display: none; }
+      .proc-node { box-shadow: none; }
     }
     @media (max-width: 600px) {
       .nav-links { display: none; }
       .hamburger { display: block; }
-      .grid-3 { grid-template-columns: 1fr; }
-      .proc-grid { grid-template-columns: 1fr; }
-      .section { padding: 68px 0; }
+      .grid-3, .prod-grid, .proc-grid { grid-template-columns: 1fr; }
+      .section { padding: 72px 0; }
+      .hero-scroll { display: none; }
     }
-    @media (prefers-reduced-motion: reduce) { * { animation: none !important; scroll-behavior: auto; } }
+
+    /* ─── REDUCED MOTION ─────────────────────────────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .aurora span, .hero-dot, .hero-scroll, .hero-h1 .grad, .btn-primary::after { animation: none !important; }
+      .marquee-track { animation: none !important; }
+      .marquee { overflow-x: auto; mask-image: none; -webkit-mask-image: none; }
+      .card, .btn, .proc-node { transition: none !important; }
+    }
   </style>
 </head>
 <body>
 
-<!-- NAV -->
+<div class="grain" aria-hidden="true"></div>
+
+<!-- ─── NAV ─────────────────────────────────────────────────────────────────── -->
 <nav id="nav">
   <div class="nav-inner">
     <a href="#hero" class="nav-logo" aria-label="Aurora AI Agency — home">
@@ -232,7 +380,7 @@
       <button class="nav-link" onclick="goTo('clients')">Clients</button>
       <button class="nav-link" onclick="goTo('products')">Products</button>
       <button class="nav-link" onclick="goTo('process')">How We Work</button>
-      <a href="mailto:aaron221048@gmail.com?subject=Aurora%20AI%20Agency%20enquiry" class="btn btn-primary" style="font-size:13px;padding:9px 20px;">Start a Project</a>
+      <a href="mailto:aaron221048@gmail.com?subject=Aurora%20AI%20Agency%20enquiry" class="btn btn-primary" style="font-size:13px;padding:10px 20px;">Start a Project</a>
     </div>
     <button class="hamburger" id="hamburger" onclick="toggleMobileNav()" aria-label="Menu">☰</button>
   </div>
@@ -245,73 +393,118 @@
   <a href="mailto:aaron221048@gmail.com?subject=Aurora%20AI%20Agency%20enquiry" class="btn btn-primary">Start a Project</a>
 </div>
 
-<!-- HERO -->
+<!-- ─── HERO ────────────────────────────────────────────────────────────────── -->
 <section id="hero">
-  <div class="hero-grid-bg"></div>
+  <div class="aurora" aria-hidden="true">
+    <span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span>
+  </div>
+  <div class="hero-grid-lines" aria-hidden="true"></div>
+  <div class="hero-fade" aria-hidden="true"></div>
   <div class="container">
-    <div class="fade-up">
+    <div class="reveal in">
       <div class="hero-eyebrow">
-        <div class="hero-eyebrow-line"></div>
+        <span class="hero-dot" aria-hidden="true"></span>
         <span class="hero-eyebrow-text">AI-Native Automation &amp; Software · Australia</span>
       </div>
-      <h1 class="hero-h1">The systems your business needs to <span class="grad">capture, serve &amp; automate</span> — built and kept running.</h1>
-      <p class="hero-sub">Aurora AI Agency designs, builds, and operates production systems for businesses — websites, lead-generation funnels, AI chatbots, and multi-agent automation. Automation is the default, not an add-on: agents do the repetitive work, humans approve the judgement calls.</p>
+      <h1 class="hero-h1">The systems your business needs to <span class="grad">capture, serve&nbsp;&amp;&nbsp;automate</span> — built and kept running.</h1>
+      <p class="hero-sub">Aurora AI Agency designs, builds, and operates production systems — websites, lead-generation funnels, AI chatbots, and multi-agent automation. Automation is the default, not an add-on: agents do the repetitive work, humans approve the judgement calls.</p>
       <div class="hero-btns">
         <a href="mailto:aaron221048@gmail.com?subject=Aurora%20AI%20Agency%20enquiry" class="btn btn-primary">Start a Project →</a>
         <button class="btn btn-outline" onclick="goTo('services')">See What We Build</button>
       </div>
       <div class="hero-badges">
-        <span class="hero-badge">⚡ Lead-gen websites</span>
-        <span class="hero-badge">🤖 AI chatbots</span>
-        <span class="hero-badge">🔗 Multi-agent automation</span>
-        <span class="hero-badge">📊 Operator dashboards</span>
-        <span class="hero-badge">🛡️ Security testing</span>
+        <span class="hero-badge">Lead-gen websites</span>
+        <span class="hero-badge">AI chatbots</span>
+        <span class="hero-badge">Multi-agent automation</span>
+        <span class="hero-badge">Operator dashboards</span>
+        <span class="hero-badge">Security testing</span>
       </div>
     </div>
   </div>
+  <div class="hero-scroll" aria-hidden="true">⌄</div>
 </section>
 
-<!-- SERVICES -->
+<!-- ─── PRODUCT STACK STRIP ─────────────────────────────────────────────────── -->
+<div id="stack-strip" aria-label="Aurora's own product stack">
+  <div class="marquee">
+    <div class="marquee-track">
+      <div class="marquee-group">
+        <span class="mq-item"><span class="mq-name">AutoBoros<em>automation engine</em></span><span class="mq-sep"></span></span>
+        <span class="mq-item"><span class="mq-name">Cockpit<em>operator UI</em></span><span class="mq-sep"></span></span>
+        <span class="mq-item"><span class="mq-name">Nexus<em>agent dashboard</em></span><span class="mq-sep"></span></span>
+        <span class="mq-item"><span class="mq-name">HexStrike AI<em>security platform</em></span><span class="mq-sep"></span></span>
+        <span class="mq-item"><span class="mq-name">Gastown<em>project scaffolder</em></span><span class="mq-sep"></span></span>
+        <span class="mq-item"><span class="mq-name">Client Portal<em>jobs &amp; invoices</em></span><span class="mq-sep"></span></span>
+        <span class="mq-item"><span class="mq-name">n8n<em>workflow layer</em></span><span class="mq-sep"></span></span>
+        <span class="mq-item"><span class="mq-name">MCP<em>agent tool mesh</em></span><span class="mq-sep"></span></span>
+      </div>
+      <div class="marquee-group" aria-hidden="true">
+        <span class="mq-item"><span class="mq-name">AutoBoros<em>automation engine</em></span><span class="mq-sep"></span></span>
+        <span class="mq-item"><span class="mq-name">Cockpit<em>operator UI</em></span><span class="mq-sep"></span></span>
+        <span class="mq-item"><span class="mq-name">Nexus<em>agent dashboard</em></span><span class="mq-sep"></span></span>
+        <span class="mq-item"><span class="mq-name">HexStrike AI<em>security platform</em></span><span class="mq-sep"></span></span>
+        <span class="mq-item"><span class="mq-name">Gastown<em>project scaffolder</em></span><span class="mq-sep"></span></span>
+        <span class="mq-item"><span class="mq-name">Client Portal<em>jobs &amp; invoices</em></span><span class="mq-sep"></span></span>
+        <span class="mq-item"><span class="mq-name">n8n<em>workflow layer</em></span><span class="mq-sep"></span></span>
+        <span class="mq-item"><span class="mq-name">MCP<em>agent tool mesh</em></span><span class="mq-sep"></span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SERVICES ────────────────────────────────────────────────────────────── -->
 <section id="services" class="section">
   <div class="container">
-    <div style="text-align:center; margin-bottom:52px;">
+    <div style="text-align:center; margin-bottom:56px;" class="reveal">
       <span class="label-chip">What We Offer</span>
       <h2 class="section-title">Service Lines</h2>
-      <p class="section-sub" style="margin:14px auto 0;">Six ways we help a modern small-to-mid business capture leads, serve customers, and run operations.</p>
+      <p class="section-sub" style="margin:16px auto 0;">Six ways we help a modern small-to-mid business capture leads, serve customers, and run operations.</p>
     </div>
     <div class="grid-3">
-      <div class="card">
-        <div class="svc-icon">🌐</div>
+      <div class="card reveal">
+        <div class="svc-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.7 2.6 4 5.7 4 9s-1.3 6.4-4 9c-2.7-2.6-4-5.7-4-9s1.3-6.4 4-9Z"/></svg>
+        </div>
         <h3 class="svc-name">Lead-Gen Websites</h3>
         <p class="svc-desc">A fast, SEO-ready site with an online enquiry form that pipes leads straight into your CRM and automation — no lead ever lost.</p>
         <p class="svc-built">Built on <span>Cloudflare Pages · Workers · n8n</span></p>
       </div>
-      <div class="card">
-        <div class="svc-icon">💬</div>
+      <div class="card reveal" data-d="1">
+        <div class="svc-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H4l2.5-2.9A8 8 0 1 1 21 12Z"/><path d="M9 11.5h.01M13 11.5h.01M17 11.5h.01" stroke-width="2.4"/></svg>
+        </div>
         <h3 class="svc-name">AI Chatbots &amp; Flows</h3>
         <p class="svc-desc">A branded chatbot for web, Messenger, or Instagram — trained on your voice, with FAQ, lead capture, and clean human handoff.</p>
         <p class="svc-built">Built on <span>ManyChat · n8n · LLM agents</span></p>
       </div>
-      <div class="card">
-        <div class="svc-icon">🔗</div>
+      <div class="card reveal" data-d="2">
+        <div class="svc-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.4"/><circle cx="19" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M7 7.5l3.5 8M17 7.5l-3.5 8M7.4 6h9.2"/></svg>
+        </div>
         <h3 class="svc-name">Multi-Agent Automation</h3>
         <p class="svc-desc">Back-office automation on an approval ladder — agents draft, humans approve, operations get faster without losing control.</p>
         <p class="svc-built">Built on <span>AutoBoros (FastAPI · n8n · MCP)</span></p>
       </div>
-      <div class="card">
-        <div class="svc-icon">📊</div>
+      <div class="card reveal">
+        <div class="svc-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19a9 9 0 1 1 16 0"/><path d="M12 15l4.5-5.5"/><circle cx="12" cy="15" r="1.4" fill="currentColor"/></svg>
+        </div>
         <h3 class="svc-name">Operator Dashboards</h3>
         <p class="svc-desc">A real-time cockpit to watch jobs, approvals, the audit trail, and analytics — the full picture in one screen.</p>
         <p class="svc-built">Built on <span>React 19 cockpit · Nexus dashboard</span></p>
       </div>
-      <div class="card">
-        <div class="svc-icon">🛡️</div>
+      <div class="card reveal" data-d="1">
+        <div class="svc-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 8.4-7 10-4-1.6-7-5.6-7-10V6l7-3Z"/><path d="M9.2 12l2 2 3.6-3.8"/></svg>
+        </div>
         <h3 class="svc-name">Security Testing</h3>
         <p class="svc-desc">Authorised red-team and penetration-test engagements with live tooling and structured, plain-English reporting.</p>
         <p class="svc-built">Built on <span>HexStrike AI</span></p>
       </div>
-      <div class="card">
-        <div class="svc-icon">🗂️</div>
+      <div class="card reveal" data-d="2">
+        <div class="svc-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/><path d="M8 13.5h8"/></svg>
+        </div>
         <h3 class="svc-name">Client Portal</h3>
         <p class="svc-desc">A single login where you see your jobs, deliverables, and invoices in one place — always current, always in sync.</p>
         <p class="svc-built">Built on <span>Next.js client-portal</span></p>
@@ -320,83 +513,92 @@
   </div>
 </section>
 
-<!-- CLIENTS -->
+<!-- ─── CLIENTS ─────────────────────────────────────────────────────────────── -->
 <section id="clients" class="section">
   <div class="container">
-    <div style="text-align:center; margin-bottom:52px;">
+    <div style="text-align:center; margin-bottom:56px;" class="reveal">
       <span class="label-chip">Who We Deliver For</span>
       <h2 class="section-title">Clients in Delivery</h2>
-      <p class="section-sub" style="margin:14px auto 0;">Real engagements, actively being built and operated.</p>
+      <p class="section-sub" style="margin:16px auto 0;">Real engagements, actively being built and operated.</p>
     </div>
     <div class="clients-grid">
-      <div class="client-card">
+      <div class="card client-card reveal">
         <div class="client-top">
-          <span class="client-name">Y.M.I Roofing</span>
+          <span class="client-mono" aria-hidden="true">Y</span>
+          <span class="client-id">
+            <span class="client-name">Y.M.I Roofing</span>
+            <div class="client-vertical">Local Trades · Melbourne</div>
+          </span>
           <span class="client-status">In Delivery</span>
         </div>
-        <div class="client-vertical">Local Trades · Melbourne</div>
         <p class="client-desc">A lead-generation website plus an ops-automation package for a Melbourne roof-tiling specialist. Website enquiry form → automation → CRM and SMS follow-up, with a review machine, missed-call follow-up, and maintenance reminders.</p>
       </div>
-      <div class="client-card">
+      <div class="card client-card reveal" data-d="1">
         <div class="client-top">
-          <span class="client-name">Evermystic</span>
+          <span class="client-mono" aria-hidden="true">E</span>
+          <span class="client-id">
+            <span class="client-name">Evermystic</span>
+            <div class="client-vertical">Content &amp; E-commerce · DTC Brand</div>
+          </span>
           <span class="client-status">In Delivery</span>
         </div>
-        <div class="client-vertical">Content &amp; E-commerce · DTC Brand</div>
         <p class="client-desc">An AI brand-voice chatbot plus automated content and ops SOPs. Brand-voice extraction, on-tone FAQ generation, and a welcome flow — run as a multi-phase SOP on the AutoBoros cockpit.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- PRODUCTS -->
+<!-- ─── PRODUCTS ────────────────────────────────────────────────────────────── -->
 <section id="products" class="section">
   <div class="container">
-    <div style="text-align:center; margin-bottom:52px;">
+    <div style="text-align:center; margin-bottom:56px;" class="reveal">
       <span class="label-chip">What Powers Delivery</span>
       <h2 class="section-title">Our Own Products</h2>
-      <p class="section-sub" style="margin:14px auto 0;">The systems Aurora runs on — so every client engagement is automated by default.</p>
+      <p class="section-sub" style="margin:16px auto 0;">The systems Aurora runs on — so every client engagement is automated by default.</p>
     </div>
     <div class="prod-grid">
-      <div class="prod-card"><div class="prod-name">AutoBoros</div><div class="prod-role">The automation engine — multi-agent orchestration on an L0–L4 human-in-the-loop job ladder. FastAPI · n8n · MCP.</div></div>
-      <div class="prod-card"><div class="prod-name">AutoBoros Cockpit</div><div class="prod-role">The operator UI for the engine — live jobs, approvals, and an audit feed over WebSocket.</div></div>
-      <div class="prod-card"><div class="prod-name">Nexus Dashboard</div><div class="prod-role">Enterprise dashboard for monitoring multi-agent systems, performance, and governance.</div></div>
-      <div class="prod-card"><div class="prod-name">HexStrike AI</div><div class="prod-role">Red-team platform with live Kali integration and structured security reporting.</div></div>
-      <div class="prod-card"><div class="prod-name">Gastown</div><div class="prod-role">Internal CLI that scaffolds new projects from a plain-language description.</div></div>
-      <div class="prod-card"><div class="prod-name">Client Portal</div><div class="prod-role">Where each client sees their jobs, deliverables, and invoices in one place.</div></div>
+      <div class="card prod-card reveal"><div class="prod-index">01</div><div class="prod-name">AutoBoros</div><div class="prod-role">The automation engine — multi-agent orchestration on an L0–L4 human-in-the-loop job ladder. FastAPI · n8n · MCP.</div></div>
+      <div class="card prod-card reveal" data-d="1"><div class="prod-index">02</div><div class="prod-name">AutoBoros Cockpit</div><div class="prod-role">The operator UI for the engine — live jobs, approvals, and an audit feed over WebSocket.</div></div>
+      <div class="card prod-card reveal" data-d="2"><div class="prod-index">03</div><div class="prod-name">Nexus Dashboard</div><div class="prod-role">Enterprise dashboard for monitoring multi-agent systems, performance, and governance.</div></div>
+      <div class="card prod-card reveal"><div class="prod-index">04</div><div class="prod-name">HexStrike AI</div><div class="prod-role">Red-team platform with live Kali integration and structured security reporting.</div></div>
+      <div class="card prod-card reveal" data-d="1"><div class="prod-index">05</div><div class="prod-name">Gastown</div><div class="prod-role">Internal CLI that scaffolds new projects from a plain-language description.</div></div>
+      <div class="card prod-card reveal" data-d="2"><div class="prod-index">06</div><div class="prod-name">Client Portal</div><div class="prod-role">Where each client sees their jobs, deliverables, and invoices in one place.</div></div>
     </div>
   </div>
 </section>
 
-<!-- PROCESS -->
+<!-- ─── PROCESS ─────────────────────────────────────────────────────────────── -->
 <section id="process" class="section">
   <div class="container">
-    <div style="text-align:center; margin-bottom:8px;">
+    <div style="text-align:center;" class="reveal">
       <span class="label-chip">How We Work</span>
       <h2 class="section-title">From Intake to Operating</h2>
-      <p class="section-sub" style="margin:14px auto 0;">A clear five-step path — we don't just build it, we keep it running.</p>
+      <p class="section-sub" style="margin:16px auto 0;">A clear five-step path — we don't just build it, we keep it running.</p>
     </div>
-    <div class="proc-grid">
-      <div class="proc-step"><div class="proc-num">01</div><div class="proc-title">Intake &amp; Scope</div><div class="proc-desc">Capture the goal, define the deliverable, agree the price.</div></div>
-      <div class="proc-step"><div class="proc-num">02</div><div class="proc-title">Build</div><div class="proc-desc">Work happens in your repo — automated wherever possible.</div></div>
-      <div class="proc-step"><div class="proc-num">03</div><div class="proc-title">Wire Automation</div><div class="proc-desc">Connect the deliverable into AutoBoros / n8n so leads and ops flow.</div></div>
-      <div class="proc-step"><div class="proc-num">04</div><div class="proc-title">Launch</div><div class="proc-desc">Deploy, point DNS, set secrets, verify the funnel end-to-end.</div></div>
-      <div class="proc-step"><div class="proc-num">05</div><div class="proc-title">Operate</div><div class="proc-desc">Monitor via the cockpit; you track status in the client portal.</div></div>
+    <div class="timeline reveal">
+      <div class="proc-grid">
+        <div class="proc-step"><div class="proc-node">01</div><div class="proc-title">Intake &amp; Scope</div><div class="proc-desc">Capture the goal, define the deliverable, agree the price.</div></div>
+        <div class="proc-step"><div class="proc-node">02</div><div class="proc-title">Build</div><div class="proc-desc">Work happens in your repo — automated wherever possible.</div></div>
+        <div class="proc-step"><div class="proc-node">03</div><div class="proc-title">Wire Automation</div><div class="proc-desc">Connect the deliverable into AutoBoros / n8n so leads and ops flow.</div></div>
+        <div class="proc-step"><div class="proc-node">04</div><div class="proc-title">Launch</div><div class="proc-desc">Deploy, point DNS, set secrets, verify the funnel end-to-end.</div></div>
+        <div class="proc-step"><div class="proc-node">05</div><div class="proc-title">Operate</div><div class="proc-desc">Monitor via the cockpit; you track status in the client portal.</div></div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- CONTACT -->
+<!-- ─── CONTACT ─────────────────────────────────────────────────────────────── -->
 <section id="contact" class="section">
   <div class="container">
-    <div class="contact-wrap">
-      <span class="label-chip">Get In Touch</span>
+    <div class="contact-wrap reveal">
+      <div class="contact-glow" aria-hidden="true"></div>
+      <span class="label-chip" style="justify-content:center;">Get In Touch</span>
       <h2 class="section-title">Start a Project</h2>
-      <p class="section-sub" style="margin:14px auto 0;">Tell us what you're trying to automate or launch. We'll scope it and come back with a plan.</p>
+      <p class="section-sub" style="margin:16px auto 0;">Tell us what you're trying to automate or launch. We'll scope it and come back with a plan.</p>
       <div class="contact-card">
-        <p style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:12px;">Email us</p>
+        <p style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.16em;margin-bottom:14px;">Email us</p>
         <a href="mailto:aaron221048@gmail.com?subject=Aurora%20AI%20Agency%20enquiry" class="contact-email">aaron221048@gmail.com</a>
-        <div style="margin-top:28px;">
+        <div style="margin-top:30px;">
           <a href="mailto:aaron221048@gmail.com?subject=Aurora%20AI%20Agency%20enquiry" class="btn btn-primary">Send an Enquiry →</a>
         </div>
       </div>
@@ -404,7 +606,7 @@
   </div>
 </section>
 
-<!-- FOOTER -->
+<!-- ─── FOOTER ──────────────────────────────────────────────────────────────── -->
 <footer>
   <div class="container">
     <div class="footer-grid">
@@ -456,6 +658,18 @@
   }
   function toggleMobileNav() { document.getElementById('mobile-nav').classList.toggle('open'); }
   function closeMobileNav() { document.getElementById('mobile-nav').classList.remove('open'); }
+
+  // Scroll-reveal — .reveal elements slide in when they enter the viewport.
+  // Gated on the html.js flag set in <head>; without JS everything is visible.
+  (function () {
+    if (!('IntersectionObserver' in window)) return;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+    document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+  })();
 </script>
 
 </body>
