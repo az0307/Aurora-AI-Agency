@@ -1,0 +1,209 @@
+{
+  "name": "Aurora: Person Deactivate",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aurora-person-deactivate",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "webhookId": "aurora-person-deactivate"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json.body;\nif (!b.email) throw new Error('email required to identify person');\nreturn [{ json: {\n  email: b.email,\n  full_name: b.full_name || b.email,\n  reason: b.reason || 'Not specified',\n  deactivated_by: b.deactivated_by || 'system',\n  send_farewell: b.send_farewell !== false\n} }];"
+      },
+      "id": "parse-input",
+      "name": "Parse Deactivate Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": { "value": "={{ $env.GOOGLE_SHEET_ID }}" },
+        "sheetName": "Persons",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.email }}",
+            "Status": "Inactive",
+            "DeactivatedAt": "={{ new Date().toLocaleDateString('en-AU') }}",
+            "DeactivateReason": "={{ $json.reason }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "update-crm-status",
+      "name": "Set CRM Status Inactive",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [600, 200],
+      "credentials": { "googleSheetsOAuth2Api": { "id": "google-sheets", "name": "Google Sheets" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "model": "claude-haiku-4-5-20251001",
+          "max_tokens": 350,
+          "messages": [
+            {
+              "role": "user",
+              "content": "Write a brief, gracious offboarding note for a contact who is being removed from the Aurora AI Agency network. Under 100 words. Warm but concise. Thank them for their connection, note that their data will be retained per Aurora's privacy policy, and mention they can reconnect at any time by emailing aaron@auroraaiagency.com.au. Person name: {{ $json.full_name }}. Sign off from 'Aaron @ Aurora AI Agency'. Return only the email body — no subject line, no tags."
+            }
+          ]
+        }
+      },
+      "id": "generate-farewell",
+      "name": "Generate Farewell Email (Haiku)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [600, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.AUTOBOROS_API_URL }}/jobs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "Bearer {{ $env.AUTOBOROS_JWT }}" }]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "t": "Deactivate Person: {{ $('parse-input').item.json.full_name }}",
+          "client": "={{ $('parse-input').item.json.full_name }}",
+          "status": "Inbox",
+          "lvl": 1,
+          "actor": "You",
+          "src": "n8n-person-deactivate",
+          "skill": "PersonAdmin",
+          "steps": ["Confirm deactivation", "Archive related records", "Cancel any outstanding tasks"],
+          "ask": "Person deactivated. Reason: {{ $('parse-input').item.json.reason }}. Review for any outstanding tasks to cancel."
+        }
+      },
+      "id": "create-archive-job",
+      "name": "Create Archive Job in AutoBoros",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const farewell = $('generate-farewell').item.json.content[0].text;\nconst person = $('parse-input').item.json;\nreturn [{ json: { ...person, farewell_email: farewell } }];"
+      },
+      "id": "merge-data",
+      "name": "Merge",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const person = $input.first().json;\nif (!person.send_farewell) return [{ json: { ...person, email_sent: false } }];\nreturn [{ json: { ...person, email_sent: true } }];"
+      },
+      "id": "check-farewell-flag",
+      "name": "Check Farewell Flag",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [{ "value1": "={{ $json.send_farewell }}", "value2": true }]
+        }
+      },
+      "id": "if-send-farewell",
+      "name": "Send Farewell?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1400, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "aaron@auroraaiagency.com.au",
+        "toEmail": "={{ $json.email }}",
+        "subject": "Staying in touch — Aurora AI Agency",
+        "emailType": "text",
+        "message": "={{ $json.farewell_email }}"
+      },
+      "id": "send-farewell-email",
+      "name": "Send Farewell Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1600, 200],
+      "credentials": { "smtp": { "id": "smtp-aurora", "name": "Aurora SMTP" } }
+    },
+    {
+      "parameters": {
+        "from": "={{ $env.TWILIO_FROM }}",
+        "to": "={{ $env.AURORA_OWNER_PHONE }}",
+        "message": "Person deactivated: {{ $('parse-input').item.json.full_name }} ({{ $('parse-input').item.json.email }}). Reason: {{ $('parse-input').item.json.reason }}. CRM updated. Archive job created."
+      },
+      "id": "notify-owner-sms",
+      "name": "SMS Aaron",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1800, 300],
+      "credentials": { "twilioApi": { "id": "twilio-creds", "name": "Twilio" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, person: $('parse-input').item.json.email, message: 'Person deactivated' } }}"
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2000, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Parse Deactivate Data", "type": "main", "index": 0 }]] },
+    "Parse Deactivate Data": {
+      "main": [[
+        { "node": "Set CRM Status Inactive", "type": "main", "index": 0 },
+        { "node": "Generate Farewell Email (Haiku)", "type": "main", "index": 0 }
+      ]]
+    },
+    "Set CRM Status Inactive": { "main": [[{ "node": "Create Archive Job in AutoBoros", "type": "main", "index": 0 }]] },
+    "Generate Farewell Email (Haiku)": { "main": [[{ "node": "Create Archive Job in AutoBoros", "type": "main", "index": 0 }]] },
+    "Create Archive Job in AutoBoros": { "main": [[{ "node": "Merge", "type": "main", "index": 0 }]] },
+    "Merge": { "main": [[{ "node": "Check Farewell Flag", "type": "main", "index": 0 }]] },
+    "Check Farewell Flag": { "main": [[{ "node": "Send Farewell?", "type": "main", "index": 0 }]] },
+    "Send Farewell?": {
+      "main": [
+        [{ "node": "Send Farewell Email", "type": "main", "index": 0 }],
+        [{ "node": "SMS Aaron", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Farewell Email": { "main": [[{ "node": "SMS Aaron", "type": "main", "index": 0 }]] },
+    "SMS Aaron": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["aurora-internal", "person-admin"],
+  "meta": {
+    "description": "POST {email, full_name?, reason?, deactivated_by?, send_farewell?} → sets person Status=Inactive in Google Sheets CRM, optionally sends AI-generated farewell email, creates AutoBoros archive job, SMS Aaron.",
+    "requiredEnvVars": ["ANTHROPIC_API_KEY", "AUTOBOROS_API_URL", "AUTOBOROS_JWT", "GOOGLE_SHEET_ID", "TWILIO_FROM", "AURORA_OWNER_PHONE"]
+  }
+}

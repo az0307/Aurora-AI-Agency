@@ -1,0 +1,186 @@
+{
+  "name": "Aurora: Person Create",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aurora-person-create",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "webhookId": "aurora-person-create"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json.body;\nif (!b.first_name || !b.email) throw new Error('first_name and email required');\nreturn [{ json: {\n  first_name: b.first_name,\n  last_name: b.last_name || '',\n  full_name: `${b.first_name} ${b.last_name || ''}`.trim(),\n  email: b.email,\n  phone: b.phone || '',\n  company: b.company || '',\n  role: b.role || '',\n  source: b.source || 'manual',\n  tags: (b.tags || []).join(', ')\n} }];"
+      },
+      "id": "parse-input",
+      "name": "Parse Person Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "model": "claude-haiku-4-5-20251001",
+          "max_tokens": 400,
+          "messages": [
+            {
+              "role": "user",
+              "content": "Write a short, warm confirmation email welcoming a new contact to the Aurora AI Agency network. Keep it under 120 words. Friendly and professional. Mention: they are now in the Aurora network, Aurora can be reached at aaron@auroraaiagency.com.au, and their details are on file. Person name: {{ $json.full_name }}. Company: {{ $json.company }}. Sign off from 'Aaron @ Aurora AI Agency'. Return only the email body — no subject line, no tags."
+            }
+          ]
+        }
+      },
+      "id": "generate-confirmation",
+      "name": "Generate Confirmation Email (Haiku)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [600, 200]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": { "value": "={{ $env.GOOGLE_SHEET_ID }}" },
+        "sheetName": "Persons",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "FirstName": "={{ $json.first_name }}",
+            "LastName": "={{ $json.last_name }}",
+            "Email": "={{ $json.email }}",
+            "Phone": "={{ $json.phone }}",
+            "Company": "={{ $json.company }}",
+            "Role": "={{ $json.role }}",
+            "Source": "={{ $json.source }}",
+            "Tags": "={{ $json.tags }}",
+            "Status": "Active",
+            "Created": "={{ new Date().toLocaleDateString('en-AU') }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "add-to-crm",
+      "name": "Add to Google Sheets CRM",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [600, 400],
+      "credentials": { "googleSheetsOAuth2Api": { "id": "google-sheets", "name": "Google Sheets" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.AUTOBOROS_API_URL }}/jobs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "Bearer {{ $env.AUTOBOROS_JWT }}" }]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "t": "New Person: {{ $('parse-input').item.json.full_name }}",
+          "client": "={{ $('parse-input').item.json.full_name }}",
+          "status": "Inbox",
+          "lvl": 1,
+          "actor": "You",
+          "src": "n8n-person-create",
+          "skill": "PersonAdmin",
+          "steps": ["Review new contact", "Assign to pipeline", "Schedule intro call if relevant"],
+          "ask": "New person added to CRM. Review and assign to appropriate pipeline."
+        }
+      },
+      "id": "create-intake-job",
+      "name": "Create Intake Job in AutoBoros",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const confirm = $('generate-confirmation').item.json.content[0].text;\nconst person = $('parse-input').item.json;\nreturn [{ json: { ...person, confirmation_email: confirm } }];"
+      },
+      "id": "merge-data",
+      "name": "Merge",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "aaron@auroraaiagency.com.au",
+        "toEmail": "={{ $json.email }}",
+        "subject": "You're in the Aurora network, {{ $json.first_name }}!",
+        "emailType": "text",
+        "message": "={{ $json.confirmation_email }}"
+      },
+      "id": "send-confirmation-email",
+      "name": "Send Confirmation Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1200, 300],
+      "credentials": { "smtp": { "id": "smtp-aurora", "name": "Aurora SMTP" } }
+    },
+    {
+      "parameters": {
+        "from": "={{ $env.TWILIO_FROM }}",
+        "to": "={{ $env.AURORA_OWNER_PHONE }}",
+        "message": "New person added: {{ $('parse-input').item.json.full_name }} ({{ $('parse-input').item.json.company }}). Source: {{ $('parse-input').item.json.source }}. CRM updated. Job created."
+      },
+      "id": "notify-owner-sms",
+      "name": "SMS Aaron",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1400, 300],
+      "credentials": { "twilioApi": { "id": "twilio-creds", "name": "Twilio" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, person: $('parse-input').item.json.full_name, message: 'Person created and confirmation sent' } }}"
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1600, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Parse Person Data", "type": "main", "index": 0 }]] },
+    "Parse Person Data": {
+      "main": [[
+        { "node": "Generate Confirmation Email (Haiku)", "type": "main", "index": 0 },
+        { "node": "Add to Google Sheets CRM", "type": "main", "index": 0 }
+      ]]
+    },
+    "Generate Confirmation Email (Haiku)": { "main": [[{ "node": "Create Intake Job in AutoBoros", "type": "main", "index": 0 }]] },
+    "Add to Google Sheets CRM": { "main": [[{ "node": "Create Intake Job in AutoBoros", "type": "main", "index": 0 }]] },
+    "Create Intake Job in AutoBoros": { "main": [[{ "node": "Merge", "type": "main", "index": 0 }]] },
+    "Merge": { "main": [[{ "node": "Send Confirmation Email", "type": "main", "index": 0 }]] },
+    "Send Confirmation Email": { "main": [[{ "node": "SMS Aaron", "type": "main", "index": 0 }]] },
+    "SMS Aaron": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["aurora-internal", "person-admin"],
+  "meta": {
+    "description": "POST {first_name, email, last_name?, phone?, company?, role?, source?, tags?} → adds person to Google Sheets CRM (Persons tab), creates AutoBoros intake job, sends confirmation email, SMS Aaron.",
+    "requiredEnvVars": ["ANTHROPIC_API_KEY", "AUTOBOROS_API_URL", "AUTOBOROS_JWT", "GOOGLE_SHEET_ID", "TWILIO_FROM", "AURORA_OWNER_PHONE"]
+  }
+}

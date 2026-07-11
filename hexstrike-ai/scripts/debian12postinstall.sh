@@ -9,6 +9,15 @@
 
 set -euo pipefail
 
+# ── Preflight checks ──────────────────────────────────────────────────────────
+if [[ "$(id -u)" -ne 0 ]]; then
+    echo "ERROR: Must be run as root (sudo bash $0)." >&2
+    exit 1
+fi
+if ! grep -qi "bookworm\|debian 12" /etc/os-release 2>/dev/null; then
+    echo "WARNING: This script targets Debian 12 (Bookworm). Detected OS may differ." >&2
+fi
+
 # ========================== CONFIGURATION ==========================
 NEW_HOSTNAME="srv01"                    # Change to your desired hostname
 ADMIN_USER=""                           # Leave empty to skip user creation (use existing)
@@ -57,8 +66,7 @@ if [[ -n "$ADMIN_USER" ]]; then
         echo "[4/12] Creating admin user: $ADMIN_USER"
         adduser --gecos "" --disabled-password "$ADMIN_USER"
         usermod -aG sudo "$ADMIN_USER"
-        echo "Set password for $ADMIN_USER:"
-        passwd "$ADMIN_USER"
+        echo ">>> Set a password for $ADMIN_USER after setup: sudo passwd $ADMIN_USER"
     fi
 else
     echo "[4/12] Skipping user creation (ADMIN_USER not set). Ensure your user is in sudo group."
@@ -76,6 +84,16 @@ timedatectl set-ntp true
 
 # 7. Harden SSH
 echo "[7/12] Hardening SSH configuration..."
+
+# Pre-flight: ensure at least one authorized_keys exists before disabling password auth
+if ! find /home -maxdepth 3 -name authorized_keys -size +0c 2>/dev/null | grep -q .; then
+    echo "WARNING: No populated authorized_keys found under /home."
+    echo "         Copy your SSH public key FIRST to avoid lockout:"
+    echo "         ssh-copy-id -p $SSH_PORT youruser@$NEW_HOSTNAME"
+    echo "Press ENTER to continue anyway (Ctrl-C to abort)..."
+    read -r
+fi
+
 cp /etc/ssh/sshd_config "/etc/ssh/sshd_config.bak.$(date +%F_%T)" 2>/dev/null || true
 
 cat > /etc/ssh/sshd_config << EOF
@@ -109,7 +127,12 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 DebianBanner no
 EOF
 
-sshd -t
+if ! sshd -t; then
+    echo "[!] sshd_config syntax check FAILED — restoring backup" >&2
+    BACKUP=$(ls -t /etc/ssh/sshd_config.bak.* 2>/dev/null | head -1)
+    [[ -n "$BACKUP" ]] && cp "$BACKUP" /etc/ssh/sshd_config
+    exit 1
+fi
 systemctl restart ssh
 systemctl enable ssh
 
@@ -145,7 +168,7 @@ systemctl enable --now unattended-upgrades
 
 # 10. Fail2ban
 echo "[10/12] Configuring Fail2ban..."
-cat > /etc/fail2ban/jail.local << 'EOF'
+cat > /etc/fail2ban/jail.local << EOF
 [DEFAULT]
 bantime = 1h
 findtime = 10m
@@ -154,7 +177,7 @@ backend = systemd
 
 [sshd]
 enabled = true
-port = ssh
+port = $SSH_PORT
 maxretry = 4
 bantime = 24h
 EOF

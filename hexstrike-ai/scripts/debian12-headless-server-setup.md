@@ -32,7 +32,10 @@ This guide covers:
 # On Linux/macOS
 wget https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA256SUMS
 wget https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/SHA256SUMS.sign
-# Verify signature and checksum (see Debian wiki for gpg key)
+# Import Debian release signing key and verify GPG signature
+gpg --keyserver keyring.debian.org --recv-keys DF9B3C838BE5D8208DF766C7129A3F0C6F9AA905
+gpg --verify SHA256SUMS.sign SHA256SUMS
+# Verify ISO checksum
 sha256sum -c SHA256SUMS 2>&1 | grep OK
 ```
 

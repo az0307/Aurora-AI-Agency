@@ -1,0 +1,120 @@
+{
+  "name": "Aurora: Person Update",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aurora-person-update",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "webhookId": "aurora-person-update"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json.body;\nif (!b.email) throw new Error('email required to identify person');\nconst changed = Object.keys(b).filter(k => k !== 'email').join(', ') || 'no specific fields listed';\nreturn [{ json: {\n  email: b.email,\n  first_name: b.first_name || '',\n  last_name: b.last_name || '',\n  full_name: (b.first_name || b.last_name) ? `${b.first_name || ''} ${b.last_name || ''}`.trim() : b.email,\n  phone: b.phone || '',\n  company: b.company || '',\n  role: b.role || '',\n  tags: (b.tags || []).join(', '),\n  changed_fields: changed,\n  updated_by: b.updated_by || 'system'\n} }];"
+      },
+      "id": "parse-input",
+      "name": "Parse Update Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": { "value": "={{ $env.GOOGLE_SHEET_ID }}" },
+        "sheetName": "Persons",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.email }}",
+            "FirstName": "={{ $json.first_name }}",
+            "LastName": "={{ $json.last_name }}",
+            "Phone": "={{ $json.phone }}",
+            "Company": "={{ $json.company }}",
+            "Role": "={{ $json.role }}",
+            "Tags": "={{ $json.tags }}",
+            "LastUpdated": "={{ new Date().toLocaleDateString('en-AU') }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "update-crm",
+      "name": "Update Google Sheets CRM",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [600, 300],
+      "credentials": { "googleSheetsOAuth2Api": { "id": "google-sheets", "name": "Google Sheets" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.AUTOBOROS_API_URL }}/jobs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "Bearer {{ $env.AUTOBOROS_JWT }}" }]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "t": "Person Updated: {{ $('parse-input').item.json.full_name }}",
+          "client": "={{ $('parse-input').item.json.full_name }}",
+          "status": "Inbox",
+          "lvl": 1,
+          "actor": "You",
+          "src": "n8n-person-update",
+          "skill": "PersonAdmin",
+          "steps": ["Review updated fields", "Verify data accuracy", "Update any dependent records"],
+          "ask": "Person record updated. Changed fields: {{ $('parse-input').item.json.changed_fields }}. Review for accuracy."
+        }
+      },
+      "id": "create-update-job",
+      "name": "Create Update Job in AutoBoros",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "from": "={{ $env.TWILIO_FROM }}",
+        "to": "={{ $env.AURORA_OWNER_PHONE }}",
+        "message": "Person updated: {{ $('parse-input').item.json.full_name }} ({{ $('parse-input').item.json.email }}). Changed: {{ $('parse-input').item.json.changed_fields }}. CRM synced."
+      },
+      "id": "notify-owner-sms",
+      "name": "SMS Aaron",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1000, 300],
+      "credentials": { "twilioApi": { "id": "twilio-creds", "name": "Twilio" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, person: $('parse-input').item.json.email, changed: $('parse-input').item.json.changed_fields, message: 'Person record updated' } }}"
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1200, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Parse Update Data", "type": "main", "index": 0 }]] },
+    "Parse Update Data": { "main": [[{ "node": "Update Google Sheets CRM", "type": "main", "index": 0 }]] },
+    "Update Google Sheets CRM": { "main": [[{ "node": "Create Update Job in AutoBoros", "type": "main", "index": 0 }]] },
+    "Create Update Job in AutoBoros": { "main": [[{ "node": "SMS Aaron", "type": "main", "index": 0 }]] },
+    "SMS Aaron": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["aurora-internal", "person-admin"],
+  "meta": {
+    "description": "POST {email, first_name?, last_name?, phone?, company?, role?, tags?, updated_by?} → syncs updated fields to Google Sheets CRM (matched by email), creates AutoBoros update job, SMS Aaron with changed fields.",
+    "requiredEnvVars": ["AUTOBOROS_API_URL", "AUTOBOROS_JWT", "GOOGLE_SHEET_ID", "TWILIO_FROM", "AURORA_OWNER_PHONE"]
+  }
+}
