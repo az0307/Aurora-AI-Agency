@@ -11,8 +11,10 @@ import os
 import sys
 import json
 import time
+import select
 import threading
 import subprocess
+import urllib.parse
 from pathlib import Path
 from datetime import datetime
 
@@ -53,7 +55,7 @@ LLAMA_BIN  = Path.home() / "llama.cpp" / "build" / "bin" / "llama-cli"
 def _get(path: str, params: dict = None, timeout: int = 5) -> dict:
     url = f"{LAB}{path}"
     if params:
-        url += "?" + "&".join(f"{k}={v}" for k,v in params.items())
+        url += "?" + urllib.parse.urlencode(params)
     try:
         if _REQUESTS:
             r = requests.get(url, timeout=timeout)
@@ -342,14 +344,16 @@ def cmd_run():
 
 def cmd_abort():
     eid = Prompt.ask("Engagement ID", default=state.active_eid or "")
-    if not eid: return
+    if not eid:
+        return
     res = _post("/agent/abort", {"engagement_id": eid})
     console.print(f"[yellow]Abort: {res.get('status','?')}[/yellow]")
 
 
 def cmd_approve():
     eid = state.active_eid or Prompt.ask("Engagement ID")
-    if not eid: return
+    if not eid:
+        return
     if Confirm.ask(f"[yellow]Approve pending tool step for {eid}?[/yellow]"):
         res = _post("/agent/approve", {"engagement_id": eid})
         console.print(f"[green]Approved: {res.get('status')}[/green]")
@@ -360,7 +364,8 @@ def cmd_approve():
 
 def cmd_plan():
     q = Prompt.ask("[magenta]Ask local LLM[/magenta]")
-    if not q: return
+    if not q:
+        return
     console.print("[dim]Thinking...[/dim]")
     # Try GLM/Ollama via HexStrike interpret
     res = _post("/glm/interpret", {
@@ -420,8 +425,8 @@ def background_refresh():
     while True:
         try:
             state.refresh()
-        except Exception:
-            pass
+        except Exception as exc:
+            console.log(f"[dim]Refresh error: {exc}[/dim]")
         time.sleep(5)
 
 
@@ -438,8 +443,8 @@ def main():
         state.refresh()
 
     if not state.lab_online:
-        console.print(f"[yellow]Lab offline — local LLM planning mode[/yellow]")
-        console.print(f"[dim]Tip: bash ~/tunnel.sh to connect[/dim]")
+        console.print("[yellow]Lab offline — local LLM planning mode[/yellow]")
+        console.print("[dim]Tip: bash ~/tunnel.sh to connect[/dim]")
 
     # Start background refresh
     t = threading.Thread(target=background_refresh, daemon=True)
@@ -462,8 +467,6 @@ def main():
             time.sleep(0.3)
 
             # Handle keyboard (crude but portable on Termux)
-            # For proper key input we use a blocking read in a thread
-            import select
             if select.select([sys.stdin], [], [], 0.1)[0]:
                 key = sys.stdin.read(1).strip()
                 if key == "q":
@@ -471,9 +474,11 @@ def main():
                     console.print("[dim]Goodbye.[/dim]")
                     return
                 elif key == "l":
+                    live.stop()
                     state.active_eid = Prompt.ask("Watch engagement", default=state.active_eid or "")
                     state.agent_logs.clear()
                     state.log_offset = 0
+                    live.start(refresh=True)
                 elif key in COMMANDS:
                     live.stop()
                     try:
