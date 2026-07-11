@@ -1,0 +1,199 @@
+{
+  "name": "Aurora: Invoice Paid",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aurora-invoice-paid",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "webhookId": "aurora-invoice-paid"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json.body;\nif (!b.invoice_number || !b.client_email) throw new Error('invoice_number and client_email required');\nreturn [{ json: {\n  invoice_number: b.invoice_number,\n  client_name: b.client_name || b.client_email,\n  client_email: b.client_email,\n  amount_paid: parseFloat(b.amount_paid || 0).toFixed(2),\n  payment_method: b.payment_method || 'Bank Transfer',\n  payment_date: b.payment_date || new Date().toLocaleDateString('en-AU'),\n  send_receipt: b.send_receipt !== false\n} }];"
+      },
+      "id": "parse-input",
+      "name": "Parse Payment Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": { "value": "={{ $env.GOOGLE_SHEET_ID }}" },
+        "sheetName": "Invoices",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "InvoiceNumber": "={{ $json.invoice_number }}",
+            "Status": "Paid",
+            "AmountPaid": "={{ $json.amount_paid }}",
+            "PaymentMethod": "={{ $json.payment_method }}",
+            "PaidDate": "={{ $json.payment_date }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "mark-paid-in-sheet",
+      "name": "Mark Paid in Invoices Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [600, 200],
+      "credentials": { "googleSheetsOAuth2Api": { "id": "google-sheets", "name": "Google Sheets" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "model": "claude-haiku-4-5-20251001",
+          "max_tokens": 350,
+          "messages": [
+            {
+              "role": "user",
+              "content": "Write a warm, professional payment receipt email for an Aurora AI Agency client. Under 120 words. Confirm payment received, include invoice number, amount paid, payment date, and method. Thank them genuinely. Mention any questions can go to aaron@auroraaiagency.com.au. Client: {{ $json.client_name }}. Invoice: {{ $json.invoice_number }}. Amount paid: ${{ $json.amount_paid }} AUD. Payment method: {{ $json.payment_method }}. Date: {{ $json.payment_date }}. Sign off from 'Aaron @ Aurora AI Agency'. Return only the email body — no subject line, no tags."
+            }
+          ]
+        }
+      },
+      "id": "generate-receipt-email",
+      "name": "Generate Receipt Email (Haiku)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [600, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.AUTOBOROS_API_URL }}/jobs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "Bearer {{ $env.AUTOBOROS_JWT }}" }]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "t": "Payment Received: {{ $('parse-input').item.json.invoice_number }} — {{ $('parse-input').item.json.client_name }}",
+          "client": "={{ $('parse-input').item.json.client_name }}",
+          "status": "Inbox",
+          "lvl": 1,
+          "actor": "You",
+          "src": "n8n-invoice-paid",
+          "skill": "InvoiceAdmin",
+          "steps": ["Confirm receipt sent to client", "Reconcile in accounting", "Archive invoice"],
+          "ask": "Payment received for invoice {{ $('parse-input').item.json.invoice_number }}: ${{ $('parse-input').item.json.amount_paid }} AUD via {{ $('parse-input').item.json.payment_method }} on {{ $('parse-input').item.json.payment_date }}. Reconcile in accounting."
+        }
+      },
+      "id": "create-payment-job",
+      "name": "Create Payment Job in AutoBoros",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const receipt = $('generate-receipt-email').item.json.content[0].text;\nconst inv = $('parse-input').item.json;\nreturn [{ json: { ...inv, receipt_email: receipt } }];"
+      },
+      "id": "merge-data",
+      "name": "Merge",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [{ "value1": "={{ $json.send_receipt }}", "value2": true }]
+        }
+      },
+      "id": "if-send-receipt",
+      "name": "Send Receipt?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1200, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "aaron@auroraaiagency.com.au",
+        "toEmail": "={{ $json.client_email }}",
+        "subject": "Payment received — Invoice {{ $json.invoice_number }}",
+        "emailType": "text",
+        "message": "={{ $json.receipt_email }}"
+      },
+      "id": "send-receipt-email",
+      "name": "Send Receipt Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1400, 200],
+      "credentials": { "smtp": { "id": "smtp-aurora", "name": "Aurora SMTP" } }
+    },
+    {
+      "parameters": {
+        "from": "={{ $env.TWILIO_FROM }}",
+        "to": "={{ $env.AURORA_OWNER_PHONE }}",
+        "message": "Payment received: {{ $('parse-input').item.json.invoice_number }} — ${{ $('parse-input').item.json.amount_paid }} AUD via {{ $('parse-input').item.json.payment_method }}. Sheet updated. Reconcile in accounting."
+      },
+      "id": "notify-owner-sms",
+      "name": "SMS Aaron",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1600, 300],
+      "credentials": { "twilioApi": { "id": "twilio-creds", "name": "Twilio" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, invoice: $('parse-input').item.json.invoice_number, amount_paid: $('parse-input').item.json.amount_paid, message: 'Invoice marked paid' } }}"
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1800, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Parse Payment Data", "type": "main", "index": 0 }]] },
+    "Parse Payment Data": {
+      "main": [[
+        { "node": "Mark Paid in Invoices Sheet", "type": "main", "index": 0 },
+        { "node": "Generate Receipt Email (Haiku)", "type": "main", "index": 0 }
+      ]]
+    },
+    "Mark Paid in Invoices Sheet": { "main": [[{ "node": "Create Payment Job in AutoBoros", "type": "main", "index": 0 }]] },
+    "Generate Receipt Email (Haiku)": { "main": [[{ "node": "Create Payment Job in AutoBoros", "type": "main", "index": 0 }]] },
+    "Create Payment Job in AutoBoros": { "main": [[{ "node": "Merge", "type": "main", "index": 0 }]] },
+    "Merge": { "main": [[{ "node": "Send Receipt?", "type": "main", "index": 0 }]] },
+    "Send Receipt?": {
+      "main": [
+        [{ "node": "Send Receipt Email", "type": "main", "index": 0 }],
+        [{ "node": "SMS Aaron", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Receipt Email": { "main": [[{ "node": "SMS Aaron", "type": "main", "index": 0 }]] },
+    "SMS Aaron": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["aurora-internal", "invoice-admin"],
+  "meta": {
+    "description": "POST {invoice_number, client_email, client_name?, amount_paid?, payment_method?, payment_date?, send_receipt?} → sets Status=Paid in Invoices sheet, generates AI receipt email (optional via send_receipt flag), creates AutoBoros payment job, SMS Aaron.",
+    "requiredEnvVars": ["ANTHROPIC_API_KEY", "AUTOBOROS_API_URL", "AUTOBOROS_JWT", "GOOGLE_SHEET_ID", "TWILIO_FROM", "AURORA_OWNER_PHONE"]
+  }
+}

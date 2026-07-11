@@ -1,0 +1,123 @@
+{
+  "name": "Aurora: Invoice Update",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aurora-invoice-update",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "webhookId": "aurora-invoice-update"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json.body;\nif (!b.invoice_number) throw new Error('invoice_number required');\nconst changed = Object.keys(b).filter(k => k !== 'invoice_number').join(', ') || 'no specific fields listed';\nconst out = { invoice_number: b.invoice_number, changed_fields: changed };\nif (b.amount !== undefined) {\n  out.amount = parseFloat(b.amount).toFixed(2);\n  out.amount_gst = (parseFloat(b.amount) * 0.1).toFixed(2);\n  out.amount_total = (parseFloat(b.amount) * 1.1).toFixed(2);\n}\nif (b.due_date) out.due_date = b.due_date;\nif (b.service_description) out.service_description = b.service_description;\nif (b.client_name) out.client_name = b.client_name;\nif (b.client_email) out.client_email = b.client_email;\nif (b.status) out.status = b.status;\nif (b.notes) out.notes = b.notes;\nif (b.payment_link) out.payment_link = b.payment_link;\nreturn [{ json: out }];"
+      },
+      "id": "parse-input",
+      "name": "Parse Update Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": { "value": "={{ $env.GOOGLE_SHEET_ID }}" },
+        "sheetName": "Invoices",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "InvoiceNumber": "={{ $json.invoice_number }}",
+            "ClientName": "={{ $json.client_name }}",
+            "ClientEmail": "={{ $json.client_email }}",
+            "ServiceDescription": "={{ $json.service_description }}",
+            "AmountExGST": "={{ $json.amount }}",
+            "GST": "={{ $json.amount_gst }}",
+            "TotalIncGST": "={{ $json.amount_total }}",
+            "DueDate": "={{ $json.due_date }}",
+            "Status": "={{ $json.status }}",
+            "Notes": "={{ $json.notes }}",
+            "LastUpdated": "={{ new Date().toLocaleDateString('en-AU') }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "update-invoices-sheet",
+      "name": "Update Invoices Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [600, 300],
+      "credentials": { "googleSheetsOAuth2Api": { "id": "google-sheets", "name": "Google Sheets" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.AUTOBOROS_API_URL }}/jobs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "Bearer {{ $env.AUTOBOROS_JWT }}" }]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "t": "Invoice Updated: {{ $('parse-input').item.json.invoice_number }}",
+          "client": "={{ $('parse-input').item.json.client_name || $('parse-input').item.json.invoice_number }}",
+          "status": "Inbox",
+          "lvl": 1,
+          "actor": "You",
+          "src": "n8n-invoice-update",
+          "skill": "InvoiceAdmin",
+          "steps": ["Verify updated details", "Notify client if amount or due date changed", "Confirm resend if needed"],
+          "ask": "Invoice {{ $('parse-input').item.json.invoice_number }} updated. Changed: {{ $('parse-input').item.json.changed_fields }}. Review and notify client if required."
+        }
+      },
+      "id": "create-update-job",
+      "name": "Create Update Job in AutoBoros",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "from": "={{ $env.TWILIO_FROM }}",
+        "to": "={{ $env.AURORA_OWNER_PHONE }}",
+        "message": "Invoice updated: {{ $('parse-input').item.json.invoice_number }}. Changed: {{ $('parse-input').item.json.changed_fields }}. Sheet synced."
+      },
+      "id": "notify-owner-sms",
+      "name": "SMS Aaron",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1000, 300],
+      "credentials": { "twilioApi": { "id": "twilio-creds", "name": "Twilio" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, invoice: $('parse-input').item.json.invoice_number, changed: $('parse-input').item.json.changed_fields, message: 'Invoice updated' } }}"
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1200, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Parse Update Data", "type": "main", "index": 0 }]] },
+    "Parse Update Data": { "main": [[{ "node": "Update Invoices Sheet", "type": "main", "index": 0 }]] },
+    "Update Invoices Sheet": { "main": [[{ "node": "Create Update Job in AutoBoros", "type": "main", "index": 0 }]] },
+    "Create Update Job in AutoBoros": { "main": [[{ "node": "SMS Aaron", "type": "main", "index": 0 }]] },
+    "SMS Aaron": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["aurora-internal", "invoice-admin"],
+  "meta": {
+    "description": "POST {invoice_number, amount?, due_date?, service_description?, client_name?, client_email?, status?, notes?, payment_link?} → syncs changed fields to Invoices sheet (matched by invoice_number), creates AutoBoros update job, SMS Aaron.",
+    "requiredEnvVars": ["AUTOBOROS_API_URL", "AUTOBOROS_JWT", "GOOGLE_SHEET_ID", "TWILIO_FROM", "AURORA_OWNER_PHONE"]
+  }
+}
