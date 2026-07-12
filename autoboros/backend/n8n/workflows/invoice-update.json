@@ -31,6 +31,7 @@
         "sheetName": "Invoices",
         "columns": {
           "mappingMode": "defineBelow",
+          "matchingColumns": ["InvoiceNumber"],
           "value": {
             "InvoiceNumber": "={{ $json.invoice_number }}",
             "ClientName": "={{ $json.client_name }}",

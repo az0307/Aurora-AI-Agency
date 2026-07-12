@@ -31,6 +31,7 @@
         "sheetName": "Invoices",
         "columns": {
           "mappingMode": "defineBelow",
+          "matchingColumns": ["InvoiceNumber"],
           "value": {
             "InvoiceNumber": "={{ $json.invoice_number }}",
             "Status": "Paid",
@@ -80,6 +81,14 @@
       "position": [600, 400]
     },
     {
+      "parameters": { "mode": "append" },
+      "id": "fan-in-merge",
+      "name": "Fan-in Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [800, 300]
+    },
+    {
       "parameters": {
         "method": "POST",
         "url": "={{ $env.AUTOBOROS_API_URL }}/jobs",
@@ -105,7 +114,7 @@
       "name": "Create Payment Job in AutoBoros",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [800, 300]
+      "position": [1000, 300]
     },
     {
       "parameters": {
@@ -115,7 +124,7 @@
       "name": "Merge",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1000, 300]
+      "position": [1200, 300]
     },
     {
       "parameters": {
@@ -127,7 +136,7 @@
       "name": "Send Receipt?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [1200, 300]
+      "position": [1400, 300]
     },
     {
       "parameters": {
@@ -141,7 +150,7 @@
       "name": "Send Receipt Email",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2,
-      "position": [1400, 200],
+      "position": [1600, 200],
       "credentials": { "smtp": { "id": "smtp-aurora", "name": "Aurora SMTP" } }
     },
     {
@@ -154,7 +163,7 @@
       "name": "SMS Aaron",
       "type": "n8n-nodes-base.twilio",
       "typeVersion": 1,
-      "position": [1600, 300],
+      "position": [1800, 300],
       "credentials": { "twilioApi": { "id": "twilio-creds", "name": "Twilio" } }
     },
     {
@@ -166,7 +175,7 @@
       "name": "Respond",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1800, 300]
+      "position": [2000, 300]
     }
   ],
   "connections": {
@@ -177,8 +186,9 @@
         { "node": "Generate Receipt Email (Haiku)", "type": "main", "index": 0 }
       ]]
     },
-    "Mark Paid in Invoices Sheet": { "main": [[{ "node": "Create Payment Job in AutoBoros", "type": "main", "index": 0 }]] },
-    "Generate Receipt Email (Haiku)": { "main": [[{ "node": "Create Payment Job in AutoBoros", "type": "main", "index": 0 }]] },
+    "Mark Paid in Invoices Sheet": { "main": [[{ "node": "Fan-in Merge", "type": "main", "index": 0 }]] },
+    "Generate Receipt Email (Haiku)": { "main": [[{ "node": "Fan-in Merge", "type": "main", "index": 1 }]] },
+    "Fan-in Merge": { "main": [[{ "node": "Create Payment Job in AutoBoros", "type": "main", "index": 0 }]] },
     "Create Payment Job in AutoBoros": { "main": [[{ "node": "Merge", "type": "main", "index": 0 }]] },
     "Merge": { "main": [[{ "node": "Send Receipt?", "type": "main", "index": 0 }]] },
     "Send Receipt?": {

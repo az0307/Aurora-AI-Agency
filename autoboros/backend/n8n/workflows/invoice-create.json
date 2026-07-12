@@ -62,6 +62,7 @@
         "sheetName": "Invoices",
         "columns": {
           "mappingMode": "defineBelow",
+          "matchingColumns": ["InvoiceNumber"],
           "value": {
             "InvoiceNumber": "={{ $json.invoice_number }}",
             "ClientName": "={{ $json.client_name }}",
@@ -84,6 +85,14 @@
       "typeVersion": 4,
       "position": [600, 400],
       "credentials": { "googleSheetsOAuth2Api": { "id": "google-sheets", "name": "Google Sheets" } }
+    },
+    {
+      "parameters": { "mode": "append" },
+      "id": "fan-in-merge",
+      "name": "Fan-in Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [800, 300]
     },
     {
       "parameters": {
@@ -111,7 +120,7 @@
       "name": "Create Invoice Job in AutoBoros",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [800, 300]
+      "position": [1000, 300]
     },
     {
       "parameters": {
@@ -121,7 +130,7 @@
       "name": "Merge",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1000, 300]
+      "position": [1200, 300]
     },
     {
       "parameters": {
@@ -135,7 +144,7 @@
       "name": "Send Invoice Email",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2,
-      "position": [1200, 300],
+      "position": [1400, 300],
       "credentials": { "smtp": { "id": "smtp-aurora", "name": "Aurora SMTP" } }
     },
     {
@@ -148,7 +157,7 @@
       "name": "SMS Aaron",
       "type": "n8n-nodes-base.twilio",
       "typeVersion": 1,
-      "position": [1400, 300],
+      "position": [1600, 300],
       "credentials": { "twilioApi": { "id": "twilio-creds", "name": "Twilio" } }
     },
     {
@@ -160,7 +169,7 @@
       "name": "Respond",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1600, 300]
+      "position": [1800, 300]
     }
   ],
   "connections": {
@@ -171,8 +180,9 @@
         { "node": "Add to Invoices Sheet", "type": "main", "index": 0 }
       ]]
     },
-    "Generate Invoice Email (Haiku)": { "main": [[{ "node": "Create Invoice Job in AutoBoros", "type": "main", "index": 0 }]] },
-    "Add to Invoices Sheet": { "main": [[{ "node": "Create Invoice Job in AutoBoros", "type": "main", "index": 0 }]] },
+    "Generate Invoice Email (Haiku)": { "main": [[{ "node": "Fan-in Merge", "type": "main", "index": 0 }]] },
+    "Add to Invoices Sheet": { "main": [[{ "node": "Fan-in Merge", "type": "main", "index": 1 }]] },
+    "Fan-in Merge": { "main": [[{ "node": "Create Invoice Job in AutoBoros", "type": "main", "index": 0 }]] },
     "Create Invoice Job in AutoBoros": { "main": [[{ "node": "Merge", "type": "main", "index": 0 }]] },
     "Merge": { "main": [[{ "node": "Send Invoice Email", "type": "main", "index": 0 }]] },
     "Send Invoice Email": { "main": [[{ "node": "SMS Aaron", "type": "main", "index": 0 }]] },
