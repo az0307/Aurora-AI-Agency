@@ -1,0 +1,197 @@
+{
+  "name": "Aurora: Invoice Create",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aurora-invoice-create",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "webhookId": "aurora-invoice-create"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json.body;\nif (!b.invoice_number || !b.client_email || !b.amount) throw new Error('invoice_number, client_email, and amount required');\nreturn [{ json: {\n  invoice_number: b.invoice_number,\n  client_name: b.client_name || b.client_email,\n  client_email: b.client_email,\n  amount: parseFloat(b.amount).toFixed(2),\n  amount_gst: (parseFloat(b.amount) * 0.1).toFixed(2),\n  amount_total: (parseFloat(b.amount) * 1.1).toFixed(2),\n  due_date: b.due_date || new Date(Date.now() + 14 * 86400000).toLocaleDateString('en-AU'),\n  service_description: b.service_description || 'Professional Services',\n  payment_link: b.payment_link || '',\n  notes: b.notes || ''\n} }];"
+      },
+      "id": "parse-input",
+      "name": "Parse Invoice Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "model": "claude-haiku-4-5-20251001",
+          "max_tokens": 450,
+          "messages": [
+            {
+              "role": "user",
+              "content": "Write a professional invoice email for an Aurora AI Agency client. Under 180 words. Polite and clear. Include: invoice number, amount (ex-GST and total inc-GST), due date, service description, and payment contact (aaron@auroraaiagency.com.au). If a payment link is provided, mention it prominently. Client: {{ $json.client_name }}. Invoice: {{ $json.invoice_number }}. Service: {{ $json.service_description }}. Amount ex-GST: ${{ $json.amount }} AUD. GST: ${{ $json.amount_gst }} AUD. Total inc-GST: ${{ $json.amount_total }} AUD. Due: {{ $json.due_date }}. Payment link: {{ $json.payment_link }}. Sign off from 'Aaron @ Aurora AI Agency'. Return only the email body — no subject line, no tags."
+            }
+          ]
+        }
+      },
+      "id": "generate-invoice-email",
+      "name": "Generate Invoice Email (Haiku)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [600, 200]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": { "value": "={{ $env.GOOGLE_SHEET_ID }}" },
+        "sheetName": "Invoices",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": ["InvoiceNumber"],
+          "value": {
+            "InvoiceNumber": "={{ $json.invoice_number }}",
+            "ClientName": "={{ $json.client_name }}",
+            "ClientEmail": "={{ $json.client_email }}",
+            "ServiceDescription": "={{ $json.service_description }}",
+            "AmountExGST": "={{ $json.amount }}",
+            "GST": "={{ $json.amount_gst }}",
+            "TotalIncGST": "={{ $json.amount_total }}",
+            "DueDate": "={{ $json.due_date }}",
+            "Status": "Sent",
+            "IssuedDate": "={{ new Date().toLocaleDateString('en-AU') }}",
+            "Notes": "={{ $json.notes }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "add-to-invoices-sheet",
+      "name": "Add to Invoices Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [600, 400],
+      "credentials": { "googleSheetsOAuth2Api": { "id": "google-sheets", "name": "Google Sheets" } }
+    },
+    {
+      "parameters": { "mode": "append" },
+      "id": "fan-in-merge",
+      "name": "Fan-in Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.AUTOBOROS_API_URL }}/jobs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "Bearer {{ $env.AUTOBOROS_JWT }}" }]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "t": "Invoice Sent: {{ $('parse-input').item.json.invoice_number }} — {{ $('parse-input').item.json.client_name }}",
+          "client": "={{ $('parse-input').item.json.client_name }}",
+          "status": "Inbox",
+          "lvl": 1,
+          "actor": "You",
+          "src": "n8n-invoice-create",
+          "skill": "InvoiceAdmin",
+          "steps": ["Confirm invoice received by client", "Follow up if unpaid after due date", "Record payment when received"],
+          "ask": "Invoice {{ $('parse-input').item.json.invoice_number }} sent to {{ $('parse-input').item.json.client_name }} for ${{ $('parse-input').item.json.amount_total }} AUD. Due {{ $('parse-input').item.json.due_date }}."
+        }
+      },
+      "id": "create-invoice-job",
+      "name": "Create Invoice Job in AutoBoros",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const emailBody = $('generate-invoice-email').item.json.content[0].text;\nconst inv = $('parse-input').item.json;\nreturn [{ json: { ...inv, invoice_email: emailBody } }];"
+      },
+      "id": "merge-data",
+      "name": "Merge",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "aaron@auroraaiagency.com.au",
+        "toEmail": "={{ $json.client_email }}",
+        "subject": "Invoice {{ $json.invoice_number }} — Aurora AI Agency",
+        "emailType": "text",
+        "message": "={{ $json.invoice_email }}"
+      },
+      "id": "send-invoice-email",
+      "name": "Send Invoice Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1400, 300],
+      "credentials": { "smtp": { "id": "smtp-aurora", "name": "Aurora SMTP" } }
+    },
+    {
+      "parameters": {
+        "from": "={{ $env.TWILIO_FROM }}",
+        "to": "={{ $env.AURORA_OWNER_PHONE }}",
+        "message": "Invoice sent: {{ $('parse-input').item.json.invoice_number }} to {{ $('parse-input').item.json.client_name }} for ${{ $('parse-input').item.json.amount_total }} AUD. Due {{ $('parse-input').item.json.due_date }}."
+      },
+      "id": "notify-owner-sms",
+      "name": "SMS Aaron",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1600, 300],
+      "credentials": { "twilioApi": { "id": "twilio-creds", "name": "Twilio" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, invoice: $('parse-input').item.json.invoice_number, total: $('parse-input').item.json.amount_total, message: 'Invoice created and sent' } }}"
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1800, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Parse Invoice Data", "type": "main", "index": 0 }]] },
+    "Parse Invoice Data": {
+      "main": [[
+        { "node": "Generate Invoice Email (Haiku)", "type": "main", "index": 0 },
+        { "node": "Add to Invoices Sheet", "type": "main", "index": 0 }
+      ]]
+    },
+    "Generate Invoice Email (Haiku)": { "main": [[{ "node": "Fan-in Merge", "type": "main", "index": 0 }]] },
+    "Add to Invoices Sheet": { "main": [[{ "node": "Fan-in Merge", "type": "main", "index": 1 }]] },
+    "Fan-in Merge": { "main": [[{ "node": "Create Invoice Job in AutoBoros", "type": "main", "index": 0 }]] },
+    "Create Invoice Job in AutoBoros": { "main": [[{ "node": "Merge", "type": "main", "index": 0 }]] },
+    "Merge": { "main": [[{ "node": "Send Invoice Email", "type": "main", "index": 0 }]] },
+    "Send Invoice Email": { "main": [[{ "node": "SMS Aaron", "type": "main", "index": 0 }]] },
+    "SMS Aaron": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": ["aurora-internal", "invoice-admin"],
+  "meta": {
+    "description": "POST {invoice_number, client_email, amount, client_name?, due_date?, service_description?, payment_link?, notes?} → adds to Invoices sheet, generates AI invoice email (inc-GST calc), creates AutoBoros job, sends email to client, SMS Aaron.",
+    "requiredEnvVars": ["ANTHROPIC_API_KEY", "AUTOBOROS_API_URL", "AUTOBOROS_JWT", "GOOGLE_SHEET_ID", "TWILIO_FROM", "AURORA_OWNER_PHONE"]
+  }
+}
