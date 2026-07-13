@@ -5,14 +5,16 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "aurora-invoice-create",
-        "responseMode": "responseNode"
+        "responseMode": "responseNode",
+        "authentication": "headerAuth"
       },
       "id": "webhook-trigger",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [200, 300],
-      "webhookId": "aurora-invoice-create"
+      "webhookId": "aurora-invoice-create",
+      "credentials": { "httpHeaderAuth": { "id": "aurora-webhook-auth", "name": "Aurora Webhook Auth" } }
     },
     {
       "parameters": {
@@ -44,7 +46,7 @@
           "messages": [
             {
               "role": "user",
-              "content": "Write a professional invoice email for an Aurora AI Agency client. Under 180 words. Polite and clear. Include: invoice number, amount (ex-GST and total inc-GST), due date, service description, and payment contact (aaron@auroraaiagency.com.au). If a payment link is provided, mention it prominently. Client: {{ $json.client_name }}. Invoice: {{ $json.invoice_number }}. Service: {{ $json.service_description }}. Amount ex-GST: ${{ $json.amount }} AUD. GST: ${{ $json.amount_gst }} AUD. Total inc-GST: ${{ $json.amount_total }} AUD. Due: {{ $json.due_date }}. Payment link: {{ $json.payment_link }}. Sign off from 'Aaron @ Aurora AI Agency'. Return only the email body — no subject line, no tags."
+              "content": "=Write a professional invoice email for an Aurora AI Agency client. Under 180 words. Polite and clear. Include: invoice number, amount (ex-GST and total inc-GST), due date, service description, and payment contact (aaron@auroraaiagency.com.au). If a payment link is provided, mention it prominently. Client: {{ $json.client_name }}. Invoice: {{ $json.invoice_number }}. Service: {{ $json.service_description }}. Amount ex-GST: ${{ $json.amount }} AUD. GST: ${{ $json.amount_gst }} AUD. Total inc-GST: ${{ $json.amount_total }} AUD. Due: {{ $json.due_date }}. Payment link: {{ $json.payment_link }}. Sign off from 'Aaron @ Aurora AI Agency'. Return only the email body — no subject line, no tags."
             }
           ]
         }
@@ -100,12 +102,12 @@
         "url": "={{ $env.AUTOBOROS_API_URL }}/jobs",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "Bearer {{ $env.AUTOBOROS_JWT }}" }]
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.AUTOBOROS_JWT }}" }]
         },
         "sendBody": true,
         "contentType": "json",
         "body": {
-          "t": "Invoice Sent: {{ $('parse-input').item.json.invoice_number }} — {{ $('parse-input').item.json.client_name }}",
+          "t": "=Invoice Sent: {{ $('parse-input').item.json.invoice_number }} — {{ $('parse-input').item.json.client_name }}",
           "client": "={{ $('parse-input').item.json.client_name }}",
           "status": "Inbox",
           "lvl": 1,
@@ -113,7 +115,7 @@
           "src": "n8n-invoice-create",
           "skill": "InvoiceAdmin",
           "steps": ["Confirm invoice received by client", "Follow up if unpaid after due date", "Record payment when received"],
-          "ask": "Invoice {{ $('parse-input').item.json.invoice_number }} sent to {{ $('parse-input').item.json.client_name }} for ${{ $('parse-input').item.json.amount_total }} AUD. Due {{ $('parse-input').item.json.due_date }}."
+          "ask": "=Invoice {{ $('parse-input').item.json.invoice_number }} sent to {{ $('parse-input').item.json.client_name }} for ${{ $('parse-input').item.json.amount_total }} AUD. Due {{ $('parse-input').item.json.due_date }}."
         }
       },
       "id": "create-invoice-job",
@@ -136,7 +138,7 @@
       "parameters": {
         "fromEmail": "aaron@auroraaiagency.com.au",
         "toEmail": "={{ $json.client_email }}",
-        "subject": "Invoice {{ $json.invoice_number }} — Aurora AI Agency",
+        "subject": "=Invoice {{ $json.invoice_number }} — Aurora AI Agency",
         "emailType": "text",
         "message": "={{ $json.invoice_email }}"
       },
@@ -151,7 +153,7 @@
       "parameters": {
         "from": "={{ $env.TWILIO_FROM }}",
         "to": "={{ $env.AURORA_OWNER_PHONE }}",
-        "message": "Invoice sent: {{ $('parse-input').item.json.invoice_number }} to {{ $('parse-input').item.json.client_name }} for ${{ $('parse-input').item.json.amount_total }} AUD. Due {{ $('parse-input').item.json.due_date }}."
+        "message": "=Invoice sent: {{ $('parse-input').item.json.invoice_number }} to {{ $('parse-input').item.json.client_name }} for ${{ $('parse-input').item.json.amount_total }} AUD. Due {{ $('parse-input').item.json.due_date }}."
       },
       "id": "notify-owner-sms",
       "name": "SMS Aaron",

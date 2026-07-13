@@ -5,14 +5,16 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "aurora-invoice-update",
-        "responseMode": "responseNode"
+        "responseMode": "responseNode",
+        "authentication": "headerAuth"
       },
       "id": "webhook-trigger",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [200, 300],
-      "webhookId": "aurora-invoice-update"
+      "webhookId": "aurora-invoice-update",
+      "credentials": { "httpHeaderAuth": { "id": "aurora-webhook-auth", "name": "Aurora Webhook Auth" } }
     },
     {
       "parameters": {
