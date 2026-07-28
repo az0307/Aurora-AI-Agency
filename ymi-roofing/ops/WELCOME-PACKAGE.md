@@ -26,8 +26,9 @@ on a phone.
   suburbs you actually service coded into the page so Google knows where to show you.
 - **Your branding throughout.** Your logo in the header, hero and footer, plus a branded
   share card so the link looks professional when it's posted to Facebook or texted to someone.
-- **Legally sound.** Privacy policy and terms of service written to Australian Consumer Law,
-  including cooling-off rights, workmanship warranty terms and record retention.
+- **Privacy policy and terms of service drafted** with Australian Consumer Law in mind —
+  cooling-off rights, workmanship warranty terms and record retention. These are drafted
+  documents, not legal advice; have a solicitor review them before you rely on them.
 
 ### Automation (once switched on)
 - **Lead capture** — every enquiry goes to a shared Google Sheet and texts your phone instantly
@@ -52,13 +53,21 @@ moment you send me the account links (Section 3 below).
 
 No GST is charged — Aurora isn't registered for GST.
 
-**The retainer covers:** website hosting and maintenance, the automation platform, a monthly
-performance report, minor site updates (text, phone numbers, prices), and chatbot monitoring.
+**The retainer covers:** website hosting and maintenance, hosting and upkeep of the n8n
+automation workflows, a monthly performance report, minor site updates (text, phone numbers,
+prices), and chatbot monitoring and tweaks.
 
-**Billed directly to you by the provider** (not through Aurora): domain renewal ~$14/yr,
-Twilio SMS ~$0.60/month, ManyChat Pro ~$22/month, and any advertising you choose to run.
+**Billed directly to you by the provider** (not through Aurora, and not included in the
+retainer): domain renewal ~$14/yr, Twilio SMS usage ~$0.60/month, ManyChat Pro subscription
+~$22/month, and any advertising you choose to run. These stay in your name so you keep
+control of them.
 
-Cancel any time with 30 days' notice. The website and content are yours.
+**Cancellation and handover.** Either of us can cancel with 30 days' notice. On cancellation:
+the website files, your photos and all site content are yours, and I'll hand over the source
+files. The domain, Google Business Profile, Google Analytics property and any third-party
+accounts (Twilio, ManyChat) are already in your name and simply stay with you. Hosting on
+Aurora's account stops at the end of the notice period — I'll help you move it to your own
+hosting, or hand over the files for someone else to deploy.
 
 ---
 
@@ -71,7 +80,8 @@ are urgent — the rest can follow.
 1. **Your business details** — sole trader or Pty Ltd, and your ABN.
    The site currently says "Pty Ltd, ACN 695 710 055" and I need to confirm that's accurate.
    If you're a sole trader, that's completely fine and very common for trades — we just have
-   to word it correctly, otherwise it breaches consumer law.
+   to word it correctly, because describing the business as something it isn't can be
+   misleading conduct under consumer law.
 2. **Licence and insurance details** — ideally a Certificate of Currency from your insurer
    (they'll email it instantly on request). Right now the site says these are "available on
    request"; with the real numbers I can state them outright, which wins far more jobs.
@@ -92,17 +102,20 @@ are urgent — the rest can follow.
 | When | What |
 |---|---|
 | **Now** | You return the information form and pay AURORA-0001 |
-| **Within 48 hrs of payment** | I correct the business details, switch on analytics, connect the domain |
+| **Within 48 hrs of payment** | I correct the business details from Section A and prepare everything for launch |
+| **Once Sections A + B are confirmed and I have domain access** | The site goes public and analytics switch on — not before, because until then the site would be making claims we can't back up |
 | **Week 1** | Google Business Profile created and submitted for verification (you do the ID step, I do the rest) |
-| **Week 2** | Automations live — lead alerts, review machine, chatbot |
+| **Week 2** (after go-live) | Automations live — lead alerts, review machine, chatbot |
 | **Monthly** | Performance report: visitors, enquiries, calls, reviews gained |
 
 ---
 
 ## 5. How to reach me
 
-Call or email any time. For anything urgent — site down, a bug, a lead not coming through —
-call, don't email.
+**Email: aaron221048@gmail.com** — this is the best way to reach me and the address the
+invoice comes from. Phone: `[your number]`.
+
+For anything urgent — site down, a bug, a lead not coming through — call, don't email.
 
 **Small changes are included** in the retainer: phone numbers, prices, service wording, adding
 photos. Just send them through, no charge, no forms.

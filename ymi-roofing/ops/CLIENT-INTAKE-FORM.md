@@ -5,21 +5,28 @@
 Hi Ben — the website is built and ready. Before we can switch it on publicly, I need a few
 details from you. Most take 30 seconds; a couple need you to dig out a document.
 
-**Sections A and B are blockers** — legally we can't go live without them. Everything else
-can follow later, but the sooner I have it the better the site performs.
+**Sections A and B gate go-live.** Not because a website is illegal without them, but
+because the site currently states things about your business that I can't verify — and I
+won't publish claims we can't back up. Once they're confirmed, we launch. Everything else can
+follow later, but the sooner I have it the better the site performs.
 
-Fill this in however suits you: reply to the email, send a photo of it written out, or just
-call and read them out to me.
+Fill this in however suits you: reply to the email, write it out and send a photo, or call and
+read it out to me.
+
+> **Please don't send passwords or logins** — not to me, not to anyone. Where I need access to
+> an account (Section D), you'll add me as a delegated user from inside that account, which you
+> can revoke at any time. Bank details (Section F) aren't needed until we set up invoicing —
+> we'll do that step over the phone, separately from this form.
 
 ---
 
 ## 🔴 SECTION A — Business identity (BLOCKER)
 
 Right now the website says *"Y.M.I Roofing **Pty Ltd**, ACN 695 710 055"*. I need to confirm
-this is correct, because if the business isn't actually a registered company, that wording
-breaches the Australian Consumer Law and has to change before launch. **This is not a
-problem — it just needs to be accurate.** Sole trader is completely fine and very common
-for trades; we just have to say the right thing.
+this is correct, because describing yourself as a Pty Ltd when you're not can be misleading
+conduct under the Australian Consumer Law. **This is not a problem — it just needs to be
+accurate.** Sole trader is completely fine and very common for trades; we just have to say the
+right thing.
 
 **A1. Which one are you?** (tick one)
 - [ ] **Sole trader** — I trade under my own name / a registered business name, and have an ABN
@@ -105,7 +112,7 @@ I've written step-by-step guides and can sit on the phone with you while you do 
 | **Google Analytics** | ☐ have one ☐ need to create | The `G-XXXXXXX` Measurement ID |
 | **Facebook page** | ☐ have one ☐ need to create | Page URL |
 | **Instagram** | ☐ have one ☐ need to create | Profile URL |
-| **Domain (ymiroofing.com.au)** | ☐ registered ☐ not yet | Registrar login or transfer code |
+| **Domain (ymiroofing.com.au)** | ☐ registered ☐ not yet | Just tell me the registrar — I'll send you the exact DNS records to paste in, or you can add me as a delegate. **Don't send me the login.** |
 
 > **Google Business Profile is the single highest-value item on this page.** It's what makes
 > you appear in Google Maps when someone searches "roof repairs near me". More valuable than
@@ -133,13 +140,14 @@ Google will suspend a profile for them. Real ones only:
 
 ---
 
-## SECTION F — Payment details (for your customers)
+## SECTION F — Payment terms (for your customers)
 
-So your quotes and invoices can be automated later:
-- Account name: `_______________________`
-- BSB: `__________`  Account number: `________________`
+So your quotes and invoices can be automated later. **Answer the policy questions here; we'll
+take the bank account details verbally when we set invoicing up — please don't write them on
+this form or email them.**
 - Deposit policy (e.g. 10% on acceptance, or none): `_____________________`
 - Payment terms you offer customers (e.g. 7 days from completion): `____________`
+- Do you accept card payments, or bank transfer/cash only? `____________`
 
 ---
 
@@ -152,7 +160,10 @@ So your quotes and invoices can be automated later:
 | Section D (Google/social links) | Switch on analytics, review buttons and social links — already wired, just needs the URLs |
 | Section E (photos/testimonials) | Expand the gallery, add real testimonials |
 
-**Nothing on this form is used for anything other than building and running your website.**
+**How I handle this information.** It's used only to build and run your website. I keep it in
+the project file for as long as I'm working with you, and delete it on request or when we stop
+working together. It isn't shared with anyone else. Licence and insurance details are published
+on your site only — that's the point of collecting them. Nothing else on this form goes public.
 
 ---
 

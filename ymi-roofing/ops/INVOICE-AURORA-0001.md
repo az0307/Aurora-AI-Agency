@@ -1,8 +1,12 @@
-# TAX INVOICE — AURORA-0001
+# INVOICE — AURORA-0001
 
-> **Before sending:** fill the four `[...]` fields below (your address, bank details, dates,
-> and Ben's confirmed entity name from the intake form). Everything else is final.
-> Delete this note before it goes out.
+> **Before sending:** fill in **every** `[...]` field below — your address and bank details,
+> the issue and due dates, and Ben's confirmed entity name and ABN from the intake form.
+> Then search the document for `[` and confirm no placeholders remain. Delete this note
+> before it goes out.
+>
+> Titled "Invoice", not "Tax invoice": the ATO directs businesses that are not registered for
+> GST to issue a standard invoice and to avoid the words "tax invoice".
 
 ---
 
@@ -31,7 +35,7 @@ Ben Breheny
 
 | Description | Qty | Rate | Amount |
 |---|---:|---:|---:|
-| **Y.M.I Roofing Ignite Package — setup**<br><span style="font-size:90%">Website design & build (ymiroofing.com.au), mobile optimisation, local SEO for Melton & Melbourne's west, structured data, logo integration, branded social share card, photo gallery build, privacy policy & terms of service, compliance review</span> | 1 | $700.00 | $700.00 |
+| **Y.M.I Roofing Ignite Package — setup**<br><span style="font-size:90%">Website design & build (ymiroofing.com.au), mobile optimisation, local SEO for Melton & Melbourne's west, structured data, logo integration, branded social share card, photo gallery build, privacy policy &amp; terms of service, consumer-law wording review (not legal advice)</span> | 1 | $700.00 | $700.00 |
 | **Monthly retainer — months 1–2**<br><span style="font-size:90%">Lead capture automation, review machine, chatbot, hosting, maintenance, monthly reporting</span> | 2 | $350.00 | $700.00 |
 
 | | |
@@ -40,9 +44,7 @@ Ben Breheny
 | GST | $0.00 * |
 | **TOTAL DUE** | **$1,400.00 AUD** |
 
-<sub>\* No GST has been charged. Aurora AI Agency is not registered for GST (turnover under
-the $75,000 registration threshold), so this is not a taxable supply under the *A New Tax
-System (Goods and Services Tax) Act 1999*.</sub>
+<sub>\* No GST charged — Aurora AI Agency is not registered for GST.</sub>
 
 ---
 
