@@ -20,7 +20,8 @@
 - **Control plane** for everything: **Dokploy**. **Expose nothing directly** — reach
   dashboards through **Cloudflare Tunnel + Access**.
 
-See [`STACK.md`](./STACK.md) for the full software catalog, [`TERMINAL.md`](./TERMINAL.md)
+See [`STACK.md`](./STACK.md) for the full software catalog, [`SERVICES.md`](./SERVICES.md)
+for server-side services + MCPs + the on-demand (rotate-on/off) pool, [`TERMINAL.md`](./TERMINAL.md)
 for the smart-terminal cockpit, [`AGENTS.md`](./AGENTS.md) for the AI-agent CLIs, and
 [`runbooks/DAY1.md`](./runbooks/DAY1.md) to stand a box up.
 

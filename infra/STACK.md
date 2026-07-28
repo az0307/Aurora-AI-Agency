@@ -25,6 +25,7 @@ All web-facing services sit **behind Cloudflare Tunnel + Access** — see
 | Container updates | **Renovate** / manual | Reviewable PRs, no surprise breakage | Watchtower (auto-pull; use cautiously, non-prod) |
 | Web terminal (headless) | **ttyd** + Zellij | Browser SSH tile behind Access | Wave (remote mode), Wetty, Sshwifty |
 | Git / CI (optional) | keep **GitHub** | Already your remote | Gitea/Forgejo + Woodpecker (fully self-host) |
+| On-demand pool | **Compose profiles + `services.sh`** | rotate heavy services on/off per job to save RAM; agents flip them via the Docker MCP | see [`SERVICES.md`](./SERVICES.md) (browser, Gotenberg, Tika, SearXNG, Qdrant, MinIO, scratch DBs) |
 
 ## What actually runs where
 
