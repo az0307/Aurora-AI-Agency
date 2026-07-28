@@ -49,6 +49,11 @@ services:
       - n8n_data:/home/node/.n8n
     expose:
       - "5678"
+    # Tunnel-only mode (recommended): uncomment to publish n8n on loopback so a
+    # host-installed cloudflared can reach it, and REMOVE the caddy service below
+    # (Cloudflare terminates TLS at the edge). Keep Caddy only for public-DNS/no-tunnel setups.
+    # ports:
+    #   - "127.0.0.1:5678:5678"
 
   caddy:
     image: caddy:2-alpine

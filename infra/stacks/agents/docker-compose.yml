@@ -18,7 +18,16 @@ services:
       LLM_MODEL: ${LLM_MODEL:-anthropic/claude-opus-4-8}
       LLM_API_KEY: ${LLM_API_KEY:-}
     volumes:
-      # OpenHands needs the docker socket to spawn its sandbox containers:
+      # ⚠️ SECURITY: OpenHands needs the Docker socket to spawn its per-task sandbox
+      # containers, but a writable docker.sock is ROOT-EQUIVALENT on the host — a
+      # compromised agent could launch a privileged container and escape. Because
+      # OpenHands cannot function without it, DO NOT run this stack on a box with
+      # anything else valuable. Mitigations (in order of preference):
+      #   1. Run it ONLY on a disposable, isolated box (the Oracle free lab), never
+      #      alongside client data or the n8n/agency stacks.
+      #   2. Point it at a ROOTLESS Docker daemon (DOCKER_HOST=unix:///run/user/<uid>/docker.sock)
+      #      so socket access is not host-root.
+      #   3. Or run it in a dedicated VM/microVM (Firecracker) rather than sharing the host.
       - /var/run/docker.sock:/var/run/docker.sock
       - openhands_state:/.openhands
     ports:

@@ -15,4 +15,5 @@ services:
       # read-only docker socket enables the Docker widget (container status tiles):
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
-      - "127.0.0.1:3000:3000"
+      # Host 3002 (Dokploy already owns 3000); container still listens on 3000.
+      - "127.0.0.1:3002:3000"

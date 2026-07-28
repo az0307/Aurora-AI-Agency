@@ -103,7 +103,7 @@ runcmd:
 
   # --- Terminal extras not in apt: Starship, Atuin, Zellij, thefuck ---
   - su - aurora -c 'curl -sS https://starship.rs/install.sh | sh -s -- -y' || true
-  - su - aurora -c 'curl -fsSL https://raw.githubusercontent.com/atuinsh/atuin/main/install.sh | sh' || true
+  - su - aurora -c "curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --non-interactive" || true
   - (curl -fsSL https://github.com/zellij-org/zellij/releases/latest/download/zellij-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin) || true
   - DEBIAN_FRONTEND=noninteractive apt-get install -y thefuck || true
 

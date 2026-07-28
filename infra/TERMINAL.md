@@ -26,7 +26,7 @@ This is where "autocorrect + suggestive + smart" actually comes from. The
 | **fish** (or zsh) | best out-of-box autosuggestions + syntax highlight | `apt install fish` — or zsh + plugins below |
 | `zsh-autosuggestions` + `zsh-syntax-highlighting` | fish-style suggestions on zsh | clone into `~/.zsh/` and source in `.zshrc` |
 | **Starship** | fast, informative prompt | `curl -sS https://starship.rs/install.sh \| sh` |
-| **Atuin** | searchable, synced shell history with a TUI | `curl ... atuin.sh \| sh` (self-host the sync server too) |
+| **Atuin** | searchable, synced shell history with a TUI | `curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh \| sh` (add `-s -- --non-interactive` for scripts; self-host the sync server too) |
 | **zoxide** | smart `cd` that learns your paths | `apt install zoxide` |
 | **thefuck** *(or `pay-respects`)* | **autocorrect** the previous command | `apt install thefuck` / cargo install pay-respects |
 | **Zellij** | multiplexer with status bar, floating panes, plugins = "widgets/buttons" | download binary / `cargo install zellij` |
@@ -55,8 +55,9 @@ For driving a box from any browser without a native client:
 - Wave Terminal's remote mode is an alternative if you standardize on Wave.
 
 ```sh
-# example (keep bound to localhost; publish via Cloudflare Tunnel + Access only)
-ttyd -p 7681 -i lo zellij
+# ttyd is READ-ONLY by default — `-W` enables browser input. Bind to loopback and
+# publish via Cloudflare Tunnel + Access only (never expose 7681 publicly).
+ttyd -p 7681 -i 127.0.0.1 -W zellij
 ```
 
 ## How this ties into the AI agents

@@ -41,9 +41,16 @@ Dokploy UI is on :3000 — **do not** open it on ufw. Reach it via the tunnel (n
 ## 4. Cloudflare Tunnel + Access (expose nothing directly)
 1. In Cloudflare Zero Trust → **Tunnels** → create a tunnel, install `cloudflared` on the box
    (or run it as a container).
-2. Add public hostnames routing to local ports, e.g.
-   `dokploy.example.com → localhost:3000`, `n8n.example.com → localhost:5678`,
-   `dash.example.com → localhost:3000` (Homepage).
+2. Add public hostnames routing to local ports. The n8n target depends on how you deployed it:
+   - `dokploy.example.com → localhost:3000` (Dokploy UI)
+   - `dash.example.com → localhost:3002` (Homepage — host 3002, since Dokploy owns 3000)
+   - **n8n:**
+     - *Dokploy-managed* → route to Dokploy's Traefik and let Dokploy handle the domain.
+     - *Standalone compose, tunnel-only* → uncomment the `127.0.0.1:5678:5678` publish on the
+       `n8n` service, drop the `caddy` service, and route `n8n.example.com → localhost:5678`.
+     - *Standalone compose with Caddy TLS (no tunnel)* → point DNS at the box; Caddy serves 443.
+   > Note: n8n only `expose`s 5678 *inside* Docker by default; a host-installed `cloudflared`
+   > can't reach `localhost:5678` until n8n is published on the host (loopback) or you route to Caddy.
 3. In **Access** → add an application policy (email allowlist / OTP) for each hostname.
 4. Once the tunnel works, tighten ufw: `sudo ufw deny 80 && sudo ufw deny 443` if *all*
    ingress goes through the tunnel.

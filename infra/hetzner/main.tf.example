@@ -28,13 +28,19 @@ variable "server_name" {
   default = "aurora-hub"
 }
 
-# CX22 = cheapest shared Intel/AMD (2 vCPU / 4 GB). CAX21 = ARM (4 vCPU / 8 GB), better value.
+# Server type MUST be available in the chosen location:
+#   - Singapore (sin) and US (ash/hil): AMD shared = CPX*, dedicated = CCX*.
+#   - EU only (nbg1/fsn1/hel1): Intel shared = CX* AND Ampere ARM = CAX* (cheaper).
+# Default = cpx21 (3 vCPU AMD / 4 GB) because the default location below is sin;
+# CAX (ARM) is NOT offered in Singapore, so cax21+sin would be rejected on apply.
+# For the cheapest ARM value, switch location to an EU one and server_type to cax21.
 variable "server_type" {
   type    = string
-  default = "cax21"
+  default = "cpx21"
 }
 
-# sin = Singapore (closest to Australia). Others: nbg1/fsn1/hel1 (EU), ash/hil (US).
+# sin = Singapore (closest to Australia, ~90–100 ms to Sydney).
+# Others: nbg1/fsn1/hel1 (EU — enables the cheaper CX/CAX types), ash/hil (US).
 variable "location" {
   type    = string
   default = "sin"

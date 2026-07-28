@@ -5,8 +5,9 @@
     "hetzner": {
       "//": "Full provisioning: create/resize/destroy servers, firewalls, volumes, snapshots. Best surface for Claude.",
       "//source": "https://github.com/nityeshaga/hetzner-mcp-server (or dkruyt/mcp-hetzner). Confirm command per that repo's README.",
+      "//pin": "PIN A REVIEWED VERSION before granting provisioning control. Bare 'hetzner-mcp-server' lets uvx resolve the latest release from the index at first run. Use 'hetzner-mcp-server@X.Y.Z' (PyPI) or 'git+https://github.com/.../hetzner-mcp-server@<commit-sha>'.",
       "command": "uvx",
-      "args": ["hetzner-mcp-server"],
+      "args": ["hetzner-mcp-server@X.Y.Z"],
       "env": {
         "HCLOUD_TOKEN": "${HETZNER_API_TOKEN}"
       }

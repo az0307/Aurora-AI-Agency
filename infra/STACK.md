@@ -55,3 +55,7 @@ All web-facing services sit **behind Cloudflare Tunnel + Access** — see
   self-hosted ntfy topic so alerts hit your phone.
 - **Backups first, features second:** stand up `restic` before you put anything you'd miss on
   a box. See [`runbooks/BACKUP.md`](./runbooks/BACKUP.md).
+- **Image pinning for production:** the compose stacks use readable tags (`:latest`, `:2`,
+  `:16-alpine`) so the templates stay easy to read. Tags are mutable — before running these in
+  production, pin each image to a reviewed version **plus its `@sha256:…` digest** and update
+  those digests through scheduled **Renovate** PRs (rather than pulling `:latest` blindly).
