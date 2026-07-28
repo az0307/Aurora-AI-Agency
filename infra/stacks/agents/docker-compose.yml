@@ -1,0 +1,28 @@
+# OpenHands: autonomous coding agent that runs SANDBOXED in Docker — the safe way to
+# let an agent browse/execute on a VPS without touching the host. Hosted-API backend.
+# Front it with Cloudflare Access; give it a scoped workspace only.
+#
+#   cp .env.example .env  &&  edit  &&  docker compose up -d
+# Then open the UI (behind Access) and set your model + API key in-app, or via env below.
+# Docs: https://docs.all-hands.dev  (confirm current image tag before deploying)
+
+services:
+  openhands:
+    image: docker.all-hands.dev/all-hands-ai/openhands:latest
+    restart: unless-stopped
+    environment:
+      # OpenHands launches per-task sandbox containers using this runtime image:
+      SANDBOX_RUNTIME_CONTAINER_IMAGE: ${SANDBOX_IMAGE:-docker.all-hands.dev/all-hands-ai/runtime:latest}
+      LOG_ALL_EVENTS: "true"
+      # Optional: preset the model/key instead of entering it in the UI.
+      LLM_MODEL: ${LLM_MODEL:-anthropic/claude-opus-4-8}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+    volumes:
+      # OpenHands needs the docker socket to spawn its sandbox containers:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - openhands_state:/.openhands
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  openhands_state:

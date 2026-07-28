@@ -1,0 +1,67 @@
+# Monitoring + alerting stack: Beszel (metrics) + Uptime Kuma (uptime/status page)
+# + Dozzle (live container logs) + ntfy (push to your phone).
+# Keep all UIs behind Cloudflare Access — do not publish these ports publicly.
+#
+#   docker compose up -d
+# Then in Uptime Kuma/Beszel, add an ntfy notification pointing at the ntfy topic.
+
+services:
+  # --- Beszel hub: lightweight metrics dashboard (pair with beszel-agent per host) ---
+  beszel:
+    image: henrygd/beszel:latest
+    restart: unless-stopped
+    volumes:
+      - beszel_data:/beszel_data
+    ports:
+      - "127.0.0.1:8090:8090"
+
+  # Agent reports this host's stats to the hub. Deploy one per monitored box.
+  beszel-agent:
+    image: henrygd/beszel-agent:latest
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      PORT: ${BESZEL_AGENT_PORT:-45876}
+      KEY: ${BESZEL_AGENT_KEY:-paste-hub-public-key}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  # --- Uptime Kuma: uptime checks + public status page ---
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    restart: unless-stopped
+    volumes:
+      - kuma_data:/app/data
+    ports:
+      - "127.0.0.1:3001:3001"
+
+  # --- Dozzle: real-time container logs in the browser ---
+  dozzle:
+    image: amir20/dozzle:latest
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      DOZZLE_NO_ANALYTICS: "true"
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  # --- ntfy: self-hosted push notifications to your phone ---
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    restart: unless-stopped
+    command: serve
+    environment:
+      NTFY_BASE_URL: ${NTFY_BASE_URL:-https://ntfy.example.com}
+      NTFY_BEHIND_PROXY: "true"
+    volumes:
+      - ntfy_cache:/var/cache/ntfy
+      - ntfy_etc:/etc/ntfy
+    ports:
+      - "127.0.0.1:8888:80"
+
+volumes:
+  beszel_data:
+  kuma_data:
+  ntfy_cache:
+  ntfy_etc:

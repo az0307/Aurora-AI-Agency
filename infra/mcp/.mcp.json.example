@@ -1,0 +1,25 @@
+{
+  "//": "Copy to .mcp.json (git-ignored) and fill tokens via env vars. Lets Claude manage the fleet.",
+  "//tokens": "Scope one Hetzner token per Project (= per client) to bound blast radius. Never commit real tokens.",
+  "mcpServers": {
+    "hetzner": {
+      "//": "Full provisioning: create/resize/destroy servers, firewalls, volumes, snapshots. Best surface for Claude.",
+      "//source": "https://github.com/nityeshaga/hetzner-mcp-server (or dkruyt/mcp-hetzner). Confirm command per that repo's README.",
+      "command": "uvx",
+      "args": ["hetzner-mcp-server"],
+      "env": {
+        "HCLOUD_TOKEN": "${HETZNER_API_TOKEN}"
+      }
+    },
+    "hostinger": {
+      "//": "OPTIONAL. Official first-party MCP. Lifecycle + metrics only (list/start/stop/restart).",
+      "//source": "https://www.hostinger.com/support/11079316-hostinger-api-mcp-server/",
+      "command": "npx",
+      "args": ["-y", "hostinger-api-mcp"],
+      "env": {
+        "HOSTINGER_API_TOKEN": "${HOSTINGER_API_TOKEN}"
+      }
+    },
+    "//oracle": "No first-class MCP recommended. Treat the free box as cattle: rebuild from hetzner/cloud-init.yaml rather than managing it live. Use the OCI CLI if you must."
+  }
+}

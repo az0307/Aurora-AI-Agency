@@ -1,0 +1,18 @@
+# Homepage: a single start-page over every service (with widgets for Docker, n8n,
+# Uptime Kuma, Beszel, etc). Config lives in ./config (mounted). Behind Cloudflare Access.
+#
+#   docker compose up -d
+# Edit ./config/services.yaml to add tiles; docs: https://gethomepage.dev
+
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    restart: unless-stopped
+    environment:
+      HOMEPAGE_ALLOWED_HOSTS: ${HOMEPAGE_ALLOWED_HOSTS:-dash.example.com}
+    volumes:
+      - ./config:/app/config
+      # read-only docker socket enables the Docker widget (container status tiles):
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "127.0.0.1:3000:3000"

@@ -1,0 +1,16 @@
+# Never commit real secrets or state — only the *.example templates.
+.env
+*.env
+!.env.example
+.mcp.json
+mcp/.mcp.json
+
+# Terraform
+hetzner/main.tf
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Local Homepage config with tokens
+stacks/dashboard/config/
