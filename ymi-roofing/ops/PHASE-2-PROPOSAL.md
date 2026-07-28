@@ -14,12 +14,13 @@ Phase 2 is about the other half: **getting found**, and turning one-off jobs int
 steady stream of enquiries. Below are the modules that give a local roofer the biggest
 return for the least fuss. Pick the ones that suit — they're not all-or-nothing.
 
-> **One honest note up front.** Nobody can *guarantee* a #1 Google ranking — anyone who
-> promises that is selling you something. What these modules do is stack the odds
-> properly: the right pages, the right local signals, real reviews, and paid placement
-> where it pays for itself. Done together they're how local trades actually win the map
-> pack and the top of search. I'll show you the numbers every month so you can see it
-> working.
+> **One honest note up front.** Nobody can *guarantee* a #1 Google ranking or a set number
+> of calls — anyone who promises that is selling you something. Results depend on your
+> market, your budget, how consistently we execute, and where you're starting from. What
+> these modules do is stack the odds properly: the right pages, the right local signals,
+> real reviews, and paid placement used where the maths works. Done together they're the
+> approach local trades typically use to compete for the map pack and the top of search.
+> I'll show you the numbers every month so you can see what's working and what isn't.
 
 ---
 
@@ -36,14 +37,21 @@ return for the least fuss. Pick the ones that suit — they're not all-or-nothin
 
 ## Phase 2 modules
 
-### 1. Google Business Profile — done properly  🔴 *do this first, it's the biggest lever*
-The single highest-return thing on this list, and most of it is free. It's what puts you
-in Google Maps and the "3-pack" when someone searches *"roof repairs near me"* — bigger
-source of calls than the website itself.
-- Full profile build + verification, categories, service list, service areas
-- Weekly photo posting from your jobs (Google rewards active profiles)
-- Q&A seeding and review-link setup
-- **Why it pays:** local pack placement is where the phone actually rings.
+### 1. Google Business Profile — ongoing optimisation  🔴 *do this first*
+> **Note:** the initial profile *build and verification* is already included in your
+> onboarding (see the Welcome Package — created and submitted in Week 1). This module is
+> the **ongoing optimisation** that keeps it working, and is optional on top.
+
+The profile is usually the biggest single lever for a local trade, and most of it is free.
+It's what puts you in Google Maps and the "3-pack" when someone searches *"roof repairs
+near me"* — for many trades a bigger source of calls than the website itself.
+- Weekly photo posting from your jobs (Google tends to favour active profiles)
+- Publishing genuine customer questions with accurate answers, and review-link setup
+- Category, service-list and service-area tuning over time
+- **Why it matters:** local-pack placement is often where the phone rings.
+
+*Posted content is real only — genuine questions, accurate answers, and job photos you've
+approved for use (per the permissions in the intake form). No manufactured engagement.*
 
 ### 2. Suburb landing pages  🟢 *high SEO ROI*
 Dedicated pages — *Roof Restoration Melton*, *Roof Repairs Caroline Springs*,
@@ -59,11 +67,18 @@ The automation is already speced — Phase 2 switches it on.
 - **Why it pays:** five genuine Google reviews outperform any amount of website polish.
   Real reviews only — fake ones breach the ACL and get profiles suspended.
 
-### 4. Google Local Services Ads ("Google Guaranteed")  🟡 *pay per lead*
-The green **Google Guaranteed** badge, shown above normal results for trades.
-- Verification + badge setup, budget and service-area config
-- You pay per lead, not per click — and only for real enquiries
-- **Why it pays:** highest-intent placement there is; the badge itself wins trust.
+### 4. Google Search Ads  🟡 *paid, when you want to accelerate*
+Paid search placement for high-intent terms like *"roof repairs Melton"* — you appear at
+the top of results when someone's actively looking.
+- Campaign setup targeted to your suburbs and services, with call-tracking
+- You set the budget; you can pause it any time
+- **Why it's useful:** it captures demand immediately while the organic work (GBP, suburb
+  pages, reviews) builds up underneath it.
+
+> *Note: Google's "Local Services Ads / Google Verified" badge program is **not currently
+> offered to Australian businesses**, so this is standard Google Search Ads — not the
+> "Google Guaranteed" product you may have seen advertised. Billing and any lead handling
+> follow Google's own rules.*
 
 ### 5. Social presence + ManyChat chatbot  🟡
 - Facebook + Instagram set up and branded, seeded with your gallery
@@ -72,7 +87,8 @@ The green **Google Guaranteed** badge, shown above normal results for trades.
 
 ### 6. Quote follow-up nurture  🟡
 Quotes that don't convert straight away get a gentle, automatic nudge (SMS/email) a few
-days later. Most trades never follow up — this alone recovers jobs you'd otherwise lose.
+days later. Most trades never follow up at all — a simple reminder is a low-effort way to
+win back jobs that would otherwise go quiet.
 
 ### 7. Seasonal campaigns  🔵 *optional*
 Pre-winter roof checks, post-storm damage outreach — timed pushes when demand spikes.
@@ -81,14 +97,16 @@ Pre-winter roof checks, post-storm damage outreach — timed pushes when demand 
 
 ## Suggested starting point
 
-You don't need all seven. For most local roofers the highest return, in order:
+You don't need all seven. For most local roofers, a sensible order is:
 
-1. **Google Business Profile** (module 1) — start here regardless
-2. **Review machine** (module 3) — cheap, compounds
+1. **Google Business Profile optimisation** (module 1) — the profile's already built in
+   onboarding; keeping it active is usually the highest-leverage next step
+2. **Review machine** (module 3) — low cost, compounds over time
 3. **Suburb pages** (module 2) — steady organic growth
-4. Then layer in **Local Services Ads** (4) once reviews are flowing
+4. Then layer in **Google Search Ads** (4) once reviews are flowing
 
-Reviews + GBP + suburb pages is the honest recipe for the map pack. Ads accelerate it.
+GBP + reviews + suburb pages is the honest core of local search. Paid ads can accelerate
+it, but aren't a substitute for it.
 
 ---
 
@@ -99,10 +117,10 @@ before anything starts, and nothing begins without your go-ahead.
 
 | Module | Setup | Ongoing |
 |---|---|---|
-| 1 · Google Business Profile build | $300 one-off | included in retainer to maintain |
+| 1 · GBP ongoing optimisation *(build already in onboarding)* | — | $100/mo, or included if you're on the retainer |
 | 2 · Suburb landing pages | $150 per suburb page | — |
 | 3 · Review machine activation | $200 one-off | ~$0.60/mo Twilio (billed to you) |
-| 4 · Local Services Ads setup | $250 one-off | your ad budget + management |
+| 4 · Google Search Ads setup | $250 one-off | $150/mo management + your ad budget (billed to you by Google) |
 | 5 · Social + ManyChat | $300 one-off | ~$22/mo ManyChat (billed to you) |
 | 6 · Quote follow-up nurture | $150 one-off | runs on existing automation |
 | 7 · Seasonal campaigns | quoted per campaign | — |
@@ -115,9 +133,9 @@ ad spend) are billed to you directly by the provider and stay in your name.*
 ## Next steps
 
 1. Tell me which modules interest you — no commitment, we'll talk it through
-2. I'll send a fixed quote for exactly those
-3. We start with the Google Business Profile either way — it's free to build and the
-   biggest single win
+2. I'll send a fixed quote for exactly those, and nothing starts until you approve it
+3. Your Google Business Profile gets built during onboarding regardless (it's included) —
+   these modules are about what we do *after* that to grow it
 
 Any questions, call me.
 
