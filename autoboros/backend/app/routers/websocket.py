@@ -1,6 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from app.services import manager
-from app.routers.auth import verify_token
+from app.routers.auth import authenticate_token
 
 router = APIRouter(prefix="/ws", tags=["websocket"])
 
@@ -13,7 +13,8 @@ async def websocket_endpoint(
     if not token:
         await websocket.close(code=4001)
         return
-    user_id = verify_token(token)
+    # S5 — authenticate_token also rejects revoked (logged-out) tokens.
+    user_id = await authenticate_token(token)
     if not user_id:
         await websocket.close(code=4001)
         return

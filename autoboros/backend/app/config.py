@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173,http://localhost:4173"
     # "development" | "production" — production refuses insecure default secrets
     env: str = "development"
+    # Redis URL for shared token-revocation + login-throttle state (S5/S6).
+    # Empty = in-process fallback (single-worker only). Set in multi-VM prod.
+    redis_url: str = ""
 
     @property
     def cors_origins_list(self) -> list[str]:

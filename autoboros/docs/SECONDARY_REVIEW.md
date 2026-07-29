@@ -77,6 +77,31 @@
 
 ---
 
+## Remediation status (S5 / S6 / S7)
+
+Backend work landed in `app/routers/auth.py`, `app/routers/websocket.py`,
+`app/services/store.py`, `app/config.py`. New env var: `REDIS_URL`
+(optional; empty = in-process fallback, **single-worker only**). Optional dep
+group added: `pip install -e ".[redis]"`.
+
+- **[S5] — DONE (backend).** Every JWT now carries a `jti`. `POST /api/v1/auth/logout`
+  revokes the token's `jti` (stored with TTL = remaining token lifetime). Every
+  authenticated request (HTTP + WebSocket) rejects a revoked `jti`. Tested:
+  `test_logout_revokes_token`.
+- **[S6] — DONE (backend).** The login lockout counter/lock now live in the shared
+  `store` (Redis when `REDIS_URL` is set, in-process otherwise). Set `REDIS_URL`
+  in any multi-VM deploy or the lock is still per-instance. Tested:
+  `test_rate_limit_locks_after_max_attempts`.
+- **[S7] — PARTIAL.** Server side is done additively: login also sets the token as
+  an `httpOnly; SameSite=Strict` cookie (`secure` in prod), `logout` clears it,
+  and both the header and cookie paths authenticate. Tested:
+  `test_login_sets_httponly_cookie`. **Remaining (frontend, not done):** the
+  cockpit still reads/writes the token in `localStorage`
+  (`src/api/client.js`, `src/hooks/useAuth.js`). To fully close S7, switch the
+  client to rely on the cookie (send `credentials: 'include'`, stop storing the
+  token in `localStorage`) and add a CSRF token because the cookie is sent
+  automatically. Left intact to avoid breaking the existing login flow.
+
 ## Verdict
 
 The first audit caught all the "won't boot" and "obvious RCE" issues. This secondary pass finds **distributed-systems blind spots** (rate limit shared state, backpressure, JWT revocation) and **frontend production gaps** (CSP, structured logging, XSS token storage). None are blockers for a single-machine demo, but [S5], [S6], and [S7] are mandatory before any multi-user or internet-facing deployment.

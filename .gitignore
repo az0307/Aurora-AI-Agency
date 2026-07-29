@@ -8,3 +8,8 @@ dist/
 node_modules/
 .env
 *.local
+
+# Local SQLite artifacts from running the autoboros test suite / dev server
+# (e.g. `DATABASE_URL="sqlite+aiosqlite:///./t.db" ... pytest` creates ./t.db)
+*.db
+*.db-journal
