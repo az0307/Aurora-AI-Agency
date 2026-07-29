@@ -31,7 +31,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - openhands_state:/.openhands
     ports:
-      - "127.0.0.1:3000:3000"
+      # Host 3003, NOT 3000: Dokploy's UI owns 3000 on this box (see runbooks/DAY1.md),
+      # and 3001/3002 are Uptime Kuma / Homepage. Container still listens on 3000.
+      - "127.0.0.1:3003:3000"
 
 volumes:
   openhands_state:

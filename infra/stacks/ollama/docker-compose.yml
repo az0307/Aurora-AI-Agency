@@ -1,0 +1,62 @@
+# Ollama — self-hosted, OpenAI-compatible inference for open-weight models
+# (Nous Hermes, Qwen, Kimi weights, Llama, etc.). This is the DOCUMENTED FUTURE PATH:
+# our default remains hosted APIs on a cheap CPU box (see ../../README.md). Stand this up
+# only when you deliberately want local/offline model serving.
+#
+# CPU-only out of the box — good for small quantized models (see README.md for the honest
+# performance + cost picture, and the GPU deploy block below for the heavier tier).
+#
+# Setup:  cp .env.example .env  &&  edit  &&  docker compose up -d
+#         docker compose exec ollama ollama pull hermes3:8b   # then it's ready
+# Reach it via Cloudflare Tunnel + Access — binds to LOOPBACK only, never publish 11434.
+# Tags are readable for the template; pin version+@sha256 for production (see ../../STACK.md).
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    environment:
+      # How long a model stays resident after use (unload sooner to reclaim RAM on a small box):
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-5m}
+      # Max models held in memory at once:
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-1}
+      # Bind inside the container to all interfaces; the host publish below keeps it on loopback:
+      OLLAMA_HOST: 0.0.0.0:11434
+    volumes:
+      - ollama_models:/root/.ollama   # pulled model weights live here — can grow to many GB
+    ports:
+      - "127.0.0.1:11434:11434"       # OpenAI-compatible API at http://127.0.0.1:11434
+
+    # --- GPU tier (opt-in) -------------------------------------------------------------
+    # CPU is fine for tiny/quantized models; real throughput needs an NVIDIA GPU + the
+    # NVIDIA Container Toolkit on the host. Uncomment to claim a GPU. NOTE: this is a
+    # materially more expensive box — Hetzner's GPU/dedicated options or another provider
+    # (a rented GPU host) are usually required; a standard CX/CPX VPS has no GPU. Be honest
+    # with the budget before flipping this on. See README.md.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # Optional browser chat UI over the same Ollama API. Profile-gated so it stays OFF unless
+  # you ask for it (`docker compose --profile ui up -d`) — keeps the base install headless.
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    profiles: ["ui"]
+    restart: unless-stopped
+    depends_on:
+      - ollama
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      WEBUI_AUTH: ${WEBUI_AUTH:-true}
+    volumes:
+      - openwebui_data:/app/backend/data
+    ports:
+      - "127.0.0.1:3080:8080"   # loopback only — front with Cloudflare Tunnel + Access
+
+volumes:
+  ollama_models:
+  openwebui_data:

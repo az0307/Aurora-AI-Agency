@@ -1,0 +1,80 @@
+# Activepieces — the closest open-source, Zapier-style *UI* alternative to n8n.
+# Use it when a client wants a friendlier, more "consumer Zapier" builder than n8n, or to
+# run a second automation engine isolated from the n8n stack. App + Postgres + Redis.
+#
+# Setup:  cp .env.example .env  &&  edit  &&  docker compose up -d
+# Reach the UI via Cloudflare Tunnel + Access — the app binds to LOOPBACK only (127.0.0.1),
+# never publish 8081 to the internet. Set AP_FRONTEND_URL to the public hostname you route.
+#
+# Tags are readable for the template; pin version+@sha256 for production (see ../../STACK.md).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${AP_POSTGRES_USERNAME:-activepieces}
+      POSTGRES_PASSWORD: ${AP_POSTGRES_PASSWORD:?set AP_POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${AP_POSTGRES_DATABASE:-activepieces}
+    volumes:
+      - ap_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AP_POSTGRES_USERNAME:-activepieces}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - ap_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  activepieces:
+    image: activepieces/activepieces:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      AP_ENVIRONMENT: prod
+      # Public URL the browser reaches (the Cloudflare hostname you route to this box):
+      AP_FRONTEND_URL: ${AP_FRONTEND_URL:-http://localhost:8081}
+      # Secrets — generate before first boot (see .env.example for the openssl commands).
+      # Changing AP_ENCRYPTION_KEY after data exists makes stored connections unreadable.
+      AP_ENCRYPTION_KEY: ${AP_ENCRYPTION_KEY:?set AP_ENCRYPTION_KEY in .env}
+      AP_JWT_SECRET: ${AP_JWT_SECRET:?set AP_JWT_SECRET in .env}
+      # Postgres
+      AP_POSTGRES_HOST: postgres
+      AP_POSTGRES_PORT: "5432"
+      AP_POSTGRES_DATABASE: ${AP_POSTGRES_DATABASE:-activepieces}
+      AP_POSTGRES_USERNAME: ${AP_POSTGRES_USERNAME:-activepieces}
+      AP_POSTGRES_PASSWORD: ${AP_POSTGRES_PASSWORD:?set AP_POSTGRES_PASSWORD in .env}
+      # Redis (queue backend)
+      AP_QUEUE_MODE: REDIS
+      AP_REDIS_HOST: redis
+      AP_REDIS_PORT: "6379"
+      # Flow execution. SANDBOXED is safest but needs `privileged: true` (below).
+      # UNSANDBOXED is fine for a single-tenant, trusted box behind Access.
+      AP_EXECUTION_MODE: ${AP_EXECUTION_MODE:-UNSANDBOXED}
+      AP_TELEMETRY_ENABLED: ${AP_TELEMETRY_ENABLED:-false}
+    # To use AP_EXECUTION_MODE=SANDBOXED, uncomment the next line (grants extra kernel caps):
+    # privileged: true
+    volumes:
+      - ap_cache:/usr/src/app/cache
+    ports:
+      # Host 8081, NOT 8080: the always-on monitoring stack already binds
+      # 127.0.0.1:8080 for Dozzle. See the port map in ../../SERVICES.md.
+      - "127.0.0.1:8081:80"   # loopback only — front with Cloudflare Tunnel + Access
+
+volumes:
+  ap_pg_data:
+  ap_redis_data:
+  ap_cache:

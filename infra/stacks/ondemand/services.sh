@@ -5,7 +5,7 @@
 #
 #   ./services.sh list             # available profiles (services you can turn on)
 #   ./services.sh status           # what's currently running
-#   ./services.sh up   <profile>   # e.g. up browser | docs | search | rag | storage | scratch
+#   ./services.sh up   <profile>   # e.g. up browser|docs|search|rag|storage|scratch|translate|stt
 #   ./services.sh down <profile>   # stop that profile, reclaim RAM
 #   ./services.sh down-all         # stop everything in the pool
 set -euo pipefail
@@ -23,6 +23,7 @@ case "$cmd" in
   down)     [ -n "$svc" ] || { echo "usage: services.sh down <profile>" >&2; exit 1; }
             "${COMPOSE[@]}" --profile "$svc" down ;;
   down-all) "${COMPOSE[@]}" --profile browser --profile docs --profile search \
-              --profile rag --profile storage --profile scratch down ;;
+              --profile rag --profile storage --profile scratch \
+              --profile translate --profile stt down ;;
   *)        echo "services.sh {list|status|up <profile>|down <profile>|down-all}" ;;
 esac

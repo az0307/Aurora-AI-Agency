@@ -11,7 +11,7 @@ All web-facing services sit **behind Cloudflare Tunnel + Access** — see
 |---|---|---|---|
 | Control plane / PaaS | **Dokploy** | Cleanest UI, built-in monitoring, Git deploys, Traefik + auto-TLS, free | Coolify (most features), CapRover, Dockge (compose-only), Portainer |
 | Reverse proxy / TLS | **Traefik** (bundled in Dokploy) | Auto Let's Encrypt, dynamic routing | Caddy (used by the standalone n8n stack), Nginx Proxy Manager |
-| Automation ("self-hosted Zapier") | **n8n** + Postgres | You already run it; huge node library; fair-code | Activepieces (closest Zapier-style UI), Node-RED, Huginn |
+| Automation ("self-hosted Zapier") | **n8n** + Postgres | You already run it; huge node library; fair-code | **Activepieces** — closest Zapier-style UI, now built: [`stacks/activepieces/`](./stacks/activepieces/); also Node-RED, Huginn |
 | Metrics | **Beszel** | Ultra-light, agent + hub, per-container | Netdata (deep), Grafana + Prometheus (heavy) |
 | Uptime + status page | **Uptime Kuma** | Dead-simple checks + public status page | Gatus, Healthchecks.io (self-host) |
 | Live container logs | **Dozzle** | Zero-config log viewer in the browser | Grafana Loki + Promtail (retention/search) |
@@ -25,7 +25,9 @@ All web-facing services sit **behind Cloudflare Tunnel + Access** — see
 | Container updates | **Renovate** / manual | Reviewable PRs, no surprise breakage | Watchtower (auto-pull; use cautiously, non-prod) |
 | Web terminal (headless) | **ttyd** + Zellij | Browser SSH tile behind Access | Wave (remote mode), Wetty, Sshwifty |
 | Git / CI (optional) | keep **GitHub** | Already your remote | Gitea/Forgejo + Woodpecker (fully self-host) |
-| On-demand pool | **Compose profiles + `services.sh`** | rotate heavy services on/off per job to save RAM; agents flip them via the Docker MCP | see [`SERVICES.md`](./SERVICES.md) (browser, Gotenberg, Tika, SearXNG, Qdrant, MinIO, scratch DBs) |
+| On-demand pool | **Compose profiles + `services.sh`** | rotate heavy services on/off per job to save RAM; agents flip them via the Docker MCP | see [`SERVICES.md`](./SERVICES.md) (browser, Gotenberg, Tika, SearXNG, Qdrant, MinIO, scratch DBs, LibreTranslate, whisper) |
+| Self-hosted models (optional) | *hosted APIs by default* | a cheap CPU box is enough; no GPU needed | **Ollama** for open-weight models (Hermes/Qwen): [`stacks/ollama/`](./stacks/ollama/) — CPU-only for small quantized models; real throughput needs a **GPU box, a materially pricier tier** |
+| Provisioning safety | **`hetzner/preflight.sh`** | read-only check that the server type is actually offered in your location (and the token works) *before* you spend | catches e.g. CAX/ARM being EU-only vs Singapore |
 
 ## What actually runs where
 
