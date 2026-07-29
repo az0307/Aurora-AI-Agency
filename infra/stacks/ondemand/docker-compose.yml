@@ -95,7 +95,41 @@ services:
     ports:
       - "127.0.0.1:56379:6379"
 
+  # --- Offline machine translation: text → translated text, no paid API/egress ---
+  libretranslate:
+    image: libretranslate/libretranslate:latest
+    profiles: ["translate"]
+    restart: unless-stopped
+    environment:
+      # Only load the language pairs you need — each model is ~100MB of RAM+disk.
+      # Comma-separated ISO codes; empty = load everything (heavy). See LibreTranslate docs.
+      LT_LOAD_ONLY: ${LT_LOAD_ONLY:-en,es,fr,de,zh}
+      LT_DISABLE_WEB_UI: ${LT_DISABLE_WEB_UI:-false}
+      # Optional API-key gate; behind Access on loopback you usually don't need it:
+      LT_API_KEYS: ${LT_API_KEYS:-false}
+    volumes:
+      - libretranslate_models:/home/libretranslate/.local/share/argos-translate
+    ports:
+      - "127.0.0.1:3014:5000"   # POST /translate  (first boot downloads the models)
+
+  # --- Speech-to-text: audio → transcript (faster-whisper engine, CPU-ok for short clips) ---
+  whisper:
+    image: onerahmet/openai-whisper-asr-webservice:latest
+    profiles: ["stt"]
+    restart: unless-stopped
+    environment:
+      ASR_ENGINE: ${ASR_ENGINE:-faster_whisper}
+      # tiny|base|small|medium|large-v3 — bigger = more accurate + much slower on CPU.
+      # Volume clips or large models want a GPU box (see stacks/ollama/README.md for that tier).
+      ASR_MODEL: ${ASR_MODEL:-base}
+    volumes:
+      - whisper_cache:/root/.cache   # caches the downloaded model between restarts
+    ports:
+      - "127.0.0.1:3015:9000"   # POST /asr?task=transcribe (multipart 'audio_file')
+
 volumes:
   searxng_data:
   qdrant_data:
   minio_data:
+  libretranslate_models:
+  whisper_cache:

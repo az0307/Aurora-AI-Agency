@@ -1,58 +1,65 @@
 {
   "//": "Copy to .mcp.json (git-ignored) and fill tokens via env vars. Lets Claude/agents manage the fleet + drive the on-demand pool.",
   "//tokens": "Scope one Hetzner token per Project (= per client) to bound blast radius. Never commit real tokens.",
-  "//package-names": "Confirm every command/package against its upstream README before use — names/versions move. Pin anything with write/provisioning access.",
+  "//package-names": "Every command/package/version below was verified against its registry (PyPI/npm) + upstream README on 2026-07-29. Re-confirm before bumping anything with write/provisioning access.",
   "//per-agent": "This uses Claude Code's ${VAR} expansion. OpenCode wants {env:VAR}, Kimi Code uses env/bearerTokenEnvVar — translate per AGENTS.md, don't symlink one file.",
   "mcpServers": {
     "hetzner": {
       "//": "Provisioning: create/resize/destroy servers, firewalls, volumes, snapshots. Best surface for Claude.",
-      "//source": "https://github.com/nityeshaga/hetzner-mcp-server (or dkruyt/mcp-hetzner). Confirm command per that repo's README.",
-      "//pin": "REQUIRED FILL-IN, fail-closed on purpose: replace 0.0.0 with a specific reviewed PyPI release (or use a git+https URL @<commit-sha>). Left as 0.0.0 uvx will error rather than silently pull an unreviewed latest before your token is passed.",
-      "command": "uvx",
-      "args": ["hetzner-mcp-server==0.0.0"],
+      "//source": "https://github.com/nityeshaga/hetzner-mcp-server — VERIFIED published to npm as 'hetzner-mcp-server' (author nityesh). It is NOT on PyPI (uvx would 404), so this runs via npx, not uvx. Alt implementation: github.com/dkruyt/mcp-hetzner.",
+      "//pin": "Pinned to npm 1.0.0 — the only published version (released 2026-01-06). This is write/provisioning access: review the diff and re-verify the version before bumping.",
+      "//env": "VERIFIED: the server reads HETZNER_API_TOKEN (its own env name), not HCLOUD_TOKEN. Value is expanded from your operator shell var of the same name.",
+      "command": "npx",
+      "args": ["-y", "hetzner-mcp-server@1.0.0"],
       "env": {
-        "HCLOUD_TOKEN": "${HETZNER_API_TOKEN}"
+        "HETZNER_API_TOKEN": "${HETZNER_API_TOKEN}"
       }
     },
     "docker": {
       "//": "The on/off switch for the on-demand pool: start/stop/inspect containers. See stacks/ondemand/.",
-      "//source": "Confirm your chosen Docker MCP package/command upstream; pin a reviewed version.",
+      "//source": "VERIFIED: github.com/QuantGeekDev/docker-mcp, published to PyPI as 'docker-mcp'. 'uvx docker-mcp' is the documented run command. Requires Python 3.12+.",
+      "//pin": "Pinned to 0.2.0 — latest PyPI release (2024-12-05). Write access to the Docker socket: re-review before bumping.",
       "command": "uvx",
-      "args": ["docker-mcp==0.0.0"]
+      "args": ["docker-mcp==0.2.0"]
     },
     "playwright": {
       "//": "Browser automation (navigate, click, extract, screenshot). Pair with the on-demand 'browser' profile or run standalone.",
+      "//source": "VERIFIED: npm '@playwright/mcp' (Microsoft). Pinned to 0.0.78 (latest stable, 2026-07). Fast-moving — bump deliberately.",
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"]
+      "args": ["-y", "@playwright/mcp@0.0.78"]
     },
     "filesystem": {
       "//": "Scoped file access — point ONLY at a workspace dir, never /.",
+      "//source": "VERIFIED: npm '@modelcontextprotocol/server-filesystem' (Anthropic). Date-versioned; pinned to 2026.7.10 (latest).",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/opt/aurora/workspace"]
+      "args": ["-y", "@modelcontextprotocol/server-filesystem@2026.7.10", "/opt/aurora/workspace"]
     },
     "postgres": {
-      "//": "Query n8n / scratch DBs. Prefer a read-only DSN.",
+      "//": "Query n8n / scratch DBs. Prefer a read-only DSN; --access-mode=restricted also blocks writes at the server layer.",
+      "//source": "VERIFIED: github.com/crystaldba/postgres-mcp, PyPI 'postgres-mcp' (Postgres MCP Pro). Reads DATABASE_URI. Pinned to 0.3.0 (latest, 2025-05-16).",
       "command": "uvx",
-      "args": ["postgres-mcp==0.0.0"],
+      "args": ["postgres-mcp==0.3.0", "--access-mode=restricted"],
       "env": {
         "DATABASE_URI": "${POSTGRES_DSN}"
       }
     },
     "fetch": {
       "//": "HTTP fetch / web content for agents. Pair with the on-demand SearXNG for private search.",
+      "//source": "VERIFIED: PyPI 'mcp-server-fetch' (Anthropic). Date-versioned; pinned to 2026.7.10 (latest).",
       "command": "uvx",
-      "args": ["mcp-server-fetch"]
+      "args": ["mcp-server-fetch==2026.7.10"]
     },
     "git": {
       "//": "Local repo operations, scoped to the workspace.",
+      "//source": "VERIFIED: PyPI 'mcp-server-git' (Anthropic). Date-versioned; pinned to 2026.7.10 (latest).",
       "command": "uvx",
-      "args": ["mcp-server-git", "--repository", "/opt/aurora/workspace"]
+      "args": ["mcp-server-git==2026.7.10", "--repository", "/opt/aurora/workspace"]
     },
     "hostinger": {
       "//": "OPTIONAL. Official first-party MCP. Lifecycle + metrics only (list/start/stop/restart).",
-      "//source": "https://www.hostinger.com/support/11079316-hostinger-api-mcp-server/",
+      "//source": "https://www.hostinger.com/support/11079316-hostinger-api-mcp-server/ — VERIFIED: npm 'hostinger-api-mcp'. Pinned to 1.25.0 (latest). Reads HOSTINGER_API_TOKEN.",
       "command": "npx",
-      "args": ["-y", "hostinger-api-mcp"],
+      "args": ["-y", "hostinger-api-mcp@1.25.0"],
       "env": {
         "HOSTINGER_API_TOKEN": "${HOSTINGER_API_TOKEN}"
       }
