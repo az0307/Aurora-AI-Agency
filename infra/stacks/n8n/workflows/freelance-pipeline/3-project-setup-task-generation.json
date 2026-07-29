@@ -1,0 +1,319 @@
+{
+  "name": "Project Setup & Task Generation",
+  "nodes": [
+    {
+      "id": "webhook",
+      "name": "Lead Won Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": {
+        "path": "lead-won",
+        "httpMethod": "POST"
+      },
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "id": "get_lead",
+      "name": "Get Lead & Service Details",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT l.*, s.* FROM leads l LEFT JOIN services s ON l.service_type = s.service_name WHERE l.id = $1",
+        "queryParameters": "={{$json.lead_id}}"
+      },
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "id": "create_client",
+      "name": "Create/Update Client",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO clients (name, industry, tier, relationship_stage) VALUES ($1, $2, 'B', 'active') ON CONFLICT (name) DO UPDATE SET relationship_stage = 'active', last_contact_date = NOW() RETURNING id",
+        "queryParameters": "name={{$node['Get Lead & Service Details'].json.company}},industry={{$node['Get Lead & Service Details'].json.industry}}"
+      },
+      "position": [
+        650,
+        200
+      ]
+    },
+    {
+      "id": "create_contact",
+      "name": "Create Contact",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "insert",
+        "table": "contacts",
+        "columns": "client_id,name,email,is_primary",
+        "values": "{{$node['Create/Update Client'].json.id}},{{$node['Get Lead & Service Details'].json.contact_name}},{{$node['Get Lead & Service Details'].json.contact_email}},true"
+      },
+      "position": [
+        650,
+        350
+      ]
+    },
+    {
+      "id": "create_project",
+      "name": "Create Project",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "insert",
+        "table": "projects",
+        "columns": "project_name,client_id,lead_id,service_id,price,cost_estimate,stage,due_date,sop_template",
+        "returnFields": "id,project_name",
+        "values": "={{$node['Get Lead & Service Details'].json.title}},={{$node['Create/Update Client'].json.id}},={{$json.lead_id}},={{$node['Get Lead & Service Details'].json.service_id}},={{$node['Get Lead & Service Details'].json.budget}},={{$node['Get Lead & Service Details'].json.cost_estimate}},discovery,={{$moment().add($node['Get Lead & Service Details'].json.delivery_window_days, 'days').format('YYYY-MM-DD')}},={{$node['Get Lead & Service Details'].json.sop_template}}"
+      },
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "id": "get_task_template",
+      "name": "Get Task Template",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "={{$node['Get Lead & Service Details'].json.sop_template}}",
+        "method": "GET"
+      },
+      "position": [
+        1050,
+        300
+      ]
+    },
+    {
+      "id": "create_tasks",
+      "name": "Create Tasks from Template",
+      "type": "n8n-nodes-base.function",
+      "parameters": {
+        "functionCode": "const template = $node['Get Task Template'].json;\nconst projectId = $node['Create Project'].json.id;\nconst tasks = [];\n\nfor (const taskTemplate of template.tasks) {\n  tasks.push({\n    project_id: projectId,\n    task_name: taskTemplate.name,\n    description: taskTemplate.description,\n    estimate_hours: taskTemplate.estimate_hours,\n    status: 'todo',\n    due_date: $moment().add(taskTemplate.day_offset, 'days').format('YYYY-MM-DD')\n  });\n}\n\nreturn tasks.map(t => ({json: t}));"
+      },
+      "position": [
+        1250,
+        300
+      ]
+    },
+    {
+      "id": "insert_tasks",
+      "name": "Insert Tasks to Database",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "insert",
+        "table": "tasks",
+        "columns": "project_id,task_name,description,estimate_hours,status,due_date"
+      },
+      "position": [
+        1450,
+        300
+      ]
+    },
+    {
+      "id": "create_folders",
+      "name": "Create Google Drive Folders",
+      "type": "n8n-nodes-base.googleDrive",
+      "parameters": {
+        "operation": "create",
+        "folderName": "={{$node['Create Project'].json.project_name}}",
+        "parentFolderId": "={{$credentials.googleDrive.clientsFolderId}}"
+      },
+      "position": [
+        1050,
+        450
+      ]
+    },
+    {
+      "id": "create_subfolders",
+      "name": "Create Project Subfolders",
+      "type": "n8n-nodes-base.function",
+      "parameters": {
+        "functionCode": "const parentId = $node['Create Google Drive Folders'].json.id;\nconst folders = ['Deliverables', 'Assets', 'Research', 'Communications'];\nreturn folders.map(name => ({json: {parentId, folderName: name}}));"
+      },
+      "position": [
+        1250,
+        450
+      ]
+    },
+    {
+      "id": "update_project_folder",
+      "name": "Update Project with Folder URL",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE projects SET drive_folder_url = $1 WHERE id = $2",
+        "queryParameters": "={{$node['Create Google Drive Folders'].json.webViewLink}},={{$node['Create Project'].json.id}}"
+      },
+      "position": [
+        1650,
+        450
+      ]
+    },
+    {
+      "id": "send_slack",
+      "name": "Notify Team on Slack",
+      "type": "n8n-nodes-base.slack",
+      "parameters": {
+        "channel": "#projects",
+        "text": "\ud83c\udf89 *New Project Won!*\n\n*Project:* {{$node['Create Project'].json.project_name}}\n*Client:* {{$node['Get Lead & Service Details'].json.company}}\n*Value:* ${{$node['Get Lead & Service Details'].json.budget}}\n*Due Date:* {{$moment().add($node['Get Lead & Service Details'].json.delivery_window_days, 'days').format('MMM DD, YYYY')}}\n\n*Tasks Created:* {{$node['Create Tasks from Template'].json.length}}\n*Drive Folder:* {{$node['Create Google Drive Folders'].json.webViewLink}}\n\n@channel Let's deliver amazing work! \ud83d\ude80"
+      },
+      "position": [
+        1850,
+        300
+      ]
+    },
+    {
+      "id": "send_kickoff_invite",
+      "name": "Schedule Kickoff Call",
+      "type": "n8n-nodes-base.googleCalendar",
+      "parameters": {
+        "operation": "create",
+        "summary": "Project Kickoff: {{$node['Create Project'].json.project_name}}",
+        "start": "={{$moment().add(2, 'days').hour(14).minute(0).format()}}",
+        "duration": 60,
+        "attendees": "={{$node['Get Lead & Service Details'].json.contact_email}}"
+      },
+      "position": [
+        1850,
+        450
+      ]
+    }
+  ],
+  "connections": {
+    "Lead Won Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Lead & Service Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lead & Service Details": {
+      "main": [
+        [
+          {
+            "node": "Create/Update Client",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create/Update Client": {
+      "main": [
+        [
+          {
+            "node": "Create Project",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Project": {
+      "main": [
+        [
+          {
+            "node": "Get Task Template",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Google Drive Folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Task Template": {
+      "main": [
+        [
+          {
+            "node": "Create Tasks from Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Tasks from Template": {
+      "main": [
+        [
+          {
+            "node": "Insert Tasks to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Tasks to Database": {
+      "main": [
+        [
+          {
+            "node": "Notify Team on Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Google Drive Folders": {
+      "main": [
+        [
+          {
+            "node": "Create Project Subfolders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Project Subfolders": {
+      "main": [
+        [
+          {
+            "node": "Update Project with Folder URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Project with Folder URL": {
+      "main": [
+        [
+          {
+            "node": "Schedule Kickoff Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all"
+  },
+  "tags": [
+    "aurora",
+    "freelance-pipeline"
+  ]
+}

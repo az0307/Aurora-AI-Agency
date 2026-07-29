@@ -1,0 +1,144 @@
+{
+  "name": "Trend Engine \u2013 Retry Queue",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 8,
+              "minute": 0
+            }
+          ]
+        },
+        "timezone": "Australia/Melbourne"
+      },
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        -200
+      ],
+      "id": "cron-0h3m7p04",
+      "name": "Daily"
+    },
+    {
+      "parameters": {
+        "operation": "lookup",
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "RetryQueue",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -200,
+        0
+      ],
+      "id": "sheet-2l0cr87g",
+      "name": "Read RetryQueue",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CRED_ID>",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "code-ed83qalo",
+      "name": "Retry Runner"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "RetryQueue",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        200,
+        0
+      ],
+      "id": "sheet-b1lc8bc4",
+      "name": "RetryQueue Remove",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CRED_ID>",
+          "name": "Google Sheets"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily": {
+      "main": [
+        [
+          {
+            "node": "Read RetryQueue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read RetryQueue": {
+      "main": [
+        [
+          {
+            "node": "Retry Runner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retry Runner": {
+      "main": [
+        [
+          {
+            "node": "RetryQueue Remove",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v-lsb265m0",
+  "id": "wf-811hz23k",
+  "tags": [],
+  "meta": {
+    "generated": "2025-08-08T08:29:11.823159"
+  }
+}

@@ -1,0 +1,667 @@
+{
+  "name": "Trend Engine \u2013 Orchestrator (GitHub Enhanced)",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 7,
+              "minute": 0
+            }
+          ]
+        },
+        "timezone": "Australia/Melbourne"
+      },
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        -200
+      ],
+      "id": "cron-eubfts6a",
+      "name": "Daily"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.github.com/repos/<OWNER>/<REPO>/contents/prompts?ref=main",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "token <GITHUB_TOKEN>"
+            },
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -700,
+        -260
+      ],
+      "id": "httpRequest-1jirkhqr",
+      "name": "GitHub: Load Prompts"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.github.com/repos/<OWNER>/<REPO>/contents/config/blacklist.txt?ref=main",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "token <GITHUB_TOKEN>"
+            },
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.raw"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -700,
+        -140
+      ],
+      "id": "httpRequest-agr53odd",
+      "name": "GitHub: Load Blacklist"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.github.com/repos/<OWNER>/<REPO>/contents/config/source_config.json?ref=main",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "token <GITHUB_TOKEN>"
+            },
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.raw"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -700,
+        -20
+      ],
+      "id": "httpRequest-30ori3u5",
+      "name": "GitHub: Load Source Config"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// Expect GitHub API responses; decode as needed\nreturn items.map(i=>({json:{\n  prompts: i.json.prompts || i.json,\n  blacklist: i.json.blacklist || i.json,\n  sourceCfg: i.json.sourceCfg || i.json\n}}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -500,
+        -140
+      ],
+      "id": "code-j0hur8dv",
+      "name": "Normalize Config"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.apify.com/v2/acts/apify~google-trends/run-sync-get-dataset-items?token=<APIFY_TOKEN>&country=AU&timeRange=now%207-d"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -500,
+        60
+      ],
+      "id": "httpRequest-tbueul05",
+      "name": "Fetch Google Trends"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apify~youtube-trending/run-sync-get-dataset-items",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "country": "AU",
+          "maxResults": 50
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <APIFY_TOKEN>"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -500,
+        160
+      ],
+      "id": "httpRequest-o73xhzzo",
+      "name": "Fetch YT Trending"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.x.ai/v1/trends?region=AU",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <X_API_KEY>"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -500,
+        260
+      ],
+      "id": "httpRequest-wfh85jty",
+      "name": "Fetch X Trending"
+    },
+    {
+      "parameters": {
+        "mode": "mergeByIndex"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        -300,
+        160
+      ],
+      "id": "merge-ptgm4es5",
+      "name": "Merge Trend Feeds"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -100,
+        160
+      ],
+      "id": "code-u4smzkke",
+      "name": "Semantic Dedupe"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst banned = ($json.blacklist || '').split(/\\r?\\n/).map(s=>s.trim().toLowerCase()).filter(Boolean);\nreturn items.filter(i=>{\n  const t=(i.json.topic||i.json.title||'').toLowerCase();\n  return !banned.some(b=>t.includes(b));\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        100,
+        160
+      ],
+      "id": "code-vtj600af",
+      "name": "Apply Blacklist"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.x.ai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <GROK_API_KEY>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "model": "grok-beta",
+          "messages": [
+            {
+              "role": "system",
+              "content": "Classify topics. Output JSON: [{topic, category, stage, confidence}]"
+            },
+            {
+              "role": "user",
+              "content": "{{$json.topic || $json.title || ''}}"
+            }
+          ],
+          "max_tokens": 600
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        160
+      ],
+      "id": "httpRequest-p2euui08",
+      "name": "Extended Trend Finder (Grok)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "leftValue": "={{$json.confidence}}",
+              "rightValue": 0.7,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "string": [
+            {
+              "leftValue": "={{$json.stage}}",
+              "rightValue": "emerging",
+              "operation": "equal"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        500,
+        160
+      ],
+      "id": "if-fxzu0v7i",
+      "name": "Filter Emerging"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Topics",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{$json.topic}}",
+            "Confidence": "={{$json.confidence}}",
+            "Stage": "={{$json.stage}}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        700,
+        160
+      ],
+      "id": "googleSheets-jafic1lg",
+      "name": "Append Topics",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CRED_ID>",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 5
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 2,
+      "position": [
+        900,
+        160
+      ],
+      "id": "splitInBatches-uypc9e35",
+      "name": "Split Topics"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(i=>({json:{...i.json, dispatched:true}}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        160
+      ],
+      "id": "code-jr3wtjg1",
+      "name": "Unified Publishing Dispatcher"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst d = new Date().toISOString().slice(0,10);\nreturn items.map((i,idx)=>({json:{\n  path: `content/${d}/package_${idx}.json`,\n  content: Buffer.from(JSON.stringify(i.json, null, 2)).toString('base64'),\n  message: `Auto content package ${d}`\n}}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        120
+      ],
+      "id": "code-ieiclbyk",
+      "name": "Prepare Assets"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://api.github.com/repos/<OWNER>/<REPO>/contents/{{$json.path}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "token <GITHUB_TOKEN>"
+            },
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "message": "={{$json.message}}",
+          "content": "={{$json.content}}",
+          "branch": "staging"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1500,
+        120
+      ],
+      "id": "httpRequest-i2g73emu",
+      "name": "GitHub: Commit Package"
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "channel": "#yt-daily",
+        "text": "Committed {{$items().length}} content packages to GitHub staging."
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        120
+      ],
+      "id": "slack-18whlrpl",
+      "name": "Slack Summary",
+      "credentials": {
+        "slackApi": {
+          "id": "<SLACK_CRED_ID>",
+          "name": "Slack"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily": {
+      "main": [
+        [
+          {
+            "node": "GitHub: Load Prompts",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GitHub: Load Blacklist",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GitHub: Load Source Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub: Load Prompts": {
+      "main": [
+        [
+          {
+            "node": "Normalize Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub: Load Blacklist": {
+      "main": [
+        [
+          {
+            "node": "Normalize Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub: Load Source Config": {
+      "main": [
+        [
+          {
+            "node": "Normalize Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Config": {
+      "main": [
+        [
+          {
+            "node": "Fetch Google Trends",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch YT Trending",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch X Trending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Google Trends": {
+      "main": [
+        [
+          {
+            "node": "Merge Trend Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch YT Trending": {
+      "main": [
+        [
+          {
+            "node": "Merge Trend Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch X Trending": {
+      "main": [
+        [
+          {
+            "node": "Merge Trend Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Trend Feeds": {
+      "main": [
+        [
+          {
+            "node": "Semantic Dedupe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Semantic Dedupe": {
+      "main": [
+        [
+          {
+            "node": "Apply Blacklist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Blacklist": {
+      "main": [
+        [
+          {
+            "node": "Extended Trend Finder (Grok)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extended Trend Finder (Grok)": {
+      "main": [
+        [
+          {
+            "node": "Filter Emerging",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Emerging": {
+      "main": [
+        [
+          {
+            "node": "Append Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Topics": {
+      "main": [
+        [
+          {
+            "node": "Split Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Topics": {
+      "main": [
+        [
+          {
+            "node": "Unified Publishing Dispatcher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unified Publishing Dispatcher": {
+      "main": [
+        [
+          {
+            "node": "Prepare Assets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Assets": {
+      "main": [
+        [
+          {
+            "node": "GitHub: Commit Package",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub: Commit Package": {
+      "main": [
+        [
+          {
+            "node": "Slack Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v-2god1zty",
+  "id": "wf-jg2l5uhy",
+  "tags": [],
+  "meta": {
+    "generated": "2025-08-08T08:34:24.088450"
+  }
+}

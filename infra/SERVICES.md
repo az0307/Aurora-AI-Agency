@@ -79,6 +79,7 @@ against its upstream before granting access; pin versions for anything with writ
 
 | MCP | Gives the agent | Notes |
 |---|---|---|
+| **n8n** | author + validate workflows against real node schemas | `czlonkowski/n8n-mcp`; pairs with the staged library in [`stacks/n8n/workflows/`](./stacks/n8n/workflows/) — see [RESOURCES.md](./stacks/n8n/RESOURCES.md) |
 | **Docker** | start/stop/inspect containers | the on/off switch for the Tier-2 pool |
 | **Hetzner** | provision/resize/destroy servers, firewalls, snapshots | scope one token per Project; **pin the runner version** |
 | **Playwright** | drive a browser | pair with the `browser` profile or run standalone |

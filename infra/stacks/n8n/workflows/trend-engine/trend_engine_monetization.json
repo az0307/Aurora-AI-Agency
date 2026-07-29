@@ -1,0 +1,611 @@
+{
+  "name": "Trend Engine \u2013 Monetization Layer",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 8,
+              "minute": 0
+            }
+          ]
+        },
+        "timezone": "Australia/Melbourne"
+      },
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        -120
+      ],
+      "id": "cron-bemsqldf",
+      "name": "Daily Monetization"
+    },
+    {
+      "parameters": {
+        "operation": "lookup",
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Published",
+          "mode": "list"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -420,
+        -120
+      ],
+      "id": "googleSheets-xti6j56w",
+      "name": "Pull Published Posts",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CRED_ID>",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "lookup",
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Affiliates",
+          "mode": "list"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -420,
+        40
+      ],
+      "id": "googleSheets-cump1t3u",
+      "name": "Affiliate Catalog",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CRED_ID>",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// Expect post rows with topic/platform/urls; join with affiliates by keyword.\nreturn items.map(i=>{\n  const topic = (i.json.topic||'').toLowerCase();\n  const platform = (i.json.platform||'').toLowerCase();\n  const baseUrl = i.json.link || i.json.url || '';\n  const utm = `?utm_source=${platform||'multi'}&utm_medium=social&utm_campaign=${encodeURIComponent(topic)}`;\n  const aff = i.json.affiliate || ''; // if pre-matched\n  return {json:{...i.json, monetizedLink: (baseUrl||'') + utm, affiliateLink: aff}};\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -220,
+        -120
+      ],
+      "id": "code-wwfsafzq",
+      "name": "UTM + Affiliate Injector"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Generate 2 merch ideas per topic with short titles and descriptions. Return JSON array."
+            }
+          ]
+        },
+        "jsonOutput": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -220,
+        40
+      ],
+      "id": "openAi-fn86cdby",
+      "name": "Merch Idea Generator",
+      "credentials": {
+        "openAiApi": {
+          "id": "<OPENAI_CRED_ID>",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.printful.com/store/products",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <PRINTFUL_TOKEN>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "sync_product": {
+            "name": "{{$json.topic || 'Trend'}} Merch",
+            "external_id": "{{$json.id || ''}}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -20,
+        40
+      ],
+      "id": "httpRequest-trnt7et7",
+      "name": "Printful Create Product"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linktr.ee/v1/links",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <LINKTREE_TOKEN>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "title": "Latest: {{$json.topic}}",
+          "url": "={{$json.monetizedLink || $json.link}}"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        180,
+        -120
+      ],
+      "id": "httpRequest-v54x4jgk",
+      "name": "Update Link in Bio"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/youtube/v3/videos?part=status&id={{$json.youtubeVideoId}}&key=<YOUTUBE_KEY>",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "status": {
+            "monetization": "enabled"
+          }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <YOUTUBE_OAUTH>"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        180,
+        40
+      ],
+      "id": "httpRequest-36hbfnbr",
+      "name": "YouTube Monetize"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// Stub: pretend we create a PDF and store path\nreturn [{json:{pdfPath:`/tmp/weekly_${new Date().toISOString().slice(0,10)}.pdf`, title:\"Weekly Trend Digest\"}}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        380,
+        -120
+      ],
+      "id": "code-p7pzren4",
+      "name": "Compile Weekly PDF"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.gumroad.com/v2/products",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <GUMROAD_TOKEN>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "name": "={{$json.title}}",
+          "price": "499",
+          "description": "Automated weekly digest",
+          "file_path": "={{$json.pdfPath}}"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        580,
+        -120
+      ],
+      "id": "httpRequest-vfc90jgg",
+      "name": "Gumroad Publish"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Given topic tags, list 5 relevant brands and a one-sentence pitch. Return JSON."
+            }
+          ]
+        },
+        "jsonOutput": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        380,
+        40
+      ],
+      "id": "openAi-aqz31un1",
+      "name": "Brand Matchmaker AI",
+      "credentials": {
+        "openAiApi": {
+          "id": "<OPENAI_CRED_ID>",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "toEmail": "={{$json.brandEmail || 'brand@example.com'}}",
+        "subject": "Partnership opportunity: {{$json.topic}}",
+        "message": "Auto-generated pitch attached."
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [
+        580,
+        40
+      ],
+      "id": "gmail-7sb6f6f4",
+      "name": "Send Sponsor Outreach",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "<GMAIL_CRED_ID>",
+          "name": "Gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://youtubeanalytics.googleapis.com/v2/reports?metrics=estimatedRevenue&key=<YT_KEY>",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <YT_OAUTH>"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        780,
+        -40
+      ],
+      "id": "httpRequest-sxuz5xfy",
+      "name": "Fetch YT Ad Revenue"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.affiliatenetwork.com/v1/earnings?api_key=<AFF_KEY>"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        780,
+        40
+      ],
+      "id": "httpRequest-cl1c34k5",
+      "name": "Fetch Affiliate Revenue"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.printful.com/orders?status=shipped",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <PRINTFUL_TOKEN>"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        780,
+        120
+      ],
+      "id": "httpRequest-v3dikzc3",
+      "name": "Fetch Merch Revenue"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Revenue",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{$now}}",
+            "adsense": "={{$json.adsense || ''}}",
+            "affiliate": "={{$json.affiliate || ''}}",
+            "merch": "={{$json.merch || ''}}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        980,
+        40
+      ],
+      "id": "googleSheets-2zhonbkf",
+      "name": "Append Revenue Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CRED_ID>",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "channel": "#revenue",
+        "text": "Revenue updated; monetized links injected; merch synced; outreach sent."
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        1180,
+        40
+      ],
+      "id": "slack-cvwm80o1",
+      "name": "Slack Monetization Summary",
+      "credentials": {
+        "slackApi": {
+          "id": "<SLACK_CRED_ID>",
+          "name": "Slack"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily Monetization": {
+      "main": [
+        [
+          {
+            "node": "Pull Published Posts",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Affiliate Catalog",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Compile Weekly PDF",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch YT Ad Revenue",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Affiliate Revenue",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Merch Revenue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pull Published Posts": {
+      "main": [
+        [
+          {
+            "node": "UTM + Affiliate Injector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Affiliate Catalog": {
+      "main": [
+        [
+          {
+            "node": "Merch Idea Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merch Idea Generator": {
+      "main": [
+        [
+          {
+            "node": "Printful Create Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UTM + Affiliate Injector": {
+      "main": [
+        [
+          {
+            "node": "Update Link in Bio",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "YouTube Monetize",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Brand Matchmaker AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compile Weekly PDF": {
+      "main": [
+        [
+          {
+            "node": "Gumroad Publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Brand Matchmaker AI": {
+      "main": [
+        [
+          {
+            "node": "Send Sponsor Outreach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch YT Ad Revenue": {
+      "main": [
+        [
+          {
+            "node": "Append Revenue Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Affiliate Revenue": {
+      "main": [
+        [
+          {
+            "node": "Append Revenue Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Merch Revenue": {
+      "main": [
+        [
+          {
+            "node": "Append Revenue Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Revenue Sheet": {
+      "main": [
+        [
+          {
+            "node": "Slack Monetization Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v-w3hbg6zy",
+  "id": "wf-2mhnyc1u",
+  "tags": [],
+  "meta": {
+    "generated": "2025-08-08T08:41:09.608827"
+  }
+}

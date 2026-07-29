@@ -1,0 +1,106 @@
+{
+  "name": "Trend Engine \u2013 GitHub Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 23,
+              "minute": 30
+            }
+          ]
+        },
+        "timezone": "Australia/Melbourne"
+      },
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        -40
+      ],
+      "id": "cron-fhqdixa7",
+      "name": "Nightly"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.github.com/repos/<OWNER>/<REPO>/commits?since={{$now.minus(1,'day').toISO()}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "token <GITHUB_TOKEN>"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -200,
+        -40
+      ],
+      "id": "httpRequest-txahfy3y",
+      "name": "GitHub: Recent Commits"
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "channel": "#yt-daily",
+        "text": "GitHub commits in last 24h: {{$json.length || 0}}"
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -40
+      ],
+      "id": "slack-fdsmb3py",
+      "name": "Slack Alert",
+      "credentials": {
+        "slackApi": {
+          "id": "<SLACK_CRED_ID>",
+          "name": "Slack"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Nightly": {
+      "main": [
+        [
+          {
+            "node": "GitHub: Recent Commits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub: Recent Commits": {
+      "main": [
+        [
+          {
+            "node": "Slack Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v-30zza4hh",
+  "id": "wf-tjjg41gh",
+  "tags": [],
+  "meta": {
+    "generated": "2025-08-08T08:34:24.088450"
+  }
+}

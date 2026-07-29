@@ -1,0 +1,144 @@
+{
+  "name": "Trend Engine \u2013 Analytics",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 9,
+              "minute": 0
+            }
+          ]
+        },
+        "timezone": "Australia/Melbourne"
+      },
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        -200
+      ],
+      "id": "cron-m4c9lytm",
+      "name": "Daily"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://youtubeanalytics.googleapis.com/v2/reports?key=<YT_KEY>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -200,
+        -40
+      ],
+      "id": "http-2e9c0wdl",
+      "name": "Fetch YT Analytics"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://graph.facebook.com/v20.0/<IG_ID>/insights?access_token=<META_TOKEN>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -200,
+        60
+      ],
+      "id": "http-8x6cz2p0",
+      "name": "Fetch IG Insights"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Analytics",
+          "mode": "list"
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "source": "={{$json.source || 'yt/ig'}}",
+            "payload": "={{JSON.stringify($json)}}"
+          },
+          "matchingColumns": []
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        100,
+        20
+      ],
+      "id": "sheet-2lwlprh6",
+      "name": "Append Analytics",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CRED_ID>",
+          "name": "Google Sheets"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily": {
+      "main": [
+        [
+          {
+            "node": "Fetch YT Analytics",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch IG Insights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch YT Analytics": {
+      "main": [
+        [
+          {
+            "node": "Append Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch IG Insights": {
+      "main": [
+        [
+          {
+            "node": "Append Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v-a0haq4k2",
+  "id": "wf-yncqmhr4",
+  "tags": [],
+  "meta": {
+    "generated": "2025-08-08T08:29:11.823159"
+  }
+}

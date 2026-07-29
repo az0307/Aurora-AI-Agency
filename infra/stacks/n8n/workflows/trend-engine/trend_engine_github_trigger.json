@@ -1,0 +1,98 @@
+{
+  "name": "Trend Engine \u2013 GitHub Trigger",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "github-sync",
+        "responseMode": "lastNode"
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        0
+      ],
+      "id": "webhook-6i88b5yq",
+      "name": "GitHub Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "leftValue": "={{$json.headers['x-github-event']}}",
+              "rightValue": "push",
+              "operation": "equal"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -200,
+        0
+      ],
+      "id": "if-2fbadgmj",
+      "name": "Verify Source"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.github.com/repos/<OWNER>/<REPO>/contents/prompts?ref=main",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "token <GITHUB_TOKEN>"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "httpRequest-rhe2pknk",
+      "name": "Pull Prompts"
+    }
+  ],
+  "connections": {
+    "GitHub Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Source": {
+      "main": [
+        [
+          {
+            "node": "Pull Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v-8858f4od",
+  "id": "wf-8nnrr9ei",
+  "tags": [],
+  "meta": {
+    "generated": "2025-08-08T08:34:24.088450"
+  }
+}
