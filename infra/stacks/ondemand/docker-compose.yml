@@ -127,9 +127,36 @@ services:
     ports:
       - "127.0.0.1:3015:9000"   # POST /asr?task=transcribe (multipart 'audio_file')
 
+  # --- Kali toolbox (CONTAINER, not a VM — see the note) ------------------------
+  # ⚠️ AUTHORIZED USE ONLY. This is a rolling Kali userland for recon/testing you
+  # have written permission to perform. It is a *container*, so:
+  #   - It shares the host kernel; it is NOT an isolated VM. A real Kali VM needs
+  #     nested virtualization, which Hetzner CLOUD does not support — that requires
+  #     a Hetzner DEDICATED/bare-metal server + Proxmox (see stacks/kali/README notes).
+  #   - Kernel-level tooling (some wireless, certain rootkits/LKMs) won't work here.
+  #   - Keep it on the disposable box, behind Cloudflare Access, never public.
+  # Ships bare (metapackages are multi-GB). Install what a job needs, e.g.:
+  #   docker exec -it ondemand-kali-1 bash -lc 'apt update && apt install -y nmap nikto sqlmap'
+  #   (or the big set: apt install -y kali-linux-headless)
+  # Access: `docker exec -it ondemand-kali-1 bash`, or via the Docker MCP.
+  kali:
+    image: kalilinux/kali-rolling:latest
+    profiles: ["kali"]
+    restart: unless-stopped
+    command: ["sleep", "infinity"]   # stays up so you can exec into it
+    cap_drop: ["ALL"]
+    cap_add: ["NET_RAW", "NET_ADMIN"]  # needed for nmap SYN scans etc.; drop the rest
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - kali_home:/root                # persist installed tools + loot between restarts
+    # No published ports: reach it via `docker exec` / the Docker MCP. If you want a
+    # browser terminal, run ttyd inside and publish it on loopback behind Access.
+
 volumes:
   searxng_data:
   qdrant_data:
   minio_data:
   libretranslate_models:
   whisper_cache:
+  kali_home:

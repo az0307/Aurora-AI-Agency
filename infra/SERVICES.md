@@ -34,6 +34,7 @@ that MCP *is* the programmatic on/off switch.
 | `scratch` | Postgres + Redis | throwaway datastores for a single job | 55432 / 56379 |
 | `translate` | LibreTranslate | offline machine translation (no paid API/egress) | 3014 |
 | `stt` | whisper-asr-webservice | speech→text (faster-whisper; CPU-ok for short clips) | 3015 |
+| `kali` | kalilinux/kali-rolling | **authorized** recon/testing toolbox — access via `docker exec`/Docker MCP | (no port) |
 
 All bind to **127.0.0.1** — reach any UI via Cloudflare Access, never publicly. Tags are
 readable for the template; pin version+digest for production (see [`STACK.md`](./STACK.md)).
