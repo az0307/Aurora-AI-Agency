@@ -1,0 +1,19 @@
+# Never commit real secrets or state — only the *.example templates.
+# Ignore every .env variant at any depth (.env, .env.local, .env.production, …),
+# but keep the .env.example templates trackable.
+**/.env*
+!**/.env.example
+.mcp.json
+mcp/.mcp.json
+
+# Terraform
+hetzner/main.tf
+*.tfvars
+*.tfvars.json
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Local Homepage config with tokens
+stacks/dashboard/config/

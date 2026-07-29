@@ -1,0 +1,101 @@
+# On-demand service pool — nothing here starts by default.
+# Every service is behind a Compose PROFILE, so `docker compose up -d` with no
+# profile starts ZERO containers. An agent (Claude / OpenCode / TARS) — or a human —
+# flips a service on only when needed and off afterward, to keep RAM free on a small box:
+#
+#   ./services.sh up browser        # start headless Chromium
+#   ./services.sh down browser      # stop it, reclaim RAM
+#   ./services.sh list              # show available profiles
+#   ./services.sh status            # show what's currently running
+#
+# Agents can equally drive this through the Docker MCP (start/stop/inspect containers).
+# All services bind to LOOPBACK only — reach them via Cloudflare Access, never publicly.
+# Tags are readable for the template; pin version+@sha256 for production (see STACK.md).
+
+services:
+  # --- Headless browser: scraping, screenshots, PDF-of-page, Playwright/Puppeteer CDP ---
+  browser:
+    image: ghcr.io/browserless/chromium:latest
+    profiles: ["browser"]
+    restart: unless-stopped
+    environment:
+      CONCURRENT: "3"
+      TOKEN: ${BROWSER_TOKEN:?set BROWSER_TOKEN in .env}
+    ports:
+      - "127.0.0.1:3010:3000"   # connect agents to ws://127.0.0.1:3010?token=...
+
+  # --- Document conversion: HTML / Office → PDF (client deliverables, invoices) ---
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    profiles: ["docs"]
+    restart: unless-stopped
+    command: ["gotenberg", "--api-port=3000"]
+    ports:
+      - "127.0.0.1:3011:3000"
+
+  # --- Document parsing/extraction: PDFs/Office/images → text+metadata (RAG ingest) ---
+  tika:
+    image: apache/tika:latest
+    profiles: ["docs"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3012:9998"
+
+  # --- Private meta-search API: agents web-search without a paid API key ---
+  searxng:
+    image: searxng/searxng:latest
+    profiles: ["search"]
+    restart: unless-stopped
+    environment:
+      SEARXNG_BASE_URL: http://localhost:3013/
+    volumes:
+      - searxng_data:/etc/searxng
+    ports:
+      - "127.0.0.1:3013:8080"
+
+  # --- Vector DB for RAG / semantic memory ---
+  qdrant:
+    image: qdrant/qdrant:latest
+    profiles: ["rag"]
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+    ports:
+      - "127.0.0.1:6333:6333"
+
+  # --- S3-compatible object store: local artifacts, dev alternative to R2 ---
+  minio:
+    image: minio/minio:latest
+    profiles: ["storage"]
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-aurora}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "127.0.0.1:9000:9000"   # S3 API
+      - "127.0.0.1:9001:9001"   # console
+
+  # --- Scratch datastores for a job: throwaway Postgres + Redis ---
+  scratch-postgres:
+    image: postgres:16-alpine
+    profiles: ["scratch"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${SCRATCH_PG_PASSWORD:?set SCRATCH_PG_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:55432:5432"
+
+  scratch-redis:
+    image: redis:7-alpine
+    profiles: ["scratch"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:56379:6379"
+
+volumes:
+  searxng_data:
+  qdrant_data:
+  minio_data:

@@ -1,0 +1,90 @@
+# Hetzner Cloud — reproducible box (optional; Claude can also provision via the Hetzner MCP).
+# Copy to main.tf, fill the variables, then: terraform init && terraform apply
+#
+# Provider docs: https://registry.terraform.io/providers/hetznercloud/hcloud/latest/docs
+
+terraform {
+  required_providers {
+    hcloud = {
+      source  = "hetznercloud/hcloud"
+      version = "~> 1.49"
+    }
+  }
+}
+
+variable "hcloud_token" {
+  description = "Hetzner Cloud API token (scope one per Project = one client). Set via TF_VAR_hcloud_token, never commit."
+  type        = string
+  sensitive   = true
+}
+
+variable "ssh_public_key" {
+  description = "Your SSH public key (ssh-ed25519 ...)."
+  type        = string
+}
+
+variable "server_name" {
+  type    = string
+  default = "aurora-hub"
+}
+
+# Server type MUST be available in the chosen location:
+#   - Singapore (sin) and US (ash/hil): AMD shared = CPX*, dedicated = CCX*.
+#   - EU only (nbg1/fsn1/hel1): Intel shared = CX* AND Ampere ARM = CAX* (cheaper).
+# Default = cpx21 (3 vCPU AMD / 4 GB) because the default location below is sin;
+# CAX (ARM) is NOT offered in Singapore, so cax21+sin would be rejected on apply.
+# For the cheapest ARM value, switch location to an EU one and server_type to cax21.
+variable "server_type" {
+  type    = string
+  default = "cpx21"
+}
+
+# sin = Singapore (closest to Australia, ~90–100 ms to Sydney).
+# Others: nbg1/fsn1/hel1 (EU — enables the cheaper CX/CAX types), ash/hil (US).
+variable "location" {
+  type    = string
+  default = "sin"
+}
+
+provider "hcloud" {
+  token = var.hcloud_token
+}
+
+resource "hcloud_ssh_key" "default" {
+  name       = "${var.server_name}-key"
+  public_key = var.ssh_public_key
+}
+
+# Firewall: SSH + HTTP/HTTPS only. Tighten further once Cloudflare Tunnel is up.
+resource "hcloud_firewall" "web" {
+  name = "${var.server_name}-fw"
+
+  dynamic "rule" {
+    for_each = [22, 80, 443]
+    content {
+      direction  = "in"
+      protocol   = "tcp"
+      port       = tostring(rule.value)
+      source_ips = ["0.0.0.0/0", "::/0"]
+    }
+  }
+}
+
+resource "hcloud_server" "box" {
+  name         = var.server_name
+  server_type  = var.server_type
+  image        = "ubuntu-24.04"
+  location     = var.location
+  ssh_keys     = [hcloud_ssh_key.default.id]
+  firewall_ids = [hcloud_firewall.web.id]
+  user_data    = file("${path.module}/cloud-init.yaml")
+
+  public_net {
+    ipv4_enabled = true
+    ipv6_enabled = true
+  }
+}
+
+output "server_ipv4" {
+  value = hcloud_server.box.ipv4_address
+}

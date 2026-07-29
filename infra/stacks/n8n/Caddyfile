@@ -1,0 +1,9 @@
+# Caddy reverse proxy for n8n with automatic HTTPS (Let's Encrypt).
+# {$N8N_DOMAIN} comes from the compose environment. For localhost testing Caddy
+# serves an internal cert. If you terminate TLS at Cloudflare Tunnel instead,
+# you can drop Caddy entirely and expose n8n:5678 to the tunnel only.
+
+{$N8N_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy n8n:5678
+}

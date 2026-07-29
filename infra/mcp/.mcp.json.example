@@ -1,0 +1,62 @@
+{
+  "//": "Copy to .mcp.json (git-ignored) and fill tokens via env vars. Lets Claude/agents manage the fleet + drive the on-demand pool.",
+  "//tokens": "Scope one Hetzner token per Project (= per client) to bound blast radius. Never commit real tokens.",
+  "//package-names": "Confirm every command/package against its upstream README before use — names/versions move. Pin anything with write/provisioning access.",
+  "//per-agent": "This uses Claude Code's ${VAR} expansion. OpenCode wants {env:VAR}, Kimi Code uses env/bearerTokenEnvVar — translate per AGENTS.md, don't symlink one file.",
+  "mcpServers": {
+    "hetzner": {
+      "//": "Provisioning: create/resize/destroy servers, firewalls, volumes, snapshots. Best surface for Claude.",
+      "//source": "https://github.com/nityeshaga/hetzner-mcp-server (or dkruyt/mcp-hetzner). Confirm command per that repo's README.",
+      "//pin": "REQUIRED FILL-IN, fail-closed on purpose: replace 0.0.0 with a specific reviewed PyPI release (or use a git+https URL @<commit-sha>). Left as 0.0.0 uvx will error rather than silently pull an unreviewed latest before your token is passed.",
+      "command": "uvx",
+      "args": ["hetzner-mcp-server==0.0.0"],
+      "env": {
+        "HCLOUD_TOKEN": "${HETZNER_API_TOKEN}"
+      }
+    },
+    "docker": {
+      "//": "The on/off switch for the on-demand pool: start/stop/inspect containers. See stacks/ondemand/.",
+      "//source": "Confirm your chosen Docker MCP package/command upstream; pin a reviewed version.",
+      "command": "uvx",
+      "args": ["docker-mcp==0.0.0"]
+    },
+    "playwright": {
+      "//": "Browser automation (navigate, click, extract, screenshot). Pair with the on-demand 'browser' profile or run standalone.",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    },
+    "filesystem": {
+      "//": "Scoped file access — point ONLY at a workspace dir, never /.",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/opt/aurora/workspace"]
+    },
+    "postgres": {
+      "//": "Query n8n / scratch DBs. Prefer a read-only DSN.",
+      "command": "uvx",
+      "args": ["postgres-mcp==0.0.0"],
+      "env": {
+        "DATABASE_URI": "${POSTGRES_DSN}"
+      }
+    },
+    "fetch": {
+      "//": "HTTP fetch / web content for agents. Pair with the on-demand SearXNG for private search.",
+      "command": "uvx",
+      "args": ["mcp-server-fetch"]
+    },
+    "git": {
+      "//": "Local repo operations, scoped to the workspace.",
+      "command": "uvx",
+      "args": ["mcp-server-git", "--repository", "/opt/aurora/workspace"]
+    },
+    "hostinger": {
+      "//": "OPTIONAL. Official first-party MCP. Lifecycle + metrics only (list/start/stop/restart).",
+      "//source": "https://www.hostinger.com/support/11079316-hostinger-api-mcp-server/",
+      "command": "npx",
+      "args": ["-y", "hostinger-api-mcp"],
+      "env": {
+        "HOSTINGER_API_TOKEN": "${HOSTINGER_API_TOKEN}"
+      }
+    },
+    "//oracle": "No first-class MCP recommended. Treat the free box as cattle: rebuild from hetzner/cloud-init.yaml rather than managing it live. Use the OCI CLI if you must."
+  }
+}

@@ -1,0 +1,120 @@
+#cloud-config
+# Hardened base image for a Hetzner (or Oracle/Hostinger) box.
+# Provisions: non-root sudo user, key-only SSH, ufw, fail2ban, unattended-upgrades,
+# Docker + compose plugin, terminal "shell sugar", then optionally bootstraps Dokploy.
+#
+# BEFORE USE:
+#   1. Replace <YOUR_SSH_PUBLIC_KEY> with your real public key (ssh-ed25519 ...).
+#   2. Optionally change the username `aurora`.
+#   3. Set INSTALL_DOKPLOY=true in the runcmd block to auto-install the control plane.
+# Validate locally with:  cloud-init schema --config-file cloud-init.yaml
+
+users:
+  - name: aurora
+    groups: [sudo, docker]
+    shell: /usr/bin/fish
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    lock_passwd: true
+    ssh_authorized_keys:
+      - <YOUR_SSH_PUBLIC_KEY>
+
+# Lock SSH down: no root login, no passwords.
+ssh_pwauth: false
+disable_root: true
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - git
+  - ufw
+  - fail2ban
+  - unattended-upgrades
+  - fish
+  - zsh
+  - fzf
+  - ripgrep
+  - fd-find
+  - bat
+  - eza
+  - tealdeer
+  - zoxide
+
+write_files:
+  # --- SSH hardening (belt-and-suspenders on top of ssh_pwauth: false) ---
+  - path: /etc/ssh/sshd_config.d/10-hardening.conf
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      ChallengeResponseAuthentication no
+      X11Forwarding no
+      MaxAuthTries 3
+
+  # --- fail2ban: protect sshd ---
+  - path: /etc/fail2ban/jail.d/sshd.local
+    content: |
+      [sshd]
+      enabled = true
+      maxretry = 3
+      bantime = 1h
+      findtime = 10m
+
+  # --- unattended security upgrades ---
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+
+  # --- shell sugar wired for the default user (fish) ---
+  - path: /home/aurora/.config/fish/config.fish
+    defer: true
+    owner: "aurora:aurora"
+    permissions: "0644"
+    content: |
+      # Prompt / navigation / history / autocorrect (installed in runcmd)
+      if type -q starship; starship init fish | source; end
+      if type -q zoxide;   zoxide init fish  | source; end
+      if type -q atuin;    atuin init fish   | source; end
+      # fish already gives autosuggestions + syntax highlighting with no plugins
+      alias cat='bat'
+      alias ls='eza'
+      abbr -a cd z
+      # `thefuck` autocorrect: run `fix` after a mistyped command
+      if type -q thefuck; thefuck --alias fix | source; end
+
+runcmd:
+  # --- Docker Engine + compose plugin (official convenience script) ---
+  - curl -fsSL https://get.docker.com | sh
+  - usermod -aG docker aurora
+  - systemctl enable --now docker
+
+  # --- Firewall: allow SSH + HTTP/HTTPS only. Prefer Cloudflare Tunnel and
+  #     tighten to 'deny incoming' entirely once the tunnel is connected. ---
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw --force enable
+
+  # --- Terminal extras not in apt: Starship, Atuin, Zellij, thefuck ---
+  - su - aurora -c 'curl -sS https://starship.rs/install.sh | sh -s -- -y' || true
+  - su - aurora -c "curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --non-interactive" || true
+  - (curl -fsSL https://github.com/zellij-org/zellij/releases/latest/download/zellij-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin) || true
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y thefuck || true
+
+  # --- Restart SSH so hardening takes effect ---
+  - systemctl restart ssh || systemctl restart sshd || true
+  - systemctl enable --now fail2ban
+
+  # --- OPTIONAL control plane: set to true to auto-install Dokploy.
+  #     Dokploy listens on 3000 (UI) — reach it via Cloudflare Tunnel + Access,
+  #     do NOT open 3000 on ufw. Requires >=2 GB RAM. ---
+  - export INSTALL_DOKPLOY=false
+  - if [ "$INSTALL_DOKPLOY" = "true" ]; then curl -sSL https://dokploy.com/install.sh | sh; fi
+
+final_message: "Base image ready. Next: connect Cloudflare Tunnel, then deploy stacks/ (see runbooks/DAY1.md)."
