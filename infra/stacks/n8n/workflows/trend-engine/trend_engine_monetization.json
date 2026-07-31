@@ -146,8 +146,8 @@
         "specifyBody": "json",
         "jsonBody": {
           "sync_product": {
-            "name": "{{$json.topic || 'Trend'}} Merch",
-            "external_id": "{{$json.id || ''}}"
+            "name": "={{$json.topic || 'Trend'}} Merch",
+            "external_id": "={{$json.id || ''}}"
           }
         }
       },
@@ -176,7 +176,7 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": {
-          "title": "Latest: {{$json.topic}}",
+          "title": "=Latest: {{$json.topic}}",
           "url": "={{$json.monetizedLink || $json.link}}"
         }
       },
@@ -192,7 +192,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://www.googleapis.com/youtube/v3/videos?part=status&id={{$json.youtubeVideoId}}&key=<YOUTUBE_KEY>",
+        "url": "=https://www.googleapis.com/youtube/v3/videos?part=status&id={{$json.youtubeVideoId}}&key=<YOUTUBE_KEY>",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": {
@@ -261,7 +261,9 @@
         -120
       ],
       "id": "httpRequest-vfc90jgg",
-      "name": "Gumroad Publish"
+      "name": "Gumroad Publish",
+      "disabled": true,
+      "notes": "DISABLED: This node is connected to 'Compile Weekly PDF' which is a stub that generates fake data. Do not enable until a real PDF generation pipeline is implemented that produces actual PDF files."
     },
     {
       "parameters": {
@@ -300,7 +302,7 @@
         "resource": "message",
         "operation": "send",
         "toEmail": "={{$json.brandEmail || 'brand@example.com'}}",
-        "subject": "Partnership opportunity: {{$json.topic}}",
+        "subject": "=Partnership opportunity: {{$json.topic}}",
         "message": "Auto-generated pitch attached."
       },
       "type": "n8n-nodes-base.gmail",
@@ -598,7 +600,7 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   },

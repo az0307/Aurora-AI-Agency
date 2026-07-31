@@ -252,7 +252,7 @@
             },
             {
               "role": "user",
-              "content": "{{$json.payload || ''}}"
+              "content": "={{$json.payload || ''}}"
             }
           ],
           "max_tokens": 800
@@ -403,7 +403,7 @@
             },
             {
               "role": "user",
-              "content": "{{$json.payload || ''}}"
+              "content": "={{$json.payload || ''}}"
             }
           ],
           "max_tokens": 800
@@ -478,7 +478,7 @@
         "specifyBody": "json",
         "jsonBody": {
           "searchQueries": [
-            "{{ $json['Keyword or Topic'] }}"
+            "={{ $json['Keyword or Topic'] }}"
           ],
           "scrapeLastNDays": 14,
           "maxResults": 80,
@@ -678,7 +678,7 @@
         "specifyBody": "json",
         "jsonBody": {
           "urls": [
-            "{{ $json.url }}"
+            "={{ $json.url }}"
           ],
           "keywordsBoolean": true,
           "outputFormat": "singleStringText"
@@ -1548,7 +1548,7 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   },

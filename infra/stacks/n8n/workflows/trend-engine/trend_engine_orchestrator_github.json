@@ -25,7 +25,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "https://api.github.com/repos/<OWNER>/<REPO>/contents/prompts?ref=main",
+        "url": "=https://api.github.com/repos/<OWNER>/<REPO>/contents/prompts?ref=main",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -52,7 +52,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "https://api.github.com/repos/<OWNER>/<REPO>/contents/config/blacklist.txt?ref=main",
+        "url": "=https://api.github.com/repos/<OWNER>/<REPO>/contents/config/blacklist.txt?ref=main",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -79,7 +79,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "https://api.github.com/repos/<OWNER>/<REPO>/contents/config/source_config.json?ref=main",
+        "url": "=https://api.github.com/repos/<OWNER>/<REPO>/contents/config/source_config.json?ref=main",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -105,7 +105,7 @@
     },
     {
       "parameters": {
-        "jsCode": "\n// Expect GitHub API responses; decode as needed\nreturn items.map(i=>({json:{\n  prompts: i.json.prompts || i.json,\n  blacklist: i.json.blacklist || i.json,\n  sourceCfg: i.json.sourceCfg || i.json\n}}));\n"
+        "jsCode": "\n// Normalize GitHub API responses and decode base64 content.\n// GitHub Contents API returns base64-encoded content field.\n// We expect three distinct inputs (prompts, blacklist, sourceCfg) from separate HTTP nodes.\n\n// Collect all items into a single config object\nconst config = {\n  prompts: null,\n  blacklist: null,\n  sourceCfg: null\n};\n\nfor (const item of items) {\n  const data = item.json;\n  \n  // If content is base64-encoded (GitHub Contents API response), decode it\n  if (data.content && data.encoding === 'base64') {\n    const decoded = Buffer.from(data.content, 'base64').toString('utf-8');\n    \n    // Determine which config this is based on the path or other context\n    if (data.path && data.path.includes('prompts')) {\n      config.prompts = decoded;\n    } else if (data.path && data.path.includes('blacklist')) {\n      config.blacklist = decoded;\n    } else if (data.path && data.path.includes('source_config')) {\n      try {\n        config.sourceCfg = JSON.parse(decoded);\n      } catch (e) {\n        config.sourceCfg = decoded;\n      }\n    }\n  } else if (typeof data === 'string') {\n    // Already decoded (Accept: application/vnd.github.raw)\n    // Blacklist and sourceCfg use this format\n    if (!config.blacklist) {\n      config.blacklist = data;\n    } else if (!config.sourceCfg) {\n      try {\n        config.sourceCfg = JSON.parse(data);\n      } catch (e) {\n        config.sourceCfg = data;\n      }\n    }\n  }\n}\n\n// Fail-closed: if blacklist is missing, use a default that blocks everything\nif (!config.blacklist) {\n  console.error('WARNING: Blacklist failed to load. Using fail-closed default.');\n  config.blacklist = '*'; // Will cause all items to be filtered\n}\n\nreturn [{json: config}];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -214,7 +214,7 @@
     },
     {
       "parameters": {
-        "jsCode": "\nconst banned = ($json.blacklist || '').split(/\\r?\\n/).map(s=>s.trim().toLowerCase()).filter(Boolean);\nreturn items.filter(i=>{\n  const t=(i.json.topic||i.json.title||'').toLowerCase();\n  return !banned.some(b=>t.includes(b));\n});\n"
+        "jsCode": "\n// Reference the blacklist from the Normalize Config node output.\n// Fail-closed: if blacklist is missing or invalid, filter out all items.\n\nconst configNode = $('Normalize Config');\nif (!configNode || !configNode.item || !configNode.item.json) {\n  console.error('ERROR: Config node not found. Filtering all items (fail-closed).');\n  return [];\n}\n\nconst blacklistRaw = configNode.item.json.blacklist || '';\n\n// If blacklist is '*' (fail-closed default), filter everything\nif (blacklistRaw === '*') {\n  console.error('ERROR: Blacklist is fail-closed default. Filtering all items.');\n  return [];\n}\n\nconst banned = blacklistRaw.split(/\\r?\\n/).map(s=>s.trim().toLowerCase()).filter(Boolean);\n\nreturn items.filter(i=>{\n  const t=(i.json.topic||i.json.title||'').toLowerCase();\n  return !banned.some(b=>t.includes(b));\n});\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -253,7 +253,7 @@
             },
             {
               "role": "user",
-              "content": "{{$json.topic || $json.title || ''}}"
+              "content": "={{$json.topic || $json.title || ''}}"
             }
           ],
           "max_tokens": 600
@@ -379,7 +379,7 @@
     {
       "parameters": {
         "method": "PUT",
-        "url": "https://api.github.com/repos/<OWNER>/<REPO>/contents/{{$json.path}}",
+        "url": "=https://api.github.com/repos/<OWNER>/<REPO>/contents/{{$json.path}}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -654,7 +654,7 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   },

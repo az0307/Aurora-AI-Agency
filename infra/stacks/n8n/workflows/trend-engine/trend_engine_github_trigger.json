@@ -35,7 +35,8 @@
         0
       ],
       "id": "if-2fbadgmj",
-      "name": "Verify Source"
+      "name": "Filter Event Type",
+      "notes": "WARNING: This node only filters event type and does NOT authenticate the webhook. Real authentication (HMAC-SHA256 signature validation against x-hub-signature-256 header) must be implemented before this webhook is exposed to the internet. Consider adding a Code node after the webhook that validates the signature using a secret stored in environment variables."
     },
     {
       "parameters": {
@@ -85,7 +86,7 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   },

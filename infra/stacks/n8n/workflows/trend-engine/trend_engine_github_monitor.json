@@ -25,7 +25,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "https://api.github.com/repos/<OWNER>/<REPO>/commits?since={{$now.minus(1,'day').toISO()}}",
+        "url": "=https://api.github.com/repos/<OWNER>/<REPO>/commits?since={{$now.minus(1,'day').toISO()}}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -51,7 +51,7 @@
         "resource": "message",
         "operation": "post",
         "channel": "#yt-daily",
-        "text": "GitHub commits in last 24h: {{$json.length || 0}}"
+        "text": "=GitHub commits in last 24h: {{$json.length || 0}}"
       },
       "type": "n8n-nodes-base.slack",
       "typeVersion": 1,
@@ -93,7 +93,7 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   },
