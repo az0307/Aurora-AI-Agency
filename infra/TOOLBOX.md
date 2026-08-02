@@ -35,7 +35,7 @@ package names at install time — they move.
 | **uv / uvx** | `curl -LsSf https://astral.sh/uv/install.sh \| sh` | runs the Python MCP servers + Python tooling |
 | **node / npm** | nodesource / nvm | runs the npm MCP servers + agent CLIs |
 | **docker + compose** | `get.docker.com` | the whole stack + the on-demand pool |
-| **jq / yq** | `apt install jq; ` yq via binary | JSON/YAML wrangling in scripts (preflight uses jq) |
+| **jq / yq** | `apt install jq;` yq via binary | JSON/YAML wrangling in scripts (preflight uses jq) |
 | shell sugar | see [`TERMINAL.md`](./TERMINAL.md) | fish/zsh, Starship, Atuin, zoxide, Zellij, eza/bat/fzf/ripgrep, thefuck |
 
 ### Bitwarden as the secrets source

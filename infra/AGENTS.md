@@ -19,7 +19,7 @@ convention.
 | — | **Aider** | Git-native pair-programmer | `pipx install aider-chat` |
 | — | **Goose** (Block) | Extensible local agent | per Goose installer |
 | — | **Crush** (Charm) | Lightweight terminal agent | per Charm install |
-| Gemini CLI | **Gemini CLI** (Google) | Open-source terminal agent; generous free tier — good cheap fallback in the failover chain | `npm i -g @google/gemini-cli` (Node ≥18); auth via Google login or `GEMINI_API_KEY` |
+| Gemini CLI | **Gemini CLI** (Google) | Open-source terminal agent; generous free tier — good cheap fallback in the failover chain | `npm i -g @google/gemini-cli` (Node ≥20); auth via Google login or `GEMINI_API_KEY` |
 
 > Exact package names/commands move fast — confirm against each project's README at install
 > time. The install lines above are the current-as-of-2026-07 shape, not a promise.

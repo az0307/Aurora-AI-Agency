@@ -142,7 +142,7 @@ services:
   kali:
     image: kalilinux/kali-rolling:latest
     profiles: ["kali"]
-    restart: unless-stopped
+    restart: "no"   # authorized-use security tool — never auto-restart (e.g. on host reboot); bring it up deliberately via services.sh
     command: ["sleep", "infinity"]   # stays up so you can exec into it
     cap_drop: ["ALL"]
     cap_add: ["NET_RAW", "NET_ADMIN"]  # needed for nmap SYN scans etc.; drop the rest
