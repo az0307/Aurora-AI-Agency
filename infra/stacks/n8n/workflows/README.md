@@ -44,7 +44,7 @@ Postgres status changes and webhooks.
 
 ## `trend-engine/` — content/monetisation engine
 
-Seven workflows plus a blueprint. Heavier and more dependency-hungry.
+Eight workflows plus a blueprint. Heavier and more dependency-hungry.
 
 | File | Nodes |
 |---|---|
@@ -77,6 +77,10 @@ LinkedIn, Mailchimp…). Enable publishing nodes one at a time, per its own chec
   the trend stream (always empty), so nothing is filtered. Load the three config files under
   distinct keys, base64-decode the GitHub `content`, and have `Apply Blacklist` read the
   blacklist via a node reference, keeping it **fail-closed** when config is missing.
+- `trend_engine_github_monitor.json`: the commit count is wrong twice over — the GitHub
+  `/commits` request returns only the first 30 (add `per_page=100` + follow the `Link` header),
+  and the Slack node runs once per commit item instead of once with a total. Aggregate the
+  commits into a single `{ count }` item (0 when empty) and map the Slack text to `$json.count`.
 
 ## `specs/` — design reference, NOT importable
 

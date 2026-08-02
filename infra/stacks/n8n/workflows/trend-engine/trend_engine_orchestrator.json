@@ -252,7 +252,7 @@
             },
             {
               "role": "user",
-              "content": "={{$json.payload || ''}}"
+              "content": "={{$json.topic || ''}}"
             }
           ],
           "max_tokens": 800
@@ -403,7 +403,7 @@
             },
             {
               "role": "user",
-              "content": "={{$json.payload || ''}}"
+              "content": "={{$json['Keyword or Topic'] || ''}}"
             }
           ],
           "max_tokens": 800
