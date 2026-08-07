@@ -37,8 +37,8 @@ curl -s http://127.0.0.1:4000/health/liveliness   # {"status":"healthy"} when re
 
 | Alias | Strategy | Chain (edit in `config.yaml`) |
 |---|---|---|
-| `auto` | **quality-first** — best model, degrade only on failure | claude → kimi → free-deepseek-r1 → free-llama-70b → gemini |
-| `auto-free` | **cost-first** — free first, escalate only on failure | free-llama-70b → free-qwen-72b → openrouter-auto → kimi |
+| `auto` | **quality-first · PAID-ONLY (PII-safe)** — never drops to a free tier | claude → kimi |
+| `auto-free` | **cost-first · non-sensitive only** — free first, escalate on failure | openrouter/free → free-llama-70b → free-qwen-72b → kimi |
 
 Retries hit the *same* model first (`num_retries`), then the chain takes over.
 A model that fails `allowed_fails` times is benched for `cooldown_time` seconds.

@@ -27,7 +27,7 @@ package names at install time — they move.
 |---|---|---|
 | **git** | `apt install git` | version control (already assumed everywhere) |
 | **GitHub CLI (`gh`)** | `apt install gh` | PRs/issues/releases from the box; `gh auth login` |
-| **Gemini CLI** | `npm i -g @google/gemini-cli` | Google's terminal agent — cheap fallback in the failover chain (see [`AGENTS.md`](./AGENTS.md)) |
+| **Gemini CLI** | `npm i -g @google/gemini-cli` (Node.js ≥20) | Google's terminal agent — cheap fallback in the failover chain (see [`AGENTS.md`](./AGENTS.md)) |
 | **Bitwarden CLI (`bw`)** | `npm i -g @bitwarden/cli` | official secrets CLI; `bw unlock` → `BW_SESSION`; pull creds into env at deploy time |
 | **rbw** *(alt)* | `cargo install rbw` (or apt) | unofficial Rust Bitwarden CLI — a persistent agent so you're not re-unlocking each call; nicer for scripts |
 | **cloudflared** | Cloudflare repo | the tunnel connector (no inbound ports) |
@@ -63,7 +63,8 @@ One endpoint for every model, with automatic fallbacks: a **LiteLLM** proxy
 ([`stacks/router/`](./stacks/router/)) fronts **OpenRouter** (+ its free `:free` models),
 Anthropic, Kimi, and Gemini. Agents call one alias (`auto` / `auto-free`, port 4000) and a
 rate-limited model drops to the next in the chain — OpenAI `/v1` for OpenCode/Aider/TARS,
-Anthropic `/v1/messages` for Claude Code. Details in [`AGENTS.md`](./AGENTS.md).
+Anthropic `/v1/messages` for Claude Code. **`auto` is paid-only (safe for client PII);
+`auto-free` is free-first for non-sensitive work.** Details in [`AGENTS.md`](./AGENTS.md).
 
 ## Skills
 Mirror your Claude skills to `/opt/aurora/skills/`, plus the **n8n skills**

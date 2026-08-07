@@ -16,16 +16,23 @@ model_list:
       api_key: os.environ/ANTHROPIC_API_KEY
   - model_name: kimi-cheap
     litellm_params:
-      model: openai/kimi-k2.7-code           # Moonshot Kimi K2, OpenAI-compatible
-      api_base: https://api.moonshot.ai/v1   # confirm model id in Kimi docs
-      api_key: os.environ/MOONSHOT_API_KEY
+      # Kimi CODE API (subscription), OpenAI-compatible. This is NOT the Moonshot
+      # Open Platform — its keys/endpoints are not interchangeable. Docs: kimi.com/code/docs
+      model: openai/kimi-for-coding
+      api_base: https://api.kimi.com/coding/v1
+      api_key: os.environ/KIMI_API_KEY
+      # (For general, non-code Kimi via the Moonshot Open Platform instead:
+      #  model: openai/kimi-k2-<ver>, api_base: https://api.moonshot.ai/v1.)
 
   # ---- Free tier (OpenRouter ":free" variants) -------------------------------
   # These ROTATE and are rate-limited. Confirm the current free list before use:
   #   https://openrouter.ai/models?max_price=0
-  - model_name: free-deepseek-r1
+  - model_name: free-auto
     litellm_params:
-      model: openrouter/deepseek/deepseek-r1:free
+      # OpenRouter's self-updating FREE router (slug openrouter/free) — picks a
+      # currently-available free model, so a single retired :free id can't break the
+      # chain. (deepseek-r1:free was retired — this avoids pinning one volatile slug.)
+      model: openrouter/openrouter/free
       api_key: os.environ/OPENROUTER_API_KEY
   - model_name: free-llama-70b
     litellm_params:
@@ -52,23 +59,26 @@ model_list:
     litellm_params:
       model: anthropic/claude-sonnet-4-5
       api_key: os.environ/ANTHROPIC_API_KEY
-  - model_name: auto-free       # cost-first entrypoint
+  - model_name: auto-free       # cost-first entrypoint (NON-sensitive workloads only)
     litellm_params:
-      model: openrouter/deepseek/deepseek-r1:free
+      model: openrouter/openrouter/free
       api_key: os.environ/OPENROUTER_API_KEY
 
 litellm_settings:
   drop_params: true             # tolerate params a given provider doesn't accept
   request_timeout: 600
   num_retries: 2                # retry the SAME model on transient errors first…
-  # …then walk these chains left→right until one succeeds:
+  # …then walk these chains left→right until one succeeds.
+  # SAFETY: `auto` and `claude-primary` are PAID-ONLY so client PII never lands on a
+  # free/data-training tier. Free models live ONLY under `auto-free`, which is for
+  # non-sensitive workloads by contract (see AGENTS.md / the stack README).
   fallbacks:
-    - auto: ["kimi-cheap", "free-deepseek-r1", "free-llama-70b", "gemini-flash"]
-    - auto-free: ["free-llama-70b", "free-qwen-72b", "openrouter-auto", "kimi-cheap"]
-    - claude-primary: ["kimi-cheap", "free-deepseek-r1"]
+    - auto: ["kimi-cheap"]
+    - auto-free: ["free-llama-70b", "free-qwen-72b", "kimi-cheap"]
+    - claude-primary: ["kimi-cheap"]
   # If a request exceeds a model's context window, retry on a bigger one:
   context_window_fallbacks:
-    - free-llama-70b: ["openrouter-auto", "claude-primary"]
+    - free-llama-70b: ["free-auto", "claude-primary"]
 
 router_settings:
   routing_strategy: simple-shuffle

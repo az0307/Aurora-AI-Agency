@@ -66,12 +66,13 @@ chain** when a model rate-limits or errors. Full stack + config in
     `ANTHROPIC_AUTH_TOKEN=$LITELLM_MASTER_KEY`, `ANTHROPIC_MODEL=auto` (or `auto-free`).
   - **OpenCode / Aider / Goose / Crush / TARS** (OpenAI API): base URL
     `http://127.0.0.1:4000/v1`, key `$LITELLM_MASTER_KEY`, model `auto` / `auto-free`.
-- Two aliases: **`auto`** = quality-first (best model → degrade to free on failure);
-  **`auto-free`** = cost-first (free first → escalate to paid on failure).
+- Two aliases: **`auto`** = quality-first and **PAID-ONLY** (Claude → Kimi) — safe for
+  client PII, it never drops to a free tier; **`auto-free`** = cost-first (OpenRouter's
+  self-updating free router → free models → Kimi) for **non-sensitive** workloads only.
 
-**Caveat:** free `:free` models rotate, are rate-limited, and may train on inputs — never
-route client PII through them (keep that on the paid `auto` chain). See the stack README
-for the live-free-list link and the security notes.
+**Caveat:** free models rotate, are rate-limited, and may train on inputs — so `auto-free`
+is for non-sensitive work only, and client PII stays on the paid **`auto`** chain (which
+has **no** free fallback). See the stack README for the live-free-list link and security notes.
 
 ## Where each runs
 
