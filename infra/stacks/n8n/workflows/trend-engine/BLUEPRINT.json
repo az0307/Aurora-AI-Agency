@@ -1,0 +1,57 @@
+{
+  "generated": "2025-08-08T09:01:12.239931",
+  "workflows": [
+    "Trend Engine \u2013 Orchestrator (GitHub Enhanced)",
+    "Trend Engine \u2013 Retry Queue",
+    "Trend Engine \u2013 Analytics",
+    "Trend Engine \u2013 Monetization Layer",
+    "Trend Engine \u2013 Mailing List Layer",
+    "Trend Engine \u2013 GitHub Trigger",
+    "Trend Engine \u2013 GitHub Monitor"
+  ],
+  "setup_order": [
+    "Import Orchestrator (GitHub Enhanced)",
+    "Set Google Sheets IDs and create tabs: Topics, ReplicatedIdeas, Step 1, Errors, RetryQueue, Analytics, Published, Revenue, Subscribers, EmailStats",
+    "Connect credentials: Google, Apify, OpenAI, Anthropic MCP, Gemini, Mistral, xAI Grok, Slack, Mailchimp, Gmail, Printful, Gumroad, Linktree, YouTube, Meta Graph, TikTok, Pinterest, LinkedIn, Twitter",
+    "Import Monetization Layer and Mailing List Layer; connect Orchestrator \u2192 Dispatcher output to Monetization input; set Published sheet feed",
+    "Import GitHub Trigger and Monitor; set webhook secret; add repo OWNER/REPO; test push",
+    "Enable all crons; run test with batchSize=1; validate sheets populate",
+    "Scale batch sizes; enable retries and Slack alerts"
+  ],
+  "env_placeholders": [
+    "<GOOGLE_SHEET_ID>",
+    "<CRED_ID>",
+    "<OPENAI_CRED_ID>",
+    "<APIFY_TOKEN>",
+    "<GROK_API_KEY>",
+    "<MCP_TOKEN>",
+    "<GEMINI_KEY>",
+    "<MISTRAL_KEY>",
+    "<NEWS_API_KEY>",
+    "<X_API_KEY>",
+    "<SLACK_CRED_ID>",
+    "<PRINTFUL_TOKEN>",
+    "<LINKTREE_TOKEN>",
+    "<YOUTUBE_KEY>",
+    "<YOUTUBE_OAUTH>",
+    "<GUMROAD_TOKEN>",
+    "<YT_KEY>",
+    "<YT_OAUTH>",
+    "<AFF_KEY>",
+    "<MC_API_KEY>",
+    "<LIST_ID>",
+    "<CRM_SHEET_ID>",
+    "<GMAIL_CRED_ID>",
+    "<OWNER>",
+    "<REPO>",
+    "<GITHUB_TOKEN>"
+  ],
+  "post_install_checklist": [
+    "Run dry test: disable publishing nodes, enable logging only",
+    "Turn on platform publishing one by one",
+    "Verify monetization toggles and affiliate link injection",
+    "Send test emails to seed list",
+    "Confirm GitHub commit of content packages",
+    "Review Slack summaries and error logs"
+  ]
+}

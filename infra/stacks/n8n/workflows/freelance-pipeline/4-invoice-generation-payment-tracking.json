@@ -1,0 +1,362 @@
+{
+  "name": "Invoice Generation & Payment Tracking",
+  "nodes": [
+    {
+      "id": "webhook",
+      "name": "Project Delivered Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": {
+        "path": "project-delivered",
+        "httpMethod": "POST"
+      },
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "id": "get_project",
+      "name": "Get Project & Client Details",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.*, c.name as client_name, c.tier, co.email as client_email, co.name as contact_name FROM projects p JOIN clients c ON p.client_id = c.id JOIN contacts co ON c.id = co.client_id WHERE p.id = $1 AND co.is_primary = true",
+        "queryParameters": "={{$json.project_id}}"
+      },
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "id": "generate_invoice_number",
+      "name": "Generate Invoice Number",
+      "type": "n8n-nodes-base.function",
+      "parameters": {
+        "functionCode": "const now = new Date();\nconst year = now.getFullYear();\nconst month = String(now.getMonth() + 1).padStart(2, '0');\nconst random = String(Math.floor(Math.random() * 10000)).padStart(4, '0');\nreturn [{json: {invoice_number: `INV-${year}${month}-${random}`}}];"
+      },
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "id": "create_invoice",
+      "name": "Create Invoice Record",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "insert",
+        "table": "invoices",
+        "columns": "invoice_number,project_id,client_id,amount,tax_amount,status,due_date",
+        "returnFields": "id,invoice_number",
+        "values": "={{$node['Generate Invoice Number'].json.invoice_number}},={{$node['Get Project & Client Details'].json.id}},={{$node['Get Project & Client Details'].json.client_id}},={{$node['Get Project & Client Details'].json.price}},={{$node['Get Project & Client Details'].json.price * 0.1}},sent,={{$moment().add(30, 'days').format('YYYY-MM-DD')}}"
+      },
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "id": "generate_invoice_pdf",
+      "name": "Generate Invoice PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://api.invoice-generator.com",
+        "method": "POST",
+        "body": {
+          "from": "Your Company Name\n123 Business St\nCity, State 12345",
+          "to": "{{$node['Get Project & Client Details'].json.client_name}}\n{{$node['Get Project & Client Details'].json.contact_name}}",
+          "logo": "https://yourcompany.com/logo.png",
+          "number": "{{$node['Generate Invoice Number'].json.invoice_number}}",
+          "date": "{{$moment().format('MM/DD/YYYY')}}",
+          "due_date": "{{$moment().add(30, 'days').format('MM/DD/YYYY')}}",
+          "items": [
+            {
+              "name": "{{$node['Get Project & Client Details'].json.project_name}}",
+              "quantity": 1,
+              "unit_cost": "{{$node['Get Project & Client Details'].json.price}}"
+            }
+          ],
+          "tax": 10,
+          "notes": "Thank you for your business! Payment is due within 30 days."
+        }
+      },
+      "position": [
+        1050,
+        300
+      ]
+    },
+    {
+      "id": "upload_to_drive",
+      "name": "Upload Invoice to Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "parameters": {
+        "operation": "upload",
+        "name": "Invoice-{{$node['Generate Invoice Number'].json.invoice_number}}.pdf",
+        "binaryData": true,
+        "folderId": "={{$node['Get Project & Client Details'].json.drive_folder_url}}"
+      },
+      "position": [
+        1250,
+        300
+      ]
+    },
+    {
+      "id": "create_stripe_link",
+      "name": "Create Stripe Payment Link",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://api.stripe.com/v1/payment_links",
+        "method": "POST",
+        "authentication": "headerAuth",
+        "body": {
+          "line_items": [
+            {
+              "price_data": {
+                "currency": "usd",
+                "product_data": {
+                  "name": "{{$node['Get Project & Client Details'].json.project_name}}"
+                },
+                "unit_amount": "={{$node['Get Project & Client Details'].json.price * 100}}"
+              },
+              "quantity": 1
+            }
+          ]
+        }
+      },
+      "position": [
+        1450,
+        300
+      ]
+    },
+    {
+      "id": "update_invoice_urls",
+      "name": "Update Invoice with URLs",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE invoices SET invoice_pdf_url = $1, stripe_payment_link = $2 WHERE id = $3",
+        "queryParameters": "={{$node['Upload Invoice to Drive'].json.webViewLink}},={{$node['Create Stripe Payment Link'].json.url}},={{$node['Create Invoice Record'].json.id}}"
+      },
+      "position": [
+        1650,
+        300
+      ]
+    },
+    {
+      "id": "send_invoice_email",
+      "name": "Send Invoice Email",
+      "type": "n8n-nodes-base.gmail",
+      "parameters": {
+        "operation": "send",
+        "to": "={{$node['Get Project & Client Details'].json.client_email}}",
+        "subject": "Invoice {{$node['Generate Invoice Number'].json.invoice_number}} - {{$node['Get Project & Client Details'].json.project_name}}",
+        "message": "<h2>Invoice for {{$node['Get Project & Client Details'].json.project_name}}</h2><p>Hi {{$node['Get Project & Client Details'].json.contact_name}},</p><p>Thank you for working with us! Here's your invoice for the completed project.</p><p><strong>Amount Due:</strong> ${{$node['Get Project & Client Details'].json.price}}<br><strong>Due Date:</strong> {{$moment().add(30, 'days').format('MMMM DD, YYYY')}}</p><p><strong>Payment Options:</strong></p><ul><li><a href='{{$node['Create Stripe Payment Link'].json.url}}'>Pay Online with Credit Card</a> (Instant)</li><li><a href='{{$node['Upload Invoice to Drive'].json.webViewLink}}'>Download Invoice PDF</a></li></ul><p>We'll send a reminder 7 days before the due date. Thank you again for your business!</p>",
+        "attachments": [
+          {
+            "type": "binary",
+            "property": "data"
+          }
+        ]
+      },
+      "position": [
+        1850,
+        300
+      ]
+    },
+    {
+      "id": "schedule_reminder",
+      "name": "Schedule Payment Reminder",
+      "type": "n8n-nodes-base.wait",
+      "parameters": {
+        "unit": "days",
+        "amount": 23
+      },
+      "position": [
+        2050,
+        300
+      ]
+    },
+    {
+      "id": "send_reminder",
+      "name": "Send Payment Reminder",
+      "type": "n8n-nodes-base.gmail",
+      "parameters": {
+        "operation": "send",
+        "to": "={{$node['Get Project & Client Details'].json.client_email}}",
+        "subject": "Friendly Reminder: Invoice {{$node['Generate Invoice Number'].json.invoice_number}} Due Soon",
+        "message": "<p>Hi {{$node['Get Project & Client Details'].json.contact_name}},</p><p>This is a friendly reminder that invoice {{$node['Generate Invoice Number'].json.invoice_number}} is due in 7 days.</p><p><strong>Amount:</strong> ${{$node['Get Project & Client Details'].json.price}}<br><strong>Due Date:</strong> {{$moment().add(7, 'days').format('MMMM DD, YYYY')}}</p><p><a href='{{$node['Create Stripe Payment Link'].json.url}}'>Pay Now</a></p>"
+      },
+      "position": [
+        2250,
+        300
+      ]
+    },
+    {
+      "id": "request_testimonial",
+      "name": "Request Testimonial (3 days after)",
+      "type": "n8n-nodes-base.wait",
+      "parameters": {
+        "unit": "days",
+        "amount": 3
+      },
+      "position": [
+        1850,
+        500
+      ]
+    },
+    {
+      "id": "send_testimonial_request",
+      "name": "Send Testimonial Request",
+      "type": "n8n-nodes-base.gmail",
+      "parameters": {
+        "operation": "send",
+        "to": "={{$node['Get Project & Client Details'].json.client_email}}",
+        "subject": "Quick Question: How Was Your Experience?",
+        "message": "<p>Hi {{$node['Get Project & Client Details'].json.contact_name}},</p><p>Now that you've had a few days to use {{$node['Get Project & Client Details'].json.project_name}}, I'd love to hear your thoughts!</p><p>Would you be willing to share a brief testimonial? It would help other businesses make decisions about similar projects.</p><p><a href='https://forms.gle/YOUR-FORM-ID'>Share Your Experience (2 minutes)</a></p><p>Thank you again for your business!</p>"
+      },
+      "position": [
+        2050,
+        500
+      ]
+    }
+  ],
+  "connections": {
+    "Project Delivered Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Project & Client Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Project & Client Details": {
+      "main": [
+        [
+          {
+            "node": "Generate Invoice Number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Invoice Number": {
+      "main": [
+        [
+          {
+            "node": "Create Invoice Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Invoice Record": {
+      "main": [
+        [
+          {
+            "node": "Generate Invoice PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Invoice PDF": {
+      "main": [
+        [
+          {
+            "node": "Upload Invoice to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Invoice to Drive": {
+      "main": [
+        [
+          {
+            "node": "Create Stripe Payment Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Stripe Payment Link": {
+      "main": [
+        [
+          {
+            "node": "Update Invoice with URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Invoice with URLs": {
+      "main": [
+        [
+          {
+            "node": "Send Invoice Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Invoice Email": {
+      "main": [
+        [
+          {
+            "node": "Schedule Payment Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Request Testimonial (3 days after)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Payment Reminder": {
+      "main": [
+        [
+          {
+            "node": "Send Payment Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request Testimonial (3 days after)": {
+      "main": [
+        [
+          {
+            "node": "Send Testimonial Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all"
+  },
+  "tags": [
+    "aurora",
+    "freelance-pipeline"
+  ]
+}

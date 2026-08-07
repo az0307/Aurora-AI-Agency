@@ -19,6 +19,7 @@ convention.
 | — | **Aider** | Git-native pair-programmer | `pipx install aider-chat` |
 | — | **Goose** (Block) | Extensible local agent | per Goose installer |
 | — | **Crush** (Charm) | Lightweight terminal agent | per Charm install |
+| Gemini CLI | **Gemini CLI** (Google) | Open-source terminal agent; generous free tier — good cheap fallback in the failover chain | `npm i -g @google/gemini-cli` (Node ≥20); auth via Google login or `GEMINI_API_KEY` |
 
 > Exact package names/commands move fast — confirm against each project's README at install
 > time. The install lines above are the current-as-of-2026-07 shape, not a promise.
@@ -48,6 +49,30 @@ claude-kimi() {
 
 Confirm the current base URL and model id in Kimi's docs before use. Because the vars are set
 inline on the `claude` command, nothing leaks into the rest of your shell — no `unset` needed.
+
+## The omni-router: one endpoint, automatic fallbacks (OpenRouter + free models)
+
+The Kimi trick above overrides one backend by hand. Scale that idea: run a **LiteLLM**
+proxy on the box (the "omni-router") that fronts **OpenRouter** (and its free `:free`
+models), Anthropic, Kimi, and Gemini behind a single endpoint, and **falls through a
+chain** when a model rate-limits or errors. Full stack + config in
+[`stacks/router/`](./stacks/router/).
+
+- **OpenRouter** = the hosted gateway that unlocks the free models (one key) and has its
+  own `openrouter/auto` meta-model. **LiteLLM** = the self-hosted router that adds *your*
+  cross-provider fallbacks/retries/cooldowns and normalizes everything to one API.
+- Every agent points at the **one** URL instead of juggling per-provider creds:
+  - **Claude Code** (Anthropic API): `ANTHROPIC_BASE_URL=http://127.0.0.1:4000`,
+    `ANTHROPIC_AUTH_TOKEN=$LITELLM_MASTER_KEY`, `ANTHROPIC_MODEL=auto` (or `auto-free`).
+  - **OpenCode / Aider / Goose / Crush / TARS** (OpenAI API): base URL
+    `http://127.0.0.1:4000/v1`, key `$LITELLM_MASTER_KEY`, model `auto` / `auto-free`.
+- Two aliases: **`auto`** = quality-first and **PAID-ONLY** (Claude → Kimi) — safe for
+  client PII, it never drops to a free tier; **`auto-free`** = cost-first (OpenRouter's
+  self-updating free router → free models → Kimi) for **non-sensitive** workloads only.
+
+**Caveat:** free models rotate, are rate-limited, and may train on inputs — so `auto-free`
+is for non-sensitive work only, and client PII stays on the paid **`auto`** chain (which
+has **no** free fallback). See the stack README for the live-free-list link and security notes.
 
 ## Where each runs
 
