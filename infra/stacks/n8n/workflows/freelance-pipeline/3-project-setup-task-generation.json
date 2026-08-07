@@ -201,9 +201,7 @@
             "node": "Create/Update Client",
             "type": "main",
             "index": 0
-          }
-        ],
-        [
+          },
           {
             "node": "Create Contact",
             "type": "main",
@@ -230,9 +228,7 @@
             "node": "Get Task Template",
             "type": "main",
             "index": 0
-          }
-        ],
-        [
+          },
           {
             "node": "Create Google Drive Folders",
             "type": "main",

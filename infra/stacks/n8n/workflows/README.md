@@ -19,26 +19,27 @@ Postgres status changes and webhooks.
 | `4-invoice-generation-payment-tracking.json` | 13 | On `delivery`: invoice number + record, PDF, Stripe payment link, email, reminder at day 23, testimonial request |
 | `INSTALL-NOTES.json` | — | Prerequisites, setup steps, the Postgres `NOTIFY` trigger SQL, and target metrics |
 
-**Known rework before these will run** (confirmed by PR #28 review — treat as the fix list):
+**Fixed in the PR #28 review pass** (logic bugs corrected in the committed JSON):
+- **Deterministic dedupe** (`1-job-scraping-lead-discovery.json`): `Check for Duplicates` now
+  runs `SELECT COUNT(*) AS duplicate_count …` and `Filter New Leads Only` tests
+  `duplicate_count == 0`, so the new-lead path reaches `Insert to Database` reliably.
+- **`score` persisted on insert** (same file): `score` was added to the insert column list, so
+  `Filter Super High-Value (0.9+)` sees it.
+- **Enrichment on the new-lead path** (same file): duplicates are dropped (empty false branch);
+  `Insert to Database` now fans out to both `Send High-Value Alert` and `Enrich Company Data`,
+  so only genuinely new leads get enriched.
+- **Single-output fan-out fixed** (`3-project-setup-task-generation.json`): `Create Contact` and
+  the Drive/kickoff branch now hang off output `main[0]` of their single-output Postgres nodes,
+  so they actually run.
+
+**Still needs a live n8n instance before go-live** (not fixable blind):
 - Credentials are referenced as inline expressions (e.g. `{{$credentials.brightData.token}}`
   in an HTTP header value). That is **not** how n8n's credential system works — rewire each
-  node to use a proper credential entry. (These inline `{{…}}` strings also lack the leading
-  `=` n8n needs to treat a value as an expression — moot once they become real credentials.)
-- Some Postgres nodes use a `queryParameters` string shape that may not match the current
-  node version; verify against your n8n version.
-- **Dedupe is non-deterministic** (`1-job-scraping-lead-discovery.json`): the `SELECT url …`
-  dedupe emits no row for a genuinely new lead, so the new-lead path never reliably reaches
-  `Insert to Database`. Use `COUNT(*) AS duplicate_count` (or an explicit empty output) and
-  test that field.
-- **`score` column is dropped on insert** (same file): the scoring function computes `score`
-  but the insert omits the column, so `Filter Super High-Value (0.9+)` never fires. Add `score`
-  to the insert.
-- **Enrichment is wired to the wrong IF branch** (same file): for n8n IF nodes `main[0]` is
-  true and `main[1]` is false — new leads currently skip enrichment. Move enrichment to the
-  true branch.
-- **Single-output nodes fan out on the wrong index** (`3-project-setup-task-generation.json`):
-  a Postgres node emits only `main[0]`, so `Create Contact` and the Drive/kickoff branch never
-  run. Put both target connections in the first output array.
+  node to use a proper credential entry.
+- Some Postgres nodes use a `queryParameters` string shape / `insert` column auto-mapping that
+  may not match your n8n version; verify against a running instance (in particular, confirm the
+  lead fields survive into `Insert to Database` — consider an `INSERT … ON CONFLICT (url) DO
+  NOTHING RETURNING …` upsert if not).
 - Requires a `leads`/`clients`/`projects`/`tasks`/`invoices` schema plus API keys for
   Anthropic, Bright Data, Clearbit, Stripe, Google Workspace, Slack.
 
@@ -77,10 +78,11 @@ LinkedIn, Mailchimp…). Enable publishing nodes one at a time, per its own chec
   the trend stream (always empty), so nothing is filtered. Load the three config files under
   distinct keys, base64-decode the GitHub `content`, and have `Apply Blacklist` read the
   blacklist via a node reference, keeping it **fail-closed** when config is missing.
-- `trend_engine_github_monitor.json`: the commit count is wrong twice over — the GitHub
-  `/commits` request returns only the first 30 (add `per_page=100` + follow the `Link` header),
-  and the Slack node runs once per commit item instead of once with a total. Aggregate the
-  commits into a single `{ count }` item (0 when empty) and map the Slack text to `$json.count`.
+- `trend_engine_github_monitor.json`: **fixed** — the `/commits` request now sets `per_page=100`
+  (was defaulting to 30) with `alwaysOutputData`, a `Count Commits` code node aggregates the
+  response into a single `{ count }` item (0 when empty), and the Slack node reads `$json.count`
+  so it fires once with the total. For repos exceeding 100 commits/day, enable n8n HTTP
+  pagination to follow the GitHub `Link` header (`rel=next`) — noted on the HTTP node.
 
 ## `specs/` — design reference, NOT importable
 

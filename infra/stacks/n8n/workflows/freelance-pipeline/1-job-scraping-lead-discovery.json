@@ -86,7 +86,7 @@
       "type": "n8n-nodes-base.postgres",
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT url FROM leads WHERE url = $1",
+        "query": "SELECT COUNT(*) AS duplicate_count FROM leads WHERE url = $1",
         "queryParameters": "url={{$json.url}}"
       },
       "position": [
@@ -102,7 +102,7 @@
         "conditions": {
           "number": [
             {
-              "value1": "={{$node['Check for Duplicates'].json.length}}",
+              "value1": "={{$node['Check for Duplicates'].json.duplicate_count}}",
               "operation": "equal",
               "value2": 0
             }
@@ -121,7 +121,7 @@
       "parameters": {
         "operation": "insert",
         "table": "leads",
-        "columns": "title,source,url,posted_date,budget,hours_estimate,company,contact_email,service_type,status,raw_snippet",
+        "columns": "title,source,url,posted_date,budget,hours_estimate,company,contact_email,service_type,status,score,raw_snippet",
         "returnFields": "id,title,score,budget"
       },
       "position": [
@@ -275,13 +275,7 @@
             "index": 0
           }
         ],
-        [
-          {
-            "node": "Enrich Company Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Insert to Database": {
@@ -289,6 +283,11 @@
         [
           {
             "node": "Send High-Value Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Enrich Company Data",
             "type": "main",
             "index": 0
           }
