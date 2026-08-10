@@ -65,9 +65,14 @@ Section 6 (Client Responsibilities) in a timely manner.
 3.2 **Monthly retainer:** $350.00 per month, payable in advance, covering the services listed in
 Schedule A, Part 2.
 
-3.3 **GST:** [Confirm — is Aurora registered for GST? If yes, add "plus GST" to all figures above
-and issue a valid tax invoice; if not registered, the supply is GST-free and this should say so
-explicitly, matching `INVOICE-TEMPLATE.txt`.]
+3.3 **GST:** [Confirm — is Aurora registered for GST?
+- If **registered**: state here whether the $700.00 and $350.00 figures above are GST-inclusive
+  or GST-exclusive, add "plus GST" to whichever is accurate, and issue a valid tax invoice.
+- If **not registered**: Aurora cannot charge GST, but note that this makes the supply **"not
+  subject to GST"** — it is not automatically "GST-free" (GST-free is a specific legal category
+  for certain goods/services, e.g. some food, medical, or export supplies, and does not apply
+  here just because the supplier is unregistered). `INVOICE-TEMPLATE.txt` should be corrected to
+  match whichever of these is actually true.]
 
 3.4 **Invoicing:** Invoices are issued monthly in advance / [confirm cycle] and are due within
 **7 days** of the invoice date.
@@ -76,9 +81,15 @@ explicitly, matching `INVOICE-TEMPLATE.txt`.]
 services after a grace period? Not yet decided in the source documents.]
 
 3.6 **Costs not included** (Client's direct responsibility, per `WELCOME-LETTER.txt`):
-- Domain renewal (~$14/year)
-- SMS provider costs (~$0.60/month), if/when SMS features are active
+- Domain renewal (~$14/year) — domain registration account remains under [confirm — Client's or
+  Aurora's registrar account?]; see Section 5.1 for control/transfer mechanics.
+- SMS provider costs (~$0.60/month via Twilio), if/when SMS features are active
 - ManyChat Pro subscription (~$22 USD/month), if/when the chatbot is active
+- Email delivery costs via Resend, if usage exceeds the free tier — [confirm threshold and who
+  pays overage]
+- Google Sheets is hosted under [confirm — Aurora's or Client's Google account?]; this determines
+  who owns the underlying data and who can access it directly, separate from the CSV export
+  Aurora provides on termination (Section 9.3)
 - Any advertising spend (Google Ads, Meta Ads)
 - Photography or custom design work beyond what's scoped in Schedule A
 
@@ -127,7 +138,11 @@ services after a grace period? Not yet decided in the source documents.]
 ### 5. Intellectual Property
 
 5.1 On full payment of the setup fee, the Client owns the website content, branding, and domain
-registration (`ymiroofing.com.au`).
+registration (`ymiroofing.com.au`). Ownership includes control, not just legal registrant status:
+[confirm — is the domain registered directly in the Client's own registrar account, or in
+Aurora's, on the Client's behalf? If the latter, Aurora will transfer the registrar account (or
+provide full DNS/registrar credentials) to the Client on request or on termination, whichever is
+earlier.]
 
 5.2 Aurora retains ownership of its own tools, frameworks, automation templates, and any
 reusable code, workflows, or systems not built specifically and exclusively for the Client.
@@ -156,12 +171,24 @@ The Client agrees to provide, in a timely manner:
 information disclosed by the other party, except as required by law.
 
 7.2 Customer data collected via the website (names, phone numbers, enquiry details) is handled
-per the Client's published Privacy Policy at `ymiroofing.com.au/privacy.html`, which complies
-with the *Privacy Act 1988* (Cth) and the Australian Privacy Principles.
+per the Client's published Privacy Policy at `ymiroofing.com.au/privacy.html`.
 
-7.3 [Confirm — does either party need a stronger data processing / sub-processor clause given
-Aurora hosts data on the Client's behalf (Google Sheets, n8n, Twilio, Resend)? Recommended, not
-yet drafted.]
+> ⚠️ **Correction from the original draft:** that policy states the Client complies with the
+> *Privacy Act 1988* (Cth) and the Australian Privacy Principles (APPs) — this Agreement should
+> not simply repeat that as an established fact. Most small businesses (annual turnover ≤ $3
+> million) are **exempt** from the Privacy Act unless a specific exception applies (e.g. trading
+> in personal information, being a health service provider, holding a Commonwealth contract, or
+> voluntarily opting in). Whether the Client is actually bound by the Privacy Act/APPs, exempt,
+> or has voluntarily opted in has not been established here and needs solicitor/OAIC-guidance
+> confirmation — see Section 10.
+
+7.3 Aurora acts as a processor of Client customer data on the Client's behalf across several
+third-party tools (Google Sheets, Twilio, Resend, and n8n if/when active). [A proper data
+processing schedule is needed, covering: Aurora's processing role and permitted uses; which
+third parties are authorised sub-processors; security controls Aurora applies to data in these
+tools; how a data breach affecting Client data would be notified and to whom; how long Aurora
+retains Client data after collection or after termination; and what disclosures (if any) Aurora
+may make to third parties. Not yet drafted — needs solicitor input, not a template.]
 
 ---
 
@@ -171,13 +198,20 @@ yet drafted.]
 remedy conferred on the Client under the *Australian Consumer Law* (Schedule 2 to the
 *Competition and Consumer Act 2010* (Cth)) that cannot lawfully be excluded.
 
-8.2 Where the Australian Consumer Law applies to the Services supplied under this Agreement:
+8.2 Where the Australian Consumer Law applies to the Services supplied under this Agreement,
+Aurora uses the ACCC's prescribed services-guarantee wording (current as at this draft — confirm
+against accc.gov.au before signing, as ACCC guidance can be updated):
 
 > "Our services come with guarantees that cannot be excluded under the Australian Consumer Law.
-> You are entitled to a replacement or refund for a major failure and for compensation for any
-> other reasonably foreseeable loss or damage. You are also entitled to have the services
-> re-performed if they fail to be of acceptable quality and the failure does not amount to a
-> major failure."
+> For major failures with the service, you are entitled:
+> — to cancel your service contract with us; and
+> — to a refund for the unused portion, or to compensation for its reduced value.
+>
+> You are also entitled to be compensated for any other reasonably foreseeable loss or damage.
+>
+> If the failure does not amount to a major failure, you are entitled to have problems with the
+> service rectified in a reasonable time and, if this is not done, to cancel your contract and
+> obtain a refund for the unused portion of the contract."
 
 ---
 
@@ -189,31 +223,75 @@ notice** to the other party.
 9.2 Either party may terminate immediately on written notice if the other party materially
 breaches this Agreement and fails to remedy the breach within **[X days]** of being notified.
 
-9.3 On termination, the Client retains ownership of the website and domain per Section 5. Aurora
-will provide a full export of website files and any Google Sheets data within **[X days]** of
-termination.
+9.3 On termination, the Client retains ownership of the website and domain per Section 5. Within
+**[X days]** of termination, Aurora will provide the Client with:
+- A full export of website source files;
+- Registrar/DNS account access or transfer for `ymiroofing.com.au`, per Section 5.1;
+- A full export of Google Sheets data (format: [confirm — Google Sheets native / CSV / other]);
+- A full export of any automation workflows built specifically for the Client (e.g. n8n workflow
+  JSON), if applicable;
+- Any vendor/hosting credentials that are the Client's to keep (as distinct from Aurora's own
+  accounts, e.g. Aurora's Resend account, which is not handed over);
+- Confirmation of what Client data Aurora deletes from its own systems after handover, and on
+  what timeline.
 
-9.4 Fees paid for the then-current month are non-refundable; no further monthly fees are payable
-after the effective termination date.
+9.4 Subject to Section 8 (Australian Consumer Law), fees paid for the then-current month are
+non-refundable except where a consumer guarantee entitles the Client to a refund for the unused
+portion per Section 8.2; no further monthly fees are payable after the effective termination
+date. [Confirm — if termination happens mid-month, is any part of that month's fee prorated back
+to the Client, or is the "non-refundable" rule absolute outside the ACL carve-out above? Not yet
+decided.]
 
 ---
 
 ### 10. Outstanding Items Before Signing
 
 The following must be resolved before this Agreement is finalised — none of these have been
-fabricated or assumed, and none should be guessed at:
+fabricated or assumed, and none should be guessed at. This list is intended to be exhaustive:
+nothing in brackets elsewhere in this document should be filled in without also being checked
+off (or explicitly removed) here.
 
-- [ ] Aurora's registered legal entity name, ABN, ACN (if any), and business address
+**Parties & dates**
+- [ ] Aurora's registered legal entity name, ABN, ACN (if any), business address, and contact phone
 - [ ] Ben's registered business address (for the Client block above and GBP verification)
-- [ ] Confirmation of GST status for Aurora's supply (affects Section 3.3 and the invoice)
+- [ ] Agreement date (top of §"SERVICES AGREEMENT") and Commencement Date (§2.1)
+- [ ] Expected setup-phase duration in business days (§2.2)
+
+**Fees & billing**
+- [ ] Aurora's GST registration status, and whether $700/$350 are GST-inclusive or exclusive (§3.3)
+- [ ] Invoicing cycle confirmation (§3.4)
+- [ ] Late payment terms — fee, interest, or service suspension (§3.5)
+- [ ] Domain registrar account ownership, and who pays Resend overage if the free tier is exceeded (§3.6)
+- [ ] Google Sheets account ownership (§3.6)
+- [ ] Whether monthly fees are prorated on mid-month termination (§9.4)
+
+**Scope**
+- [ ] Which Schedule A items are actually live vs. planned — do not send until every row in the
+      Part 1/Part 2 tables is marked (§4)
+- [ ] Automation platform hosting — confirm whether this is actually included (§4, Part 2)
+
+**Compliance**
 - [ ] BPC (Building and Plumbing Commission) registration number for Y.M.I Roofing — flagged as
       outstanding since `CREDIBILITY-AUDIT.md` and `MASTER-DELIVERY-CHECKLIST.md`
 - [ ] Public liability insurance certificate sighted and cover amount confirmed
-- [ ] Confirmation of which Schedule A items are actually live vs. planned (Section 4)
-- [ ] Late payment terms (Section 3.5)
-- [ ] IP licence-back terms, if wanted (Section 5.3)
-- [ ] Data processing terms for third-party tools (Section 7.3)
-- [ ] Breach-remedy period in Section 9.2
+- [ ] Whether the Client is actually bound by, exempt from, or has opted into the Privacy Act
+      1988/APPs — do not assume compliance (§7.2)
+- [ ] ACL services-guarantee wording in §8.2 re-checked against current ACCC guidance immediately
+      before signing
+
+**Legal terms needing solicitor drafting, not templating**
+- [ ] IP licence-back terms, if wanted (§5.3)
+- [ ] Domain/registrar transfer mechanics finalised (§5.1)
+- [ ] Full data processing schedule for third-party tools (§7.3)
+- [ ] Breach-remedy period (§9.2, currently **[X days]**)
+- [ ] Termination handover deadline (§9.3, currently **[X days]**)
+- [ ] Limitation of liability clause — entirely undrafted (§11)
+- [ ] Dispute-resolution timeframe (§12.2, currently **[X days]**) and the actual enforceable
+      forum(s) for unresolved disputes — do not rely on VCAT by default (§12.2)
+
+**Execution**
+- [ ] Aurora's signatory name and title (Signatures block)
+- [ ] Signing dates for both parties (Signatures block)
 
 ---
 
@@ -231,8 +309,17 @@ review.]
 12.1 If a dispute arises, the parties will first attempt to resolve it through direct discussion
 between Ben Breheny and Aaron Baker.
 
-12.2 If unresolved within **[X days]**, either party may refer the matter to Consumer Affairs
-Victoria, and if still unresolved, to the Victorian Civil and Administrative Tribunal (VCAT).
+12.2 If unresolved within **[X days]**, either party **may** (this is a voluntary, non-binding
+option, not a mandatory step) refer the matter to Consumer Affairs Victoria conciliation.
+
+> ⚠️ **Flag for solicitor review:** the original draft named VCAT as the enforceable next step,
+> but VCAT is not a Chapter III court and generally cannot hear matters that require applying
+> federal law (e.g. a claim genuinely arising under the Commonwealth *Competition and Consumer
+> Act 2010*, as opposed to the Australian Consumer Law as picked up by the Victorian *Australian
+> Consumer Law and Fair Trading Act 2012*). Whether a given dispute under this Agreement would
+> fall within VCAT's jurisdiction or need to go to a court (e.g. the Magistrates' Court of
+> Victoria) depends on how the claim is framed. **A solicitor should specify the actual
+> enforceable forum(s)** rather than this Agreement asserting VCAT applies to every dispute.
 
 ---
 
@@ -241,12 +328,20 @@ Victoria, and if still unresolved, to the Victorian Civil and Administrative Tri
 13.1 **Governing law:** This Agreement is governed by the laws of Victoria, Australia.
 
 13.2 **Entire agreement:** This Agreement, together with Schedule A, constitutes the entire
-agreement between the parties and supersedes all prior discussions.
+agreement between the parties and supersedes all prior discussions. Note: `WELCOME-LETTER.txt`
+and `INVOICE-TEMPLATE.txt` contain commercial terms (fees, inclusions, exclusions) that this
+Agreement is meant to formalise — before signing, confirm every operative term from those
+documents is either restated here (Sections 3–4) or that both parties agree those documents are
+superseded by this Agreement rather than still relied upon.
 
 13.3 **Variation:** Any changes to this Agreement must be agreed in writing by both parties.
 
-13.4 **Notices:** Notices under this Agreement should be sent to the contact details listed at
-the top of this document.
+13.4 **Notices:** Written notices under this Agreement (including under Section 9, termination
+and breach notices) must be sent to the contact details listed at the top of this document, by
+one of: email (deemed received when sent, provided no bounce/delivery-failure notice is
+received), or prepaid post (deemed received 3 business days after posting to the address on
+record). Either party may update its own notice contact details by written notice to the other
+party under this clause.
 
 ---
 
