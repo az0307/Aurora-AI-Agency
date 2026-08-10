@@ -21,8 +21,10 @@ Y.M.I Roofing Ignite Package Setup        1    $700.00    $700.00
   (Website build + n8n automation setup)
 
 Monthly Retainer — Months 1-2             2    $350.00    $700.00
-  (Lead capture, review machine, chatbot,
-   hosting, maintenance, monthly reporting)
+  (Hosting, maintenance, analytics,
+   monthly reporting; automation features
+   are added to this retainer as each one
+   goes live — see current status brief)
 
 ─────────────────────────────────────────────────────────────────
                                           SUBTOTAL:        $1,400.00
@@ -36,8 +38,7 @@ Monthly Retainer — Months 1-2             2    $350.00    $700.00
 
 PAYMENT DETAILS
 Bank Transfer (Westpac):
-  Account Name: [Confirm exact name on the account — likely "Aaron Baker"; must match bank
-                records exactly for the transfer to clear]
+  Account Name: Aaron Baker (Westpac Business One account)
   BSB:          033-121
   Account #:    674782
   Reference:    AURORA-0001-YMI

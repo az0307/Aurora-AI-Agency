@@ -20,7 +20,12 @@ Aaron Baker, trading as **Aurora AI Agency** (**"Aurora"**)
 ABN: 15 870 917 390 (verified against the official ABR record — Individual/Sole Trader, active
 from 1 Oct 2025, main business location VIC 3338)
 ACN: N/A — Aurora operates as a sole trader, not a registered company
-Registered address: Melton South, VIC 3338 — [full street address still outstanding]
+Registered address: Melton South, VIC 3338 — [street address confirmed as a home residence;
+exact street number/name still needs a clean re-confirmation — a voice-dictated version came
+through garbled and shouldn't be guessed at in a legal document. Note: this address only appears
+in this private Agreement and the invoice to Ben — it is not published anywhere on
+`ymiroofing.com.au` or elsewhere publicly, so using a home address here is low-risk and standard
+practice for a sole trader.]
 Contact: Aaron Baker — aaron221048@gmail.com — 0401 154 219
 
 > ⚠️ **New item from this ABR check:** the ABR record lists "Aaron Baker" as the registered
@@ -84,8 +89,8 @@ this clause and the invoice template both need updating.
 3.4 **Invoicing:** Invoices are issued monthly in advance / [confirm cycle] and are due within
 **7 days** of the invoice date.
 
-3.5 **Late payment:** [Confirm — does Aurora want a late fee / interest clause, or suspension of
-services after a grace period? Not yet decided in the source documents.]
+3.5 **Late payment:** No late fee or interest charge. If an invoice is unpaid past its due date,
+Aurora will send a friendly reminder before taking any further action.
 
 3.6 **Costs not included** (Client's direct responsibility, per `WELCOME-LETTER.txt`):
 - Domain renewal (~$14/year) — domain registration account remains under [confirm — Client's or
@@ -154,8 +159,9 @@ earlier.]
 5.2 Aurora retains ownership of its own tools, frameworks, automation templates, and any
 reusable code, workflows, or systems not built specifically and exclusively for the Client.
 
-5.3 [Confirm — does Aurora want a licence-back clause allowing reuse of the general website
-template/automation patterns for future clients? Not yet decided.]
+5.3 No licence-back clause is granted. Aurora's rights are limited to Section 5.2 (its own
+retained tools/frameworks/templates); nothing in this Agreement gives Aurora any additional
+rights to reuse work built specifically for the Client.
 
 ---
 
@@ -237,10 +243,10 @@ against accc.gov.au before signing, as ACCC guidance can be updated):
 notice** to the other party.
 
 9.2 Either party may terminate immediately on written notice if the other party materially
-breaches this Agreement and fails to remedy the breach within **[X days]** of being notified.
+breaches this Agreement and fails to remedy the breach within **7 days** of being notified.
 
 9.3 On termination, and provided the setup fee has been paid in full (Section 5.1), the Client
-retains ownership of the website and domain per Section 5. Within **[X days]** of termination,
+retains ownership of the website and domain per Section 5. Within **7 days** of termination,
 Aurora will provide the Client with an export of the Client-specific materials below — this
 excludes Aurora's own reusable tools, frameworks, and automation templates retained under
 Section 5.2, which are not part of this handover:
@@ -275,7 +281,8 @@ off (or explicitly removed) here.
       ABR record on 2026-08-10
 - [ ] **New:** "Aurora AI Agency" is not a registered ASIC business name under this ABN — confirm
       registration status before issuing this Agreement under that trading name
-- [ ] Aurora's full registered/business street address (suburb confirmed: Melton South, VIC 3338)
+- [ ] Aurora's exact street address — confirmed as a home residence in Melton South, VIC 3338;
+      the specific street number/name still needs a clean (typed, not dictated) confirmation
 - [ ] Ben's registered business address (for the Client block above and for Google Business
       Profile verification, per Section 6)
 - [ ] Agreement date (top of §"SERVICES AGREEMENT") and Commencement Date (§2.1)
@@ -285,7 +292,7 @@ off (or explicitly removed) here.
 - [x] Aurora's GST registration status confirmed: not registered — supply is not subject to GST,
       no GST-inclusive/exclusive question applies (§3.3)
 - [ ] Invoicing cycle confirmation (§3.4)
-- [ ] Late payment terms — fee, interest, or service suspension (§3.5)
+- [x] Late payment terms confirmed: no fee/interest, friendly reminder only (§3.5)
 - [ ] Domain registrar account ownership, and who pays Resend overage if the free tier is exceeded (§3.6)
 - [ ] Google Sheets account ownership (§3.6)
 - [ ] Whether monthly fees are prorated on mid-month termination (§9.4)
@@ -305,17 +312,18 @@ off (or explicitly removed) here.
       before signing
 
 **Legal terms needing solicitor drafting, not templating**
-- [ ] IP licence-back terms, if wanted (§5.3)
+- [x] IP licence-back: decided against — none granted (§5.3)
 - [ ] Domain/registrar transfer mechanics finalised (§5.1)
 - [ ] Google Sheets export format on termination — currently **[confirm — Google Sheets native /
       CSV / other]** (§9.3)
 - [ ] Full data processing schedule for third-party tools (§7.3)
 - [ ] `privacy.html` updated to disclose Resend as an active data processor (§7.3)
-- [ ] Breach-remedy period (§9.2, currently **[X days]**)
-- [ ] Termination handover deadline (§9.3, currently **[X days]**)
+- [x] Breach-remedy period set to 7 days (§9.2)
+- [x] Termination handover deadline set to 7 days (§9.3)
 - [ ] Limitation of liability clause — entirely undrafted (§11)
-- [ ] Dispute-resolution timeframe (§12.2, currently **[X days]**) and the actual enforceable
-      forum(s) for unresolved disputes — do not rely on VCAT by default (§12.2)
+- [x] Dispute-resolution timeframe set to 7 days (§12.2)
+- [ ] The actual enforceable forum(s) for unresolved disputes still needs solicitor input — do not
+      rely on VCAT by default (§12.2)
 
 **Execution**
 - [ ] Aurora's signatory name and title (Signatures block)
@@ -337,7 +345,7 @@ review.]
 12.1 If a dispute arises, the parties will first attempt to resolve it through direct discussion
 between Ben Breheny and Aaron Baker.
 
-12.2 If unresolved within **[X days]**, either party **may** (this is a voluntary, non-binding
+12.2 If unresolved within **7 days**, either party **may** (this is a voluntary, non-binding
 option, not a mandatory step) refer the matter to Consumer Affairs Victoria conciliation.
 
 > ⚠️ **Flag for solicitor review:** the original draft named VCAT as the enforceable next step,
