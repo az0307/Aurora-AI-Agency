@@ -190,7 +190,16 @@ per the Client's published Privacy Policy at `ymiroofing.com.au/privacy.html`.
 > confirmation — see Section 10.
 
 7.3 Aurora acts as a processor of Client customer data on the Client's behalf across several
-third-party tools (Google Sheets, Twilio, Resend, and n8n if/when active). [A proper data
+third-party tools. Reconciled against `ymiroofing.com.au/privacy.html` (the live privacy policy)
+and what's actually confirmed deployed (Section 4):
+- **Cloudflare** — website hosting/CDN — active
+- **Resend** — email delivery for the website lead form — active (confirmed via the live `/api/lead`
+  endpoint), but **not currently listed in `privacy.html`** — the privacy policy needs updating to
+  disclose this processor; see Section 10
+- **Google Sheets, Twilio, n8n, ManyChat** — listed in `privacy.html` but their live/active status
+  depends on which Schedule A (Section 4) items are actually turned on
+
+[A proper data
 processing schedule is needed, covering: Aurora's processing role and permitted uses; which
 third parties are authorised sub-processors; security controls Aurora applies to data in these
 tools; how a data breach affecting Client data would be notified and to whom; how long Aurora
@@ -230,9 +239,12 @@ notice** to the other party.
 9.2 Either party may terminate immediately on written notice if the other party materially
 breaches this Agreement and fails to remedy the breach within **[X days]** of being notified.
 
-9.3 On termination, the Client retains ownership of the website and domain per Section 5. Within
-**[X days]** of termination, Aurora will provide the Client with:
-- A full export of website source files;
+9.3 On termination, and provided the setup fee has been paid in full (Section 5.1), the Client
+retains ownership of the website and domain per Section 5. Within **[X days]** of termination,
+Aurora will provide the Client with an export of the Client-specific materials below — this
+excludes Aurora's own reusable tools, frameworks, and automation templates retained under
+Section 5.2, which are not part of this handover:
+- A full export of website source files (Client-specific content and configuration only);
 - Registrar/DNS account access or transfer for `ymiroofing.com.au`, per Section 5.1;
 - A full export of Google Sheets data (format: [confirm — Google Sheets native / CSV / other]);
 - A full export of any automation workflows built specifically for the Client (e.g. n8n workflow
@@ -264,7 +276,8 @@ off (or explicitly removed) here.
 - [ ] **New:** "Aurora AI Agency" is not a registered ASIC business name under this ABN — confirm
       registration status before issuing this Agreement under that trading name
 - [ ] Aurora's full registered/business street address (suburb confirmed: Melton South, VIC 3338)
-- [ ] Ben's registered business address (for the Client block above and GBP verification)
+- [ ] Ben's registered business address (for the Client block above and for Google Business
+      Profile verification, per Section 6)
 - [ ] Agreement date (top of §"SERVICES AGREEMENT") and Commencement Date (§2.1)
 - [ ] Expected setup-phase duration in business days (§2.2)
 
@@ -294,7 +307,10 @@ off (or explicitly removed) here.
 **Legal terms needing solicitor drafting, not templating**
 - [ ] IP licence-back terms, if wanted (§5.3)
 - [ ] Domain/registrar transfer mechanics finalised (§5.1)
+- [ ] Google Sheets export format on termination — currently **[confirm — Google Sheets native /
+      CSV / other]** (§9.3)
 - [ ] Full data processing schedule for third-party tools (§7.3)
+- [ ] `privacy.html` updated to disclose Resend as an active data processor (§7.3)
 - [ ] Breach-remedy period (§9.2, currently **[X days]**)
 - [ ] Termination handover deadline (§9.3, currently **[X days]**)
 - [ ] Limitation of liability clause — entirely undrafted (§11)
