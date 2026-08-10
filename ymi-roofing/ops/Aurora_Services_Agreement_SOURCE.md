@@ -16,11 +16,19 @@
 This Agreement is made on **[Date]** between:
 
 **(1) Service Provider**
-[Aurora AI Agency's full registered legal name — e.g. "Aurora AI Agency Pty Ltd"] (**"Aurora"**)
-ABN: [Aurora ABN]
-ACN: [Aurora ACN, if applicable]
-Registered address: [Aurora registered/business address]
-Contact: Aaron Baker — aaron221048@gmail.com — [Aurora contact phone]
+Aaron Baker, trading as **Aurora AI Agency** (**"Aurora"**)
+ABN: 15 870 917 390 (verified against the official ABR record — Individual/Sole Trader, active
+from 1 Oct 2025, main business location VIC 3338)
+ACN: N/A — Aurora operates as a sole trader, not a registered company
+Registered address: Melton South, VIC 3338 — [full street address still outstanding]
+Contact: Aaron Baker — aaron221048@gmail.com — 0401 154 219
+
+> ⚠️ **New item from this ABR check:** the ABR record lists "Aaron Baker" as the registered
+> trading name (since 2009) — **"Aurora AI Agency" does not currently appear as a registered
+> business name** on the ASIC Business Names Register under this ABN. Trading under a name other
+> than your own personal name generally needs to be registered with ASIC. Confirm whether "Aurora
+> AI Agency" is registered elsewhere/pending, or register it, before this Agreement issues under
+> that trading name — see Section 10.
 
 **(2) Client**
 Y.M.I Roofing Pty Ltd (**"Client"**)
@@ -65,14 +73,13 @@ Section 6 (Client Responsibilities) in a timely manner.
 3.2 **Monthly retainer:** $350.00 per month, payable in advance, covering the services listed in
 Schedule A, Part 2.
 
-3.3 **GST:** [Confirm — is Aurora registered for GST?
-- If **registered**: state here whether the $700.00 and $350.00 figures above are GST-inclusive
-  or GST-exclusive, add "plus GST" to whichever is accurate, and issue a valid tax invoice.
-- If **not registered**: Aurora cannot charge GST, but note that this makes the supply **"not
-  subject to GST"** — it is not automatically "GST-free" (GST-free is a specific legal category
-  for certain goods/services, e.g. some food, medical, or export supplies, and does not apply
-  here just because the supplier is unregistered). `INVOICE-TEMPLATE.txt` should be corrected to
-  match whichever of these is actually true.]
+3.3 **GST:** Confirmed via the ABR record — Aurora (Aaron Baker, ABN 15 870 917 390) is **not
+currently registered for GST**. Aurora cannot charge GST on the fees in this Agreement. This
+makes the supply **"not subject to GST"** — not "GST-free" (GST-free is a distinct legal category
+for specific goods/services and doesn't apply here just because the supplier is unregistered).
+The $700.00 and $350.00 figures in Sections 3.1–3.2 are the total amounts payable, with no GST
+added. `INVOICE-TEMPLATE.txt` has been corrected to match. If Aurora later registers for GST,
+this clause and the invoice template both need updating.
 
 3.4 **Invoicing:** Invoices are issued monthly in advance / [confirm cycle] and are due within
 **7 days** of the invoice date.
@@ -252,13 +259,18 @@ nothing in brackets elsewhere in this document should be filled in without also 
 off (or explicitly removed) here.
 
 **Parties & dates**
-- [ ] Aurora's registered legal entity name, ABN, ACN (if any), business address, and contact phone
+- [x] Aurora's ABN (15 870 917 390), sole-trader status, and GST status — verified against the
+      ABR record on 2026-08-10
+- [ ] **New:** "Aurora AI Agency" is not a registered ASIC business name under this ABN — confirm
+      registration status before issuing this Agreement under that trading name
+- [ ] Aurora's full registered/business street address (suburb confirmed: Melton South, VIC 3338)
 - [ ] Ben's registered business address (for the Client block above and GBP verification)
 - [ ] Agreement date (top of §"SERVICES AGREEMENT") and Commencement Date (§2.1)
 - [ ] Expected setup-phase duration in business days (§2.2)
 
 **Fees & billing**
-- [ ] Aurora's GST registration status, and whether $700/$350 are GST-inclusive or exclusive (§3.3)
+- [x] Aurora's GST registration status confirmed: not registered — supply is not subject to GST,
+      no GST-inclusive/exclusive question applies (§3.3)
 - [ ] Invoicing cycle confirmation (§3.4)
 - [ ] Late payment terms — fee, interest, or service suspension (§3.5)
 - [ ] Domain registrar account ownership, and who pays Resend overage if the free tier is exceeded (§3.6)

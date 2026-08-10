@@ -1,8 +1,8 @@
 INVOICE
 
-Aurora AI Agency
-[Your Address]
-ABN: [Your ABN]
+Aaron Baker, trading as Aurora AI Agency
+Melton South, VIC 3338 [full street address outstanding — see Section 10 of the Services Agreement]
+ABN: 15 870 917 390
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -29,15 +29,17 @@ Monthly Retainer — Months 1-2             2    $350.00    $700.00
                                           GST:             $0.00*
                                           TOTAL DUE:       $1,400.00
 
-* GST-free supply (under threshold)
+* Aurora (ABN 15 870 917 390) is not currently registered for GST — this supply is not subject
+  to GST.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 PAYMENT DETAILS
-Bank Transfer:
-  Account Name: [Your Account Name]
-  BSB:          [Your BSB]
-  Account #:    [Your Account Number]
+Bank Transfer (Westpac):
+  Account Name: [Confirm exact name on the account — likely "Aaron Baker"; must match bank
+                records exactly for the transfer to clear]
+  BSB:          033-121
+  Account #:    674782
   Reference:    AURORA-0001-YMI
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
