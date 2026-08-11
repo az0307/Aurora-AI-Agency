@@ -1,0 +1,255 @@
+{
+  "name": "Proposal Generation & Delivery",
+  "nodes": [
+    {
+      "id": "webhook",
+      "name": "Lead Status Changed Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": {
+        "path": "lead-qualified",
+        "httpMethod": "POST"
+      },
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "id": "get_lead",
+      "name": "Get Lead Details",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT l.*, c.name as company_name, c.industry FROM leads l LEFT JOIN clients c ON l.company = c.name WHERE l.id = $1",
+        "queryParameters": "={{$json.lead_id}}"
+      },
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "id": "generate_proposal",
+      "name": "Generate Proposal with Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://api.anthropic.com/v1/messages",
+        "method": "POST",
+        "authentication": "headerAuth",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{$credentials.anthropic.apiKey}}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "body": {
+          "model": "claude-sonnet-4-20250514",
+          "max_tokens": 2000,
+          "messages": [
+            {
+              "role": "user",
+              "content": "Generate a professional consulting proposal for:\n\nProject: {{$node['Get Lead Details'].json.title}}\nCompany: {{$node['Get Lead Details'].json.company_name}}\nIndustry: {{$node['Get Lead Details'].json.industry}}\nBudget: ${{$node['Get Lead Details'].json.budget}}\nDescription: {{$node['Get Lead Details'].json.raw_snippet}}\n\nInclude:\n1. Executive summary\n2. Understanding of their needs\n3. Proposed solution (3 tiers: Base, Plus, VIP)\n4. Timeline with milestones\n5. Pricing breakdown\n6. Why we're the best fit (2-3 case results)\n7. Next steps\n\nFormat as professional business proposal."
+            }
+          ]
+        }
+      },
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "id": "create_doc",
+      "name": "Create Google Doc",
+      "type": "n8n-nodes-base.googleDocs",
+      "parameters": {
+        "operation": "create",
+        "title": "Proposal - {{$node['Get Lead Details'].json.company_name}} - {{$node['Get Lead Details'].json.title}}",
+        "folderId": "={{$credentials.googleDrive.proposalFolderId}}",
+        "body": "={{$node['Generate Proposal with Claude'].json.content[0].text}}"
+      },
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "id": "share_doc",
+      "name": "Share Doc & Get Link",
+      "type": "n8n-nodes-base.googleDrive",
+      "parameters": {
+        "operation": "share",
+        "fileId": "={{$node['Create Google Doc'].json.id}}",
+        "permissions": {
+          "role": "reader",
+          "type": "anyone"
+        }
+      },
+      "position": [
+        1050,
+        300
+      ]
+    },
+    {
+      "id": "send_email",
+      "name": "Send Proposal Email",
+      "type": "n8n-nodes-base.gmail",
+      "parameters": {
+        "operation": "send",
+        "to": "={{$node['Get Lead Details'].json.contact_email}}",
+        "subject": "Proposal: {{$node['Get Lead Details'].json.title}}",
+        "message": "<p>Hi {{$node['Get Lead Details'].json.contact_name || 'there'}},</p><p>Thank you for considering us for your {{$node['Get Lead Details'].json.title}} project. I've prepared a detailed proposal that outlines how we can help.</p><p><strong><a href='{{$node['Share Doc & Get Link'].json.webViewLink}}'>View Your Custom Proposal</a></strong></p><p>The proposal includes three service tiers so you can choose what works best for your needs and budget.</p><p>I'm available for a call this week to discuss any questions. What time works for you?</p><p>Looking forward to working together!</p>"
+      },
+      "position": [
+        1250,
+        300
+      ]
+    },
+    {
+      "id": "update_lead",
+      "name": "Update Lead Status",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE leads SET status = 'proposal', proposal_sent_at = NOW() WHERE id = $1",
+        "queryParameters": "={{$node['Get Lead Details'].json.id}}"
+      },
+      "position": [
+        1450,
+        300
+      ]
+    },
+    {
+      "id": "schedule_followup",
+      "name": "Schedule Follow-Up (Day 2)",
+      "type": "n8n-nodes-base.wait",
+      "parameters": {
+        "unit": "days",
+        "amount": 2
+      },
+      "position": [
+        1650,
+        300
+      ]
+    },
+    {
+      "id": "send_followup",
+      "name": "Send Follow-Up #1",
+      "type": "n8n-nodes-base.gmail",
+      "parameters": {
+        "operation": "send",
+        "to": "={{$node['Get Lead Details'].json.contact_email}}",
+        "subject": "Re: Proposal - {{$node['Get Lead Details'].json.title}}",
+        "message": "<p>Hi {{$node['Get Lead Details'].json.contact_name || 'there'}},</p><p>Just following up on the proposal I sent a couple days ago. I wanted to share a recent case study that's similar to your project...</p><p>[Include relevant case result with metrics]</p><p>Would you like to schedule a quick 15-minute call to discuss?</p>"
+      },
+      "position": [
+        1850,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Lead Status Changed Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Lead Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lead Details": {
+      "main": [
+        [
+          {
+            "node": "Generate Proposal with Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Proposal with Claude": {
+      "main": [
+        [
+          {
+            "node": "Create Google Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Google Doc": {
+      "main": [
+        [
+          {
+            "node": "Share Doc & Get Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share Doc & Get Link": {
+      "main": [
+        [
+          {
+            "node": "Send Proposal Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Proposal Email": {
+      "main": [
+        [
+          {
+            "node": "Update Lead Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Lead Status": {
+      "main": [
+        [
+          {
+            "node": "Schedule Follow-Up (Day 2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Follow-Up (Day 2)": {
+      "main": [
+        [
+          {
+            "node": "Send Follow-Up #1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all"
+  },
+  "tags": [
+    "aurora",
+    "freelance-pipeline"
+  ]
+}

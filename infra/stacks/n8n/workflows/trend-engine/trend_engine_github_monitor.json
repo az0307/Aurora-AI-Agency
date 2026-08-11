@@ -1,0 +1,133 @@
+{
+  "name": "Trend Engine \u2013 GitHub Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 23,
+              "minute": 30
+            }
+          ]
+        },
+        "timezone": "Australia/Melbourne"
+      },
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        -40
+      ],
+      "id": "cron-fhqdixa7",
+      "name": "Nightly"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/<OWNER>/<REPO>/commits?per_page=100&since={{$now.minus(1,'day').toISO()}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "token <GITHUB_TOKEN>"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "alwaysOutputData": true,
+      "position": [
+        -200,
+        -40
+      ],
+      "id": "httpRequest-txahfy3y",
+      "name": "GitHub: Recent Commits",
+      "notes": "per_page=100 covers typical single-repo daily volume; the default was 30. For repos exceeding 100 commits/day, enable n8n HTTP pagination to follow the GitHub 'Link' header (rel=next). alwaysOutputData ensures the count node still runs (count=0) when the response is an empty array."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate the GitHub /commits response into ONE item with a total count.\n// n8n may surface the JSON array either as one item per commit or as a single\n// item whose json IS the array; handle both, and 0 for an empty result.\nconst items = $input.all();\nlet count = 0;\nif (items.length === 1 && Array.isArray(items[0].json)) {\n  count = items[0].json.length;\n} else {\n  count = items.filter(i => i.json && (i.json.sha || i.json.commit)).length;\n}\nreturn [{ json: { count } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -100,
+        -40
+      ],
+      "id": "code-countcommits",
+      "name": "Count Commits"
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "channel": "#yt-daily",
+        "text": "=GitHub commits in last 24h: {{$json.count}}"
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -40
+      ],
+      "id": "slack-fdsmb3py",
+      "name": "Slack Alert",
+      "credentials": {
+        "slackApi": {
+          "id": "<SLACK_CRED_ID>",
+          "name": "Slack"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Nightly": {
+      "main": [
+        [
+          {
+            "node": "GitHub: Recent Commits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub: Recent Commits": {
+      "main": [
+        [
+          {
+            "node": "Count Commits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Count Commits": {
+      "main": [
+        [
+          {
+            "node": "Slack Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v-30zza4hh",
+  "id": "wf-tjjg41gh",
+  "tags": [],
+  "meta": {
+    "generated": "2025-08-08T08:34:24.088450"
+  }
+}
