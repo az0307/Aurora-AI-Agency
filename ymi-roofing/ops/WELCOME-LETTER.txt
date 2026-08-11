@@ -7,38 +7,39 @@ Dear Ben,
 
 Welcome to the Aurora AI Agency family. We're excited to help Y.M.I Roofing grow.
 
-WHAT'S INCLUDED IN YOUR IGNITE PACKAGE
+WHAT'S LIVE NOW
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ✓ Professional website (ymiroofing.com.au)
-  — Lead capture form with instant SMS alerts
   — Mobile-optimised, fast-loading design
   — SEO-ready with structured data
+  — Google Analytics live
 
-✓ Automated Lead Capture
-  — Every website form submission → instant SMS to your phone
-  — All leads logged to a shared Google Sheet
-  — No lead ever slips through the cracks
+✓ Lead Capture Form
+  — Every website form submission → instant email to you
+  — Tested and confirmed delivering
 
-✓ Review Machine
-  — After each job, tap a bookmark → customer gets review SMS next day
-  — Friendly follow-up 3 days later if no review
-  — Builds your Google reputation on autopilot
+ON THE ROADMAP (not yet live — built as we go)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-✓ Facebook/Instagram Chatbot (ManyChat)
-  — Answers common questions 24/7
-  — Qualifies leads and captures details
-  — Routes urgent repairs to your phone immediately
+○ Automated SMS lead alerts (in addition to email)
+○ Leads logged to a shared Google Sheet
+○ Review Machine — after each job, tap a bookmark → customer gets a review
+  request automatically
+○ Facebook/Instagram Chatbot (ManyChat) — answers common questions 24/7
+
+We'll turn each of these on and let you know the moment it goes live — you're
+not paying for anything that isn't actually working yet.
 
 MONTHLY RETAINER: $350/month (not subject to GST — Aurora is not currently GST-registered)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 This covers:
   • Website hosting & maintenance
-  • n8n automation platform hosting
   • Monthly performance report
   • Minor website updates (text, phone numbers, etc.)
-  • Chatbot monitoring & tweaks
+  • Automation platform hosting and chatbot monitoring, once each of those
+    features goes live (see "On the roadmap" above)
 
 NOT INCLUDED (your responsibility):
   • Domain renewal (~$14/year via VentraIP)
