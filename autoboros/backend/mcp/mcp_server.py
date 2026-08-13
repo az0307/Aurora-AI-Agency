@@ -4,7 +4,10 @@
 SECURITY (hardened):
   - shell_exec: shell=False + shlex.split + command allowlist (no shell=True, ever)
   - file_read/file_write: confined to MCP_WORKSPACE via resolved-path containment
-  - db_query: read-only enforced (SELECT / WITH / PRAGMA only)
+  - db_query: read-only enforced (SELECT / WITH / PRAGMA keyword check +
+    connection opened in SQLite mode=ro so a CTE-prefixed write statement,
+    e.g. "WITH x AS (SELECT 1) DELETE FROM jobs", is rejected by the engine
+    even if it slips the keyword check); queries over 10KB are rejected
 """
 
 import json
@@ -32,6 +35,9 @@ ALLOWED_COMMANDS = {
     "ls", "cat", "echo", "pwd", "git", "python", "python3",
     "node", "npm", "grep", "find", "wc", "head", "tail", "sort", "uniq",
 }
+
+# db_query is rejected outright above this size (documented 10KB cap).
+DB_QUERY_MAX_BYTES = 10 * 1024
 
 def get_db_path():
     if DB_URL.startswith('sqlite'):
@@ -120,11 +126,18 @@ def handle_call(name, args):
         if not db_path:
             return {"error": "Only SQLite is supported in this MCP server"}
         q = args.get("query", "").strip()
+        if len(q.encode("utf-8")) > DB_QUERY_MAX_BYTES:
+            return {"error": f"query too large: max {DB_QUERY_MAX_BYTES} bytes"}
         head = q.lstrip("(").split(None, 1)[0].lower() if q else ""
         if head not in ("select", "with", "pragma"):
             return {"error": "read-only: only SELECT / WITH / PRAGMA permitted"}
         try:
-            conn = sqlite3.connect(db_path)
+            # Defense in depth: the head-keyword check above can be bypassed by
+            # a `WITH ... INSERT/UPDATE/DELETE ...` CTE, which SQLite accepts as
+            # valid syntax. Open the connection itself in read-only mode (SQLite
+            # URI mode=ro) so any write is rejected at the engine level
+            # regardless of how the query text is phrased.
+            conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute(q)
