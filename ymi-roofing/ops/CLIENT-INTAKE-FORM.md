@@ -81,9 +81,9 @@ awareness, manufacturer accreditations, HIA/Master Builders membership)
 ## SECTION C — Contact & service area
 
 **C1. Confirm these are right** (they're on the site now):
-- Primary phone: **0422 093 241** ☐ correct ☐ change to: `_____________`
-- Second phone: **0423 858 503** ☐ correct ☐ change to: `_____________`
-- Email: **y.m.iroofing@outlook.com** ☐ correct ☐ change to: `_____________`
+- Primary phone: **0423 858 503** ☐ correct ☐ change to: `_____________`
+- Second phone: **0422 093 241** ☐ correct ☐ change to: `_____________`
+- Email: **ymiroofing@outlook.com** ☐ correct ☐ change to: `_____________`
 
 **C2. Business hours** — site currently says Mon–Sun 7:00am–6:00pm.
 ☐ correct  ☐ change to: `_____________________________`

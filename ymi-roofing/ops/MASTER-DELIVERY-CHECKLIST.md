@@ -51,8 +51,8 @@ PHASE 1: WEBSITE GOES LIVE (15 min)
   □ favicon.png
   □ og-image.jpg
 □ Site loads at ymi-roofing.pages.dev
-□ All phone links work (tel:0422093241, tel:0423858503)
-□ All email links work (mailto:y.m.iroofing@outlook.com)
+□ All phone links work (tel:0423858503, tel:0422093241)
+□ All email links work (mailto:ymiroofing@outlook.com)
 □ Form validation works (name required, phone AU format)
 □ Mobile responsive test passed
 □ Page speed check (aim: <2s on mobile)

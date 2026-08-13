@@ -333,14 +333,14 @@ function ManyView() {
       { from: "user", text: "Croydon" },
       { from: "bot", text: "And what's the best phone number to reach you?" },
       { from: "user", text: "0412 345 678" },
-      { from: "bot", text: "✅ Done! Ben has been notified and will call you within 1 hour.\n\nYou can also reach him directly:\n📞 0422 093 241" },
+      { from: "bot", text: "✅ Done! Ben has been notified and will call you within 1 hour.\n\nYou can also reach him directly:\n📞 0423 858 503" },
     ],
     [
       { from: "user", text: "I have a leak — urgent!" },
       { from: "bot", text: "Oh no — leaks need attention fast. 🛠️\n\nIs this an emergency (active leak, storm damage)?" },
       { from: "bot", text: "🚨 Yes — emergency   ⏰ No — can wait", isButtons: true },
       { from: "user", text: "🚨 Yes — emergency" },
-      { from: "bot", text: "For urgent repairs, call Ben directly — he'll do his best to get out ASAP.\n\n📞 0422 093 241\n📞 0423 858 503\n\nTell him it's urgent. 👍" },
+      { from: "bot", text: "For urgent repairs, call Ben directly — he'll do his best to get out ASAP.\n\n📞 0423 858 503\n📞 0422 093 241\n\nTell him it's urgent. 👍" },
     ],
   ];
 
@@ -564,7 +564,7 @@ export default function App() {
           <div>
             <div style={{ fontSize: 10, color: C.blue, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 3 }}>Aurora AI Agency</div>
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>YMI Roofing — Full Delivery Package</div>
-            <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>Ben Breheny · ACN 695 710 055 · 0422 093 241</div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>Ben Breheny · ACN 695 710 055 · 0423 858 503</div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 10, color: C.muted }}>Skills Used</div>

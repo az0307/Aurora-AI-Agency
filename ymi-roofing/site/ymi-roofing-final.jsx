@@ -50,7 +50,7 @@ const WHY_POINTS = [
 ];
 
 const PROCESS_STEPS = [
-  { num: "01", title: "Call or Enquire",  desc: "Call Ben directly on 0422 093 241, or submit an enquiry online. Same-day response guaranteed." },
+  { num: "01", title: "Call or Enquire",  desc: "Call Ben directly on 0423 858 503, or submit an enquiry online. Same-day response guaranteed." },
   { num: "02", title: "Free Quote",       desc: "Ben visits, inspects the roof, and gives you a clear written quote. No pressure. No obligation." },
   { num: "03", title: "Job Done Right",   desc: "Work starts on schedule. Completed to spec. 100% guaranteed. You inspect before Ben leaves." },
 ];
@@ -83,7 +83,7 @@ const SchemaMarkup = () => {
     description: "Melbourne roof tiling specialists. New roofs, repairs, re-bedding and pointing. 20+ years experience. 100% guaranteed workmanship.",
     url: "https://ymiroofing.com.au",
     telephone: ["+61-422-093-241", "+61-423-858-503"],
-    email: "y.m.iroofing@outlook.com",
+    email: "ymiroofing@outlook.com",
     founder: { "@type": "Person", name: "Ben Breheny", jobTitle: "Director" },
     address: {
       "@type": "PostalAddress",
@@ -430,9 +430,9 @@ export default function YMIRoofing() {
             {NAV_LINKS.map(([label, id]) => (
               <button key={id} className="nav-btn" onClick={() => scrollTo(id)} style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".08em", color: C.silver, textTransform: "uppercase" }}>{label}</button>
             ))}
-            <a href="tel:0422093241" className="btn btn-solid pulse" style={{ padding: "9px 20px", borderRadius: 6, fontSize: 13, fontWeight: 700, letterSpacing: ".04em" }}
-              aria-label="Call 0422 093 241 for a free quote">
-              <span aria-hidden="true">📞</span> 0422 093 241
+            <a href="tel:0423858503" className="btn btn-solid pulse" style={{ padding: "9px 20px", borderRadius: 6, fontSize: 13, fontWeight: 700, letterSpacing: ".04em" }}
+              aria-label="Call 0423 858 503 for a free quote">
+              <span aria-hidden="true">📞</span> 0423 858 503
             </a>
           </div>
 
@@ -459,8 +459,8 @@ export default function YMIRoofing() {
                 {label}
               </button>
             ))}
-            <a href="tel:0422093241" className="btn btn-solid" style={{ justifyContent: "center", padding: "12px 20px", borderRadius: 6, fontSize: 14, fontWeight: 700, marginTop: 8 }}>
-              📞 0422 093 241
+            <a href="tel:0423858503" className="btn btn-solid" style={{ justifyContent: "center", padding: "12px 20px", borderRadius: 6, fontSize: 14, fontWeight: 700, marginTop: 8 }}>
+              📞 0423 858 503
             </a>
           </div>
         )}
@@ -502,7 +502,7 @@ export default function YMIRoofing() {
                 Over 20 years of expert roof tiling across Melbourne. New roofs, repairs, re-bedding &amp; pointing — quality work with a 100% workmanship guarantee on every job.
               </p>
               <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 36 }}>
-                <a href="tel:0422093241" className="btn btn-solid" style={{ padding: "14px 30px", borderRadius: 8, fontSize: 15, fontWeight: 700 }} aria-label="Call for a free quote">
+                <a href="tel:0423858503" className="btn btn-solid" style={{ padding: "14px 30px", borderRadius: 8, fontSize: 15, fontWeight: 700 }} aria-label="Call for a free quote">
                   <span aria-hidden="true">📞</span> Call for a Free Quote
                 </a>
                 <button onClick={() => scrollTo("contact")} className="btn btn-ghost" style={{ padding: "14px 30px", borderRadius: 8, fontSize: 15, fontWeight: 600 }}>
@@ -533,8 +533,8 @@ export default function YMIRoofing() {
               </p>
 
               {[
-                { label: "Primary",   num: "0422 093 241", href: "tel:0422093241" },
-                { label: "Secondary", num: "0423 858 503", href: "tel:0423858503" },
+                { label: "Primary",   num: "0423 858 503", href: "tel:0423858503" },
+                { label: "Secondary", num: "0422 093 241", href: "tel:0422093241" },
               ].map(p => (
                 <div key={p.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 18 }}>
                   <a href={p.href} aria-label={`${p.label} number: ${p.num}`} style={{ display: "block" }}
@@ -549,10 +549,10 @@ export default function YMIRoofing() {
 
               <div style={{ borderTop: "1px solid rgba(27,104,180,.2)", paddingTop: 18, marginBottom: 22 }}>
                 <p style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 6 }}>Email</p>
-                <a href="mailto:y.m.iroofing@outlook.com" style={{ fontSize: 13, color: C.silver }}>y.m.iroofing@outlook.com</a>
+                <a href="mailto:ymiroofing@outlook.com" style={{ fontSize: 13, color: C.silver }}>ymiroofing@outlook.com</a>
               </div>
 
-              <a href="tel:0422093241" className="btn btn-solid" style={{ width: "100%", justifyContent: "center", padding: 14, borderRadius: 8, fontSize: 14, fontWeight: 700 }}>
+              <a href="tel:0423858503" className="btn btn-solid" style={{ width: "100%", justifyContent: "center", padding: 14, borderRadius: 8, fontSize: 14, fontWeight: 700 }}>
                 Call for a Free Quote
               </a>
               <p style={{ marginTop: 14, fontSize: 11, color: C.muted, textAlign: "center" }}>Response within 1 hour · Available 7 days</p>
@@ -593,8 +593,8 @@ export default function YMIRoofing() {
             </div>
             <div style={{ textAlign: "center", marginTop: 44 }}>
               <p style={{ fontSize: 15, color: C.silver, marginBottom: 20 }}>Not sure what you need? Call Ben and he'll diagnose it over the phone — free.</p>
-              <a href="tel:0422093241" className="btn btn-ghost" style={{ padding: "13px 28px", borderRadius: 8, fontSize: 14, fontWeight: 700 }} aria-label="Call 0422 093 241">
-                <span aria-hidden="true">📞</span> 0422 093 241
+              <a href="tel:0423858503" className="btn btn-ghost" style={{ padding: "13px 28px", borderRadius: 8, fontSize: 14, fontWeight: 700 }} aria-label="Call 0423 858 503">
+                <span aria-hidden="true">📞</span> 0423 858 503
               </a>
             </div>
           </div>
@@ -719,8 +719,8 @@ export default function YMIRoofing() {
                       Thanks {form.name.split(" ")[0]}. Ben will call you back on <strong>{form.phone}</strong> within the hour.
                       <br />If it's after hours, expect a call first thing in the morning.
                     </p>
-                    <a href="tel:0422093241" className="btn btn-solid" style={{ padding: "13px 28px", borderRadius: 8, fontSize: 14, fontWeight: 700, margin: "24px auto 0", justifyContent: "center" }}>
-                      📞 0422 093 241
+                    <a href="tel:0423858503" className="btn btn-solid" style={{ padding: "13px 28px", borderRadius: 8, fontSize: 14, fontWeight: 700, margin: "24px auto 0", justifyContent: "center" }}>
+                      📞 0423 858 503
                     </a>
                     <button onClick={resetForm} style={{ display: "block", margin: "16px auto 0", background: "none", border: "none", cursor: "pointer", fontSize: 13, color: C.muted, textDecoration: "underline", fontFamily: "'Barlow',sans-serif" }}>
                       Send another enquiry
@@ -734,7 +734,7 @@ export default function YMIRoofing() {
                     {formState === "error" && (
                       <div role="alert" style={{ background: "rgba(239,68,68,.15)", border: "1px solid rgba(239,68,68,.4)", borderRadius: 8, padding: "12px 16px", marginBottom: 20, fontSize: 13, color: "#FCA5A5" }}>
                         ⚠️ Couldn't send right now. Please call Ben directly on{" "}
-                        <a href="tel:0422093241" style={{ color: C.blueBright, textDecoration: "underline" }}>0422 093 241</a>.
+                        <a href="tel:0423858503" style={{ color: C.blueBright, textDecoration: "underline" }}>0423 858 503</a>.
                         <button onClick={() => setFormState("idle")} style={{ float: "right", background: "none", border: "none", cursor: "pointer", color: "#FCA5A5", fontSize: 16 }}>✕</button>
                       </div>
                     )}
@@ -812,8 +812,8 @@ export default function YMIRoofing() {
                 <div style={{ background: `linear-gradient(160deg,${C.navyLight},${C.navy})`, border: "1px solid rgba(27,104,180,.25)", borderRadius: 14, padding: 24 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 16 }}>Call Ben Direct</div>
                   {[
-                    { label: "Primary",   num: "0422 093 241", href: "tel:0422093241" },
-                    { label: "Secondary", num: "0423 858 503", href: "tel:0423858503" },
+                    { label: "Primary",   num: "0423 858 503", href: "tel:0423858503" },
+                    { label: "Secondary", num: "0422 093 241", href: "tel:0422093241" },
                   ].map(p => (
                     <div key={p.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                       <a href={p.href} aria-label={`${p.label}: ${p.num}`}>
@@ -828,7 +828,7 @@ export default function YMIRoofing() {
                 {/* Email */}
                 <div style={{ background: `linear-gradient(160deg,${C.navyLight},${C.navy})`, border: "1px solid rgba(27,104,180,.25)", borderRadius: 14, padding: 20 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 8 }}>Email</div>
-                  <a href="mailto:y.m.iroofing@outlook.com" style={{ fontSize: 13, color: C.silver }}>y.m.iroofing@outlook.com</a>
+                  <a href="mailto:ymiroofing@outlook.com" style={{ fontSize: 13, color: C.silver }}>ymiroofing@outlook.com</a>
                 </div>
 
                 {/* Response guarantee */}
@@ -868,10 +868,10 @@ export default function YMIRoofing() {
             </nav>
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".12em", color: C.silver, textTransform: "uppercase", marginBottom: 16 }}>Contact</div>
-              <a href="tel:0422093241" style={{ display: "block", fontSize: 14, color: C.silver, marginBottom: 10 }}>0422 093 241</a>
               <a href="tel:0423858503" style={{ display: "block", fontSize: 14, color: C.silver, marginBottom: 10 }}>0423 858 503</a>
-              <a href="mailto:y.m.iroofing@outlook.com" style={{ display: "block", fontSize: 13, color: C.muted, marginBottom: 20, wordBreak: "break-all" }}>y.m.iroofing@outlook.com</a>
-              <a href="tel:0422093241" className="btn btn-solid" style={{ padding: "10px 20px", borderRadius: 6, fontSize: 13, fontWeight: 700 }}>Free Quote</a>
+              <a href="tel:0422093241" style={{ display: "block", fontSize: 14, color: C.silver, marginBottom: 10 }}>0422 093 241</a>
+              <a href="mailto:ymiroofing@outlook.com" style={{ display: "block", fontSize: 13, color: C.muted, marginBottom: 20, wordBreak: "break-all" }}>ymiroofing@outlook.com</a>
+              <a href="tel:0423858503" className="btn btn-solid" style={{ padding: "10px 20px", borderRadius: 6, fontSize: 13, fontWeight: 700 }}>Free Quote</a>
             </div>
           </div>
           <div style={{ borderTop: "1px solid rgba(27,104,180,.12)", paddingTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>

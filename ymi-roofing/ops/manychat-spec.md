@@ -107,8 +107,8 @@ Is there anything else you'd like to add about your roof?
 Bot: You're all set! Ben has been notified. 🙏
 
 In the meantime, you can also reach him directly:
-📞 0422 093 241
-📧 y.m.iroofing@outlook.com
+📞 0423 858 503
+📧 ymiroofing@outlook.com
 
 Talk soon!
 ```
@@ -143,8 +143,8 @@ Is this an emergency (active leak, storm damage)?
 Bot: For urgent repairs, call Ben directly — he'll do his best
 to get out to you ASAP.
 
-📞 0422 093 241
 📞 0423 858 503
+📞 0422 093 241
 
 Tell him you saw this message and it's urgent. 👍
 ```
@@ -185,7 +185,7 @@ Here's what I can help with:
 [🌐 Visit Our Website]
 ```
 
-**"Call Ben Directly" button:** `tel:0422093241`
+**"Call Ben Directly" button:** `tel:0423858503`
 **"Visit Our Website" button:** `https://ymiroofing.com.au`
 
 ---
