@@ -28,7 +28,7 @@ const ALLOWED_IPS= (process.env.ALLOWED_IPS ?? '').split(',').filter(Boolean);
 
 // ── Command allowlist (prevent injection via params) ──────────
 const ALLOWED_CMDS = new Set(['nmap','masscan','nikto','sqlmap','hashcat','msfvenom','msfconsole']);
-const BLOCKED_ARGS = [';','&&','||','|','`','$(','>','<','\\n','\\r'];
+const BLOCKED_ARGS = [';','&&','||','|','`','$(','>','<','\n','\r'];
 
 function sanitizeArg(arg: string): string {
   for (const bad of BLOCKED_ARGS) {
@@ -43,6 +43,34 @@ function safeSpawn(cmd: string, args: string[]) {
   return spawn(cmd, safeArgs, { stdio: 'pipe', shell: false }); // shell: false — critical
 }
 
+// Run an allowlisted command via safeSpawn and collect its stdout as a Promise,
+// mirroring the non-streaming exec() call sites but without shell interpolation.
+function runCmd(cmd: string, args: string[], timeoutMs: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let proc: ReturnType<typeof safeSpawn>;
+    try {
+      proc = safeSpawn(cmd, args);
+    } catch (e) {
+      reject(e);
+      return;
+    }
+    let out = '';
+    let err = '';
+    const timer = setTimeout(() => {
+      proc.kill('SIGKILL');
+      reject(new Error(`${cmd} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+    proc.stdout.on('data', (d: Buffer) => { out += d.toString(); });
+    proc.stderr.on('data', (d: Buffer) => { err += d.toString(); });
+    proc.on('error', (e) => { clearTimeout(timer); reject(e); });
+    proc.on('close', (code) => {
+      clearTimeout(timer);
+      if (code === 0) resolve(out);
+      else reject(new Error(err || `${cmd} exited with code ${code}`));
+    });
+  });
+}
+
 const app = express();
 const httpServer = createServer(app);
 
@@ -51,10 +79,15 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
 
 // IP allow-list middleware
+// Exact match only — substring matching (e.g. ip.includes(a)) would let
+// "21.2.3.4" pass an allowlist meant only for "1.2.3.4".
+function normalizeIp(ip: string): string {
+  return ip.startsWith('::ffff:') ? ip.slice(7) : ip;
+}
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (!ALLOWED_IPS.length) return next();
-  const ip = req.ip ?? '';
-  if (ALLOWED_IPS.some(a => ip.includes(a))) return next();
+  const ip = normalizeIp(req.ip ?? '');
+  if (ALLOWED_IPS.some(a => normalizeIp(a) === ip)) return next();
   res.status(403).json({ error: 'Forbidden' });
 });
 
@@ -94,10 +127,10 @@ app.post('/tools/nmap', async (req, res) => {
   if (!target) return res.status(400).json({ error: 'target required' });
   const args = ['--open', '-oX', '-',
     ...(ports ? ['-p', ports] : []),
-    ...flags.split(' ').filter(Boolean),
+    ...String(flags).split(' ').filter(Boolean),
     target];
   try {
-    const { stdout } = await execAsync(`nmap ${args.map(a => `'${a}'`).join(' ')}`, { timeout: 120_000 });
+    const stdout = await runCmd('nmap', args, 120_000);
     res.json({ success: true, data: stdout });
   } catch (err) { res.status(500).json({ success: false, error: String(err) }); }
 });
@@ -112,7 +145,7 @@ app.post('/tools/masscan', async (req, res) => {
   const { target, ports = '1-65535', rate = '1000' } = req.body;
   if (!target) return res.status(400).json({ error: 'target required' });
   try {
-    const { stdout } = await execAsync(`masscan '${target}' -p'${ports}' --rate='${rate}' -oX -`, { timeout: 120_000 });
+    const stdout = await runCmd('masscan', [target, `-p${ports}`, `--rate=${rate}`, '-oX', '-'], 120_000);
     res.json({ success: true, data: stdout });
   } catch (err) { res.status(500).json({ success: false, error: String(err) }); }
 });
@@ -144,7 +177,7 @@ app.post('/tools/nikto', async (req, res) => {
   const { target } = req.body;
   if (!target) return res.status(400).json({ error: 'target required' });
   try {
-    const { stdout } = await execAsync(`nikto -h '${target}' -Format csv`, { timeout: 180_000 });
+    const stdout = await runCmd('nikto', ['-h', target, '-Format', 'csv'], 180_000);
     res.json({ success: true, data: stdout });
   } catch (err) { res.status(500).json({ success: false, error: String(err) }); }
 });
@@ -157,9 +190,10 @@ app.post('/tools/sqlmap', async (req, res) => {
   const { url, level = 1, risk = 1 } = req.body;
   if (!url) return res.status(400).json({ error: 'url required' });
   try {
-    const { stdout } = await execAsync(
-      `sqlmap -u '${url}' --level=${level} --risk=${risk} --batch --output-dir=/tmp/hexstrike-sqlmap`,
-      { timeout: 300_000 }
+    const stdout = await runCmd(
+      'sqlmap',
+      ['-u', url, `--level=${level}`, `--risk=${risk}`, '--batch', '--output-dir=/tmp/hexstrike-sqlmap'],
+      300_000
     );
     res.json({ success: true, data: stdout });
   } catch (err) { res.status(500).json({ success: false, error: String(err) }); }
@@ -174,10 +208,7 @@ app.post('/tools/hashcat', async (req, res) => {
   const { hash, wordlist = '/usr/share/wordlists/rockyou.txt', mode = '0' } = req.body;
   if (!hash) return res.status(400).json({ error: 'hash required' });
   try {
-    const { stdout } = await execAsync(
-      `hashcat -m ${mode} '${hash}' '${wordlist}' --status --quiet`,
-      { timeout: 300_000 }
-    );
+    const stdout = await runCmd('hashcat', ['-m', String(mode), hash, wordlist, '--status', '--quiet'], 300_000);
     res.json({ success: true, data: stdout });
   } catch (err) { res.status(500).json({ success: false, error: String(err) }); }
 });
