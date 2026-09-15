@@ -1,0 +1,48 @@
+# Omni-router — a self-hosted LiteLLM proxy that fronts EVERY model provider
+# behind ONE endpoint, with automatic fallbacks. Agents (Claude Code, OpenCode,
+# TARS, Aider, Goose, Crush) point here instead of at each provider, so a
+# rate-limited or failed model silently drops to the next in the chain.
+#
+# It exposes BOTH APIs on the same port:
+#   - OpenAI-compatible   → http://127.0.0.1:4000/v1        (OpenCode/Aider/TARS/…)
+#   - Anthropic-compatible→ http://127.0.0.1:4000/v1/messages  (Claude Code)
+# That Anthropic endpoint is what lets Claude Code route through the fallback
+# chain via ANTHROPIC_BASE_URL (see AGENTS.md).
+#
+# Loopback-only; reach the admin UI (/ui) / API through Cloudflare Access, never
+# public. Pin the image DIGEST for production (see STACK.md) — `main-stable` is a
+# moving tag.
+
+services:
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    restart: unless-stopped
+    env_file: .env
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    ports:
+      - "127.0.0.1:4000:4000"   # OpenAI /v1 · Anthropic /v1/messages · UI /ui
+    healthcheck:
+      # Python is always present in the image; curl may not be.
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness')\" || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # OPTIONAL: uncomment to enable the admin UI, virtual keys, and spend tracking.
+  # Then set DATABASE_URL + STORE_MODEL_IN_DB=True + ROUTER_DB_PASSWORD in .env.
+  # Pure routing + fallbacks work WITHOUT this — the DB is only for key/spend mgmt.
+  # router-db:
+  #   image: postgres:16-alpine
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_DB: litellm
+  #     POSTGRES_USER: litellm
+  #     POSTGRES_PASSWORD: ${ROUTER_DB_PASSWORD:?set ROUTER_DB_PASSWORD in .env}
+  #   volumes:
+  #     - router_db:/var/lib/postgresql/data
+
+# volumes:
+#   router_db:

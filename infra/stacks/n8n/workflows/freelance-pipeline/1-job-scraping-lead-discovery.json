@@ -1,0 +1,339 @@
+{
+  "name": "Job Scraping & Lead Discovery",
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 4
+            }
+          ]
+        }
+      },
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "id": "bright_data",
+      "name": "Scrape Freelance Sites",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://api.brightdata.com/datasets/gd_lq9ckzq5h4p64nu25",
+        "method": "GET",
+        "authentication": "headerAuth",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{$credentials.brightData.token}}"
+            }
+          ]
+        },
+        "qs": {
+          "platform": "upwork,freelancer,fiverr,weworkremotely",
+          "keywords": "automation,ai,consulting,notion,airtable",
+          "min_budget": "1000",
+          "posted_within_days": "7"
+        }
+      },
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "id": "parse_jobs",
+      "name": "Parse & Score Jobs",
+      "type": "n8n-nodes-base.function",
+      "parameters": {
+        "functionCode": "const items = $input.all();\nconst scored = [];\n\nfor (const item of items) {\n  const job = item.json;\n  const budget = parseFloat(job.budget) || 0;\n  const hours = parseFloat(job.estimated_hours) || 20;\n  const hourlyRate = budget / hours;\n  \n  // Calculate days since posted\n  const posted = new Date(job.posted_date);\n  const now = new Date();\n  const daysOld = Math.floor((now - posted) / (1000 * 60 * 60 * 24));\n  \n  // Score components\n  const rateScore = Math.min(hourlyRate / 150, 1) * 0.6;\n  const urgencyScore = daysOld <= 3 ? 0.25 : 0;\n  const sourceScore = job.platform === 'referral' ? 0.15 : 0;\n  \n  const totalScore = parseFloat((rateScore + urgencyScore + sourceScore).toFixed(2));\n  \n  scored.push({\n    json: {\n      ...job,\n      hourly_rate: parseFloat(hourlyRate.toFixed(2)),\n      days_old: daysOld,\n      score: totalScore,\n      status: 'new'\n    }\n  });\n}\n\nreturn scored;"
+      },
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "id": "filter_high_score",
+      "name": "Filter High-Value Leads",
+      "type": "n8n-nodes-base.filter",
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.score}}",
+              "operation": "largerEqual",
+              "value2": 0.7
+            }
+          ]
+        }
+      },
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "id": "dedupe_check",
+      "name": "Check for Duplicates",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) AS duplicate_count FROM leads WHERE url = $1",
+        "queryParameters": "url={{$json.url}}"
+      },
+      "position": [
+        1050,
+        300
+      ]
+    },
+    {
+      "id": "filter_new",
+      "name": "Filter New Leads Only",
+      "type": "n8n-nodes-base.if",
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$node['Check for Duplicates'].json.duplicate_count}}",
+              "operation": "equal",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "position": [
+        1250,
+        300
+      ]
+    },
+    {
+      "id": "insert_lead",
+      "name": "Insert to Database",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "insert",
+        "table": "leads",
+        "columns": "title,source,url,posted_date,budget,hours_estimate,company,contact_email,service_type,status,score,raw_snippet",
+        "returnFields": "id,title,score,budget"
+      },
+      "position": [
+        1450,
+        250
+      ]
+    },
+    {
+      "id": "enrich_company",
+      "name": "Enrich Company Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "url": "https://company.clearbit.com/v2/companies/find",
+        "method": "GET",
+        "authentication": "headerAuth",
+        "qs": {
+          "domain": "={{$json.company_domain}}"
+        }
+      },
+      "position": [
+        1450,
+        400
+      ]
+    },
+    {
+      "id": "update_enrichment",
+      "name": "Update Lead with Enrichment",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE leads SET company_size = $1, industry = $2, linkedin_url = $3 WHERE id = $4",
+        "queryParameters": "company_size={{$node['Enrich Company Data'].json.metrics.employees}},industry={{$node['Enrich Company Data'].json.category.industry}},linkedin_url={{$node['Enrich Company Data'].json.linkedin.handle}},id={{$node['Insert to Database'].json.id}}"
+      },
+      "position": [
+        1650,
+        400
+      ]
+    },
+    {
+      "id": "notify_high_value",
+      "name": "Send High-Value Alert",
+      "type": "n8n-nodes-base.slack",
+      "parameters": {
+        "channel": "#leads",
+        "text": "\ud83c\udfaf *High-Value Lead Alert!*\n\n*Title:* {{$node['Insert to Database'].json.title}}\n*Score:* {{$node['Insert to Database'].json.score}}\n*Budget:* ${{$node['Insert to Database'].json.budget}}\n*Hourly Rate:* ${{$json.hourly_rate}}\n*Company:* {{$json.company}}\n*Source:* {{$json.source}}\n\n*Link:* {{$json.url}}\n\n\u23f0 *Action Required:* Review and create proposal within 4 hours",
+        "attachments": []
+      },
+      "position": [
+        1850,
+        250
+      ]
+    },
+    {
+      "id": "filter_super_high",
+      "name": "Filter Super High-Value (0.9+)",
+      "type": "n8n-nodes-base.filter",
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$node['Insert to Database'].json.score}}",
+              "operation": "largerEqual",
+              "value2": 0.9
+            }
+          ]
+        }
+      },
+      "position": [
+        1850,
+        400
+      ]
+    },
+    {
+      "id": "send_email",
+      "name": "Send Email Notification",
+      "type": "n8n-nodes-base.gmail",
+      "parameters": {
+        "operation": "send",
+        "to": "{{$credentials.gmail.user}}",
+        "subject": "\ud83d\udea8 URGENT: Super High-Value Lead (Score: {{$node['Insert to Database'].json.score}})",
+        "message": "<h2>Immediate Action Required</h2><p><strong>Lead:</strong> {{$node['Insert to Database'].json.title}}</p><p><strong>Budget:</strong> ${{$node['Insert to Database'].json.budget}}</p><p><strong>Score:</strong> {{$node['Insert to Database'].json.score}}</p><p><strong>Company:</strong> {{$json.company}}</p><p><a href='{{$json.url}}'>View Job Posting</a></p>"
+      },
+      "position": [
+        2050,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Scrape Freelance Sites",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Freelance Sites": {
+      "main": [
+        [
+          {
+            "node": "Parse & Score Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Score Jobs": {
+      "main": [
+        [
+          {
+            "node": "Filter High-Value Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter High-Value Leads": {
+      "main": [
+        [
+          {
+            "node": "Check for Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Filter New Leads Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter New Leads Only": {
+      "main": [
+        [
+          {
+            "node": "Insert to Database",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Insert to Database": {
+      "main": [
+        [
+          {
+            "node": "Send High-Value Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Enrich Company Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich Company Data": {
+      "main": [
+        [
+          {
+            "node": "Update Lead with Enrichment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send High-Value Alert": {
+      "main": [
+        [
+          {
+            "node": "Filter Super High-Value (0.9+)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Super High-Value (0.9+)": {
+      "main": [
+        [
+          {
+            "node": "Send Email Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all"
+  },
+  "tags": [
+    "aurora",
+    "freelance-pipeline"
+  ]
+}

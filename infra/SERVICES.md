@@ -34,6 +34,7 @@ that MCP *is* the programmatic on/off switch.
 | `scratch` | Postgres + Redis | throwaway datastores for a single job | 55432 / 56379 |
 | `translate` | LibreTranslate | offline machine translation (no paid API/egress) | 3014 |
 | `stt` | whisper-asr-webservice | speech→text (faster-whisper; CPU-ok for short clips) | 3015 |
+| `kali` | kalilinux/kali-rolling | **authorized** recon/testing toolbox — access via `docker exec`/Docker MCP | (no port) |
 
 All bind to **127.0.0.1** — reach any UI via Cloudflare Access, never publicly. Tags are
 readable for the template; pin version+digest for production (see [`STACK.md`](./STACK.md)).
@@ -46,6 +47,7 @@ Deploy per-box only if you want them; each is its own compose stack:
 
 | Stack | What | Port | Notes |
 |---|---|---|---|
+| [`stacks/router/`](./stacks/router/) | **Omni-router** (LiteLLM) — one endpoint over OpenRouter + free models + Anthropic/Kimi/Gemini, with fallbacks | 4000 | OpenAI `/v1` + Anthropic `/v1/messages`; agents point here. See [README](./stacks/router/README.md) & [`AGENTS.md`](./AGENTS.md) |
 | [`stacks/activepieces/`](./stacks/activepieces/) | Activepieces — Zapier-style automation UI | 8081 | Alternative/complement to n8n |
 | [`stacks/ollama/`](./stacks/ollama/) | Ollama — self-hosted open-weight models (Hermes/Qwen/etc.) | 11434 | CPU-only for small quantized models; real throughput needs a **GPU box (materially pricier tier)** — see its [README](./stacks/ollama/README.md). Optional `ui` profile (open-webui) on 3080. |
 
@@ -61,6 +63,7 @@ fighting over one host port is the easiest mistake to make here.
 | 3003 | OpenHands | agents |
 | 3010–3015 | browser · gotenberg · tika · searxng · libretranslate · whisper | ondemand |
 | 3080 | open-webui (`ui` profile) | ollama |
+| 4000 | LiteLLM omni-router (OpenAI `/v1` + Anthropic `/v1/messages` + `/ui`) | router |
 | 5678 | n8n | n8n |
 | 6333 | Qdrant | ondemand |
 | 8080 | Dozzle | monitoring |
@@ -79,6 +82,7 @@ against its upstream before granting access; pin versions for anything with writ
 
 | MCP | Gives the agent | Notes |
 |---|---|---|
+| **n8n** | author + validate workflows against real node schemas | `czlonkowski/n8n-mcp`; pairs with the staged library in [`stacks/n8n/workflows/`](./stacks/n8n/workflows/) — see [RESOURCES.md](./stacks/n8n/RESOURCES.md) |
 | **Docker** | start/stop/inspect containers | the on/off switch for the Tier-2 pool |
 | **Hetzner** | provision/resize/destroy servers, firewalls, snapshots | scope one token per Project; **pin the runner version** |
 | **Playwright** | drive a browser | pair with the `browser` profile or run standalone |

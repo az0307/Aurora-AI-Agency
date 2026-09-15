@@ -1,0 +1,34 @@
+{
+  "installation_instructions": {
+    "prerequisites": [
+      "n8n installed (docker recommended: docker run -d -p 5678:5678 n8nio/n8n)",
+      "Postgres database with freelance schema",
+      "API credentials: Anthropic (Claude), Bright Data, Clearbit, Stripe, Google Workspace",
+      "Slack workspace with incoming webhooks enabled"
+    ],
+    "setup_steps": [
+      "1. Import each workflow JSON into n8n",
+      "2. Configure credentials for each service (Settings > Credentials)",
+      "3. Update webhook URLs in your Postgres triggers",
+      "4. Test each workflow individually",
+      "5. Enable all workflows and monitor execution logs"
+    ],
+    "postgres_webhook_setup": "CREATE OR REPLACE FUNCTION notify_n8n_lead_qualified() RETURNS TRIGGER AS $ BEGIN PERFORM pg_notify('n8n_webhook', json_build_object('event', 'lead_qualified', 'lead_id', NEW.id)::text); RETURN NEW; END; $ LANGUAGE plpgsql; CREATE TRIGGER lead_qualified_trigger AFTER UPDATE ON leads FOR EACH ROW WHEN (OLD.status != 'qualified' AND NEW.status = 'qualified') EXECUTE FUNCTION notify_n8n_lead_qualified();"
+  },
+  "monitoring_and_analytics": {
+    "key_metrics": [
+      "Leads discovered per day (target: 20+)",
+      "Lead score distribution (target: 30% above 0.7)",
+      "Proposal response rate (target: 50%+ open within 48hrs)",
+      "Proposal to win rate (target: 30%+)",
+      "Time to first response (target: <4 hours for score >0.8)",
+      "Invoice payment time (target: 80% paid within 30 days)"
+    ],
+    "error_handling": [
+      "All workflows have error notification nodes",
+      "Failed executions trigger Slack alerts to #tech-alerts channel",
+      "Webhook errors logged to activity_log table",
+      "Daily health check workflow validates all integrations"
+    ]
+  }
+}

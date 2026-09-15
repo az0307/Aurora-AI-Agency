@@ -15,6 +15,18 @@
         "HETZNER_API_TOKEN": "${HETZNER_API_TOKEN}"
       }
     },
+    "n8n": {
+      "//": "Deep knowledge of n8n's ~2,285 node schemas so Claude can AUTHOR and VALIDATE workflows instead of guessing at node shapes. See stacks/n8n/RESOURCES.md.",
+      "//source": "https://github.com/czlonkowski/n8n-mcp — verified 2026-07-29. Companion skills: czlonkowski/n8n-skills. To also MANAGE a live instance, see czlonkowski/n8n-manager-for-ai-agents.",
+      "//pin": "REQUIRED FILL-IN: replace 'latest' with a reviewed npm version before use. Confirm the current package name/version against the upstream README.",
+      "//env": "N8N_API_URL/N8N_API_KEY are only needed for live-instance features; node-documentation lookups work without them.",
+      "command": "npx",
+      "args": ["-y", "n8n-mcp@latest"],
+      "env": {
+        "N8N_API_URL": "${N8N_API_URL}",
+        "N8N_API_KEY": "${N8N_API_KEY}"
+      }
+    },
     "docker": {
       "//": "The on/off switch for the on-demand pool: start/stop/inspect containers. See stacks/ondemand/.",
       "//source": "VERIFIED: github.com/QuantGeekDev/docker-mcp, published to PyPI as 'docker-mcp'. 'uvx docker-mcp' is the documented run command. Requires Python 3.12+.",

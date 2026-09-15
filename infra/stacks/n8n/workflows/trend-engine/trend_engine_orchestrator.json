@@ -1,0 +1,1561 @@
+{
+  "name": "Trend Engine \u2013 Orchestrator",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 7,
+              "minute": 0
+            }
+          ]
+        },
+        "timezone": "Australia/Melbourne"
+      },
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        -200
+      ],
+      "id": "cron-2opssfc9",
+      "name": "Daily"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.apify.com/v2/acts/apify~google-trends/run-sync-get-dataset-items?token=<APIFY_TOKEN>&country=AU&timeRange=now%207-d",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        -200
+      ],
+      "id": "http-vatmuzkm",
+      "name": "Fetch Google Trends"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apify~youtube-trending/run-sync-get-dataset-items",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <APIFY_TOKEN>"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "country": "AU",
+          "maxResults": 50
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        -80
+      ],
+      "id": "http-zu4vwddy",
+      "name": "Fetch YT Trending"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.x.ai/v1/trends?region=AU",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <X_API_KEY>"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        40
+      ],
+      "id": "http-wcdb88mt",
+      "name": "Fetch X Trending"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.pushshift.io/reddit/search/submission/?subreddit=technology,ai,finance&size=50",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        160
+      ],
+      "id": "http-w29bq1qb",
+      "name": "Fetch Reddit Hot"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/epctex~tiktok-trending-hashtags/run-sync-get-dataset-items",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <APIFY_TOKEN>"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "country": "AU"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        280
+      ],
+      "id": "http-0zcbfdju",
+      "name": "Fetch TikTok Hashtags"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://newsapi.org/v2/top-headlines?country=au&apiKey=<NEWS_API_KEY>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        400
+      ],
+      "id": "http-rjq5mghv",
+      "name": "Fetch News"
+    },
+    {
+      "parameters": {
+        "mode": "mergeByIndex"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        -200,
+        80
+      ],
+      "id": "merge-a8q1oteh",
+      "name": "Merge Trend Feeds"
+    },
+    {
+      "parameters": {
+        "jsCode": "/* cosine similarity dedupe stub */\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        80
+      ],
+      "id": "code-wvkmoy50",
+      "name": "Semantic Dedupe"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": {
+            "not": {
+              "value1": "={{$json.topic || $json.title || $json.query || ''}}",
+              "operation": "contains",
+              "value2": "<BANNED_KEYWORD>"
+            }
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        200,
+        80
+      ],
+      "id": "if-kbtariof",
+      "name": "Negative Keyword Filter"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(i=>({json:{topic:(i.json.topic||i.json.title||''), source:i.json.source||'mixed', payload:i.json}}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        80
+      ],
+      "id": "code-y0eq2rh2",
+      "name": "Confidence Weighting"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.x.ai/v1/chat/completions",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <GROK_API_KEY>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "model": "grok-beta",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You classify topics from mixed sources. For each input.topic, output JSON:\n[{\"topic\":\"...\", \"category\":\"...\", \"stage\":\"emerging|peaking|fading\", \"confidence\":0.0-1.0}]"
+            },
+            {
+              "role": "user",
+              "content": "={{$json.topic || ''}}"
+            }
+          ],
+          "max_tokens": 800
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        600,
+        80
+      ],
+      "id": "http-scyyvey3",
+      "name": "Extended Trend Finder (Grok)"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Validate stage and confidence. Return only items with stage='emerging' and confidence>=0.7 as JSON array.",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "simplify": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        800,
+        80
+      ],
+      "id": "oai-p0a6foxe",
+      "name": "Trend Stage Validator",
+      "credentials": {
+        "openAiApi": {
+          "id": "<OPENAI_CRED_ID>",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Topics",
+          "mode": "list"
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{$json.topic}}",
+            "Confidence": "={{$json.confidence}}",
+            "Stage": "={{$json.stage}}"
+          },
+          "matchingColumns": []
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1000,
+        80
+      ],
+      "id": "sheet-5h3jss1a",
+      "name": "Append Emerging Topics",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CRED_ID>",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 5
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        80
+      ],
+      "id": "split-xoj5fxni",
+      "name": "Split Topics"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "Keyword or Topic",
+              "value": "={{$json.Topic || $json.topic}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        80
+      ],
+      "id": "set-dgk1rvy8",
+      "name": "Set Keyword"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.x.ai/v1/chat/completions",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <GROK_API_KEY>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "model": "grok-beta",
+          "messages": [
+            {
+              "role": "system",
+              "content": "Given a topic, produce JSON with 3 candidates: [{\"title\":\"<=70 chars\",\"thumbText\":\"3-5 words\",\"outline\":\"bullet points\"}]."
+            },
+            {
+              "role": "user",
+              "content": "={{$json['Keyword or Topic'] || ''}}"
+            }
+          ],
+          "max_tokens": 800
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        80
+      ],
+      "id": "http-usr9gjbd",
+      "name": "Trend Replicator (Grok)"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "ReplicatedIdeas",
+          "mode": "list"
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "topic": "={{$json.topic || $json['Keyword or Topic']}}",
+            "ideas": "={{JSON.stringify($json)}}"
+          },
+          "matchingColumns": []
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1740,
+        80
+      ],
+      "id": "sheet-j0vs6hp3",
+      "name": "Append ReplicatedIdeas",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CRED_ID>",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/h7sDV53CddomktSi5/run-sync-get-dataset-items",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <APIFY_TOKEN>"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "searchQueries": [
+            "={{ $json['Keyword or Topic'] }}"
+          ],
+          "scrapeLastNDays": 14,
+          "maxResults": 80,
+          "videoType": "video",
+          "sortVideosBy": "NEWEST"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        -120
+      ],
+      "id": "http-z8z9lorm",
+      "name": "YouTube Video Scrape"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "leftValue": "={{$json.viewCount}}",
+              "rightValue": 1500,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "leftValue": "={{$json.duration}}",
+              "rightValue": 420,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1760,
+        -120
+      ],
+      "id": "if-um9t74qd",
+      "name": "Video Filter"
+    },
+    {
+      "parameters": {
+        "operation": "lookup",
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Step 1",
+          "mode": "list"
+        },
+        "options": {},
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "id",
+              "lookupValue": "={{$json.id}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1940,
+        -120
+      ],
+      "id": "sheet-cm6e7w5b",
+      "name": "Find Duplicate Entries",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CRED_ID>",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "keepKeyMatches"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        2120,
+        -120
+      ],
+      "id": "merge-dx2kluxw",
+      "name": "Merge New"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Step 1",
+          "mode": "list"
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{$json.id}}",
+            "title": "={{$json.title}}",
+            "url": "={{$json.url}}",
+            "channelName": "={{$json.channelName}}",
+            "viewCount": "={{$json.viewCount}}",
+            "duration": "={{$json.duration}}",
+            "thumbnailUrl": "={{$json.thumbnailUrl}}"
+          },
+          "matchingColumns": []
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2300,
+        -120
+      ],
+      "id": "sheet-r24cijjo",
+      "name": "Step 1 Results",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CRED_ID>",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Describe thumbnail in natural language.",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "simplify": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        2480,
+        -40
+      ],
+      "id": "oai-bftn7kiq",
+      "name": "Analyze Thumbnail",
+      "credentials": {
+        "openAiApi": {
+          "id": "<OPENAI_CRED_ID>",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/1s7eXiaukVuOr4Ueg/run-sync-get-dataset-items",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <APIFY_TOKEN>"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "urls": [
+            "={{ $json.url }}"
+          ],
+          "keywordsBoolean": true,
+          "outputFormat": "singleStringText"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2480,
+        -160
+      ],
+      "id": "http-mk4ktl7f",
+      "name": "Fetch Transcript (Apify)"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Return JSON {newTitle, thumbnailText}.",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "simplify": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        2660,
+        -160
+      ],
+      "id": "oai-7haends1",
+      "name": "OpenAI Title",
+      "credentials": {
+        "openAiApi": {
+          "id": "<OPENAI_CRED_ID>",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://<MCP_HOST>/anthropic/chat",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <MCP_TOKEN>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "model": "claude-3-5-sonnet",
+          "messages": [
+            {
+              "role": "system",
+              "content": "Return JSON {newTitle, thumbnailText}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2660,
+        -60
+      ],
+      "id": "http-lg4gryx7",
+      "name": "Anthropic Title (MCP)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=<GEMINI_KEY>",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "contents": [
+            {
+              "parts": [
+                {
+                  "text": "Return JSON {newTitle, thumbnailText}"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2660,
+        40
+      ],
+      "id": "http-m3anbqw8",
+      "name": "Gemini Title"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mistral.ai/v1/chat/completions",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <MISTRAL_KEY>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "model": "mixtral-8x7b-32768",
+          "messages": [
+            {
+              "role": "system",
+              "content": "Return JSON {newTitle, thumbnailText}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2660,
+        120
+      ],
+      "id": "http-o00qfto3",
+      "name": "Mistral Title"
+    },
+    {
+      "parameters": {
+        "mode": "passThrough"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        2860,
+        -40
+      ],
+      "id": "merge-e5qmhj77",
+      "name": "Merge AI Outputs"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst kw = ($json.keyword||$json['Keyword or Topic']||'').toLowerCase();\nfunction score(t){ if(!t) return 0; t=t.toLowerCase(); let s=0; if (kw && t.includes(kw)) s+=2; if (t.length<=70) s+=1; if (/(how|why|top|best)/.test(t)) s+=1; return s; }\nreturn items.map(i=>({json:{...i.json, _score:score(i.json.newTitle||'')}})).sort((a,b)=>b.json._score-a.json._score).slice(0,1);\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3040,
+        -40
+      ],
+      "id": "code-9tu9847h",
+      "name": "Auto-Scoring"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Generate: {ytScript, shortScript, blogPost}.",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "simplify": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        3220,
+        -40
+      ],
+      "id": "oai-en7z4sop",
+      "name": "Outline-to-Script Expander",
+      "credentials": {
+        "openAiApi": {
+          "id": "<OPENAI_CRED_ID>",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Input master package; output map per platform.",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "simplify": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        3400,
+        -40
+      ],
+      "id": "oai-bf0otb5r",
+      "name": "Per-Platform Caption Formatter",
+      "credentials": {
+        "openAiApi": {
+          "id": "<OPENAI_CRED_ID>",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Generate hashtags per platform.",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "simplify": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        3400,
+        60
+      ],
+      "id": "oai-uo3trili",
+      "name": "Hashtag Generator",
+      "credentials": {
+        "openAiApi": {
+          "id": "<OPENAI_CRED_ID>",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Add platform-specific CTAs.",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "simplify": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        3400,
+        160
+      ],
+      "id": "oai-hr2vlcxo",
+      "name": "CTA Injector",
+      "credentials": {
+        "openAiApi": {
+          "id": "<OPENAI_CRED_ID>",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(i=>({json:{...i.json, ffmpeg:'resize/crop queued'}}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3400,
+        -140
+      ],
+      "id": "code-wnz3mkhc",
+      "name": "Aspect Ratio Converter"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// Route by platform variable; here we just annotate\nreturn items.map(i=>({json:{...i.json, dispatched:true}}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3600,
+        -40
+      ],
+      "id": "code-etsmn56c",
+      "name": "Unified Publishing Dispatcher"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://status.example/health",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -600,
+        40
+      ],
+      "id": "http-0syx5at7",
+      "name": "API Health Check"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Errors",
+          "mode": "list"
+        },
+        "options": {},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{$now}}",
+            "node": "={{$json.node}}",
+            "message": "={{$json.error}}"
+          },
+          "matchingColumns": []
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3800,
+        200
+      ],
+      "id": "sheet-te257q1f",
+      "name": "Log Error",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CRED_ID>",
+          "name": "Google Sheets"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily": {
+      "main": [
+        [
+          {
+            "node": "Fetch Google Trends",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch YT Trending",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch X Trending",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Reddit Hot",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch TikTok Hashtags",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch News",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "API Health Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Google Trends": {
+      "main": [
+        [
+          {
+            "node": "Merge Trend Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch YT Trending": {
+      "main": [
+        [
+          {
+            "node": "Merge Trend Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch X Trending": {
+      "main": [
+        [
+          {
+            "node": "Merge Trend Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Reddit Hot": {
+      "main": [
+        [
+          {
+            "node": "Merge Trend Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch TikTok Hashtags": {
+      "main": [
+        [
+          {
+            "node": "Merge Trend Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch News": {
+      "main": [
+        [
+          {
+            "node": "Merge Trend Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Trend Feeds": {
+      "main": [
+        [
+          {
+            "node": "Semantic Dedupe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Semantic Dedupe": {
+      "main": [
+        [
+          {
+            "node": "Negative Keyword Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Negative Keyword Filter": {
+      "main": [
+        [
+          {
+            "node": "Confidence Weighting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confidence Weighting": {
+      "main": [
+        [
+          {
+            "node": "Extended Trend Finder (Grok)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extended Trend Finder (Grok)": {
+      "main": [
+        [
+          {
+            "node": "Trend Stage Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trend Stage Validator": {
+      "main": [
+        [
+          {
+            "node": "Append Emerging Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Emerging Topics": {
+      "main": [
+        [
+          {
+            "node": "Split Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Topics": {
+      "main": [
+        [
+          {
+            "node": "Set Keyword",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Keyword": {
+      "main": [
+        [
+          {
+            "node": "Trend Replicator (Grok)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "YouTube Video Scrape",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trend Replicator (Grok)": {
+      "main": [
+        [
+          {
+            "node": "Append ReplicatedIdeas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube Video Scrape": {
+      "main": [
+        [
+          {
+            "node": "Video Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video Filter": {
+      "main": [
+        [
+          {
+            "node": "Find Duplicate Entries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Duplicate Entries": {
+      "main": [
+        [
+          {
+            "node": "Merge New",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge New": {
+      "main": [
+        [
+          {
+            "node": "Step 1 Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 1 Results": {
+      "main": [
+        [
+          {
+            "node": "Analyze Thumbnail",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Transcript (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Thumbnail": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Title",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Anthropic Title (MCP)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gemini Title",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mistral Title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Transcript (Apify)": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Title",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Anthropic Title (MCP)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gemini Title",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mistral Title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Title": {
+      "main": [
+        [
+          {
+            "node": "Merge AI Outputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Title (MCP)": {
+      "main": [
+        [
+          {
+            "node": "Merge AI Outputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Title": {
+      "main": [
+        [
+          {
+            "node": "Merge AI Outputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Title": {
+      "main": [
+        [
+          {
+            "node": "Merge AI Outputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge AI Outputs": {
+      "main": [
+        [
+          {
+            "node": "Auto-Scoring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto-Scoring": {
+      "main": [
+        [
+          {
+            "node": "Outline-to-Script Expander",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Outline-to-Script Expander": {
+      "main": [
+        [
+          {
+            "node": "Per-Platform Caption Formatter",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Hashtag Generator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "CTA Injector",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Aspect Ratio Converter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Per-Platform Caption Formatter": {
+      "main": [
+        [
+          {
+            "node": "Unified Publishing Dispatcher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hashtag Generator": {
+      "main": [
+        [
+          {
+            "node": "Unified Publishing Dispatcher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CTA Injector": {
+      "main": [
+        [
+          {
+            "node": "Unified Publishing Dispatcher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aspect Ratio Converter": {
+      "main": [
+        [
+          {
+            "node": "Unified Publishing Dispatcher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v-qf8i53cb",
+  "id": "wf-a07l4xzi",
+  "tags": [],
+  "meta": {
+    "generated": "2025-08-08T08:29:11.823159"
+  }
+}

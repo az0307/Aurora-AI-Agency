@@ -2,6 +2,7 @@ import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { Webhook } from 'svix'
 import { db } from '@/lib/db'
+import { sendEmail } from '@/lib/email'
 
 export async function POST(req: Request) {
   const body = await req.text()
@@ -45,6 +46,15 @@ export async function POST(req: Request) {
     }
     // New users without an existing ClientUser record get one only when Aurora
     // manually links them to a client via the admin API.
+
+    if (event.type === 'user.created' && email) {
+      await sendEmail({
+        to: email,
+        subject: 'Welcome to the Aurora AI Agency portal',
+        html: `<p>Hi ${name || 'there'},</p><p>Welcome to the Aurora AI Agency client portal. You'll see your deliverables, jobs, and invoices here as they become available.</p>`,
+        text: `Hi ${name || 'there'},\n\nWelcome to the Aurora AI Agency client portal. You'll see your deliverables, jobs, and invoices here as they become available.`,
+      })
+    }
   }
 
   return NextResponse.json({ received: true })

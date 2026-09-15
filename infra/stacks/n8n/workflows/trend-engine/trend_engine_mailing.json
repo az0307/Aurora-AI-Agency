@@ -1,0 +1,404 @@
+{
+  "name": "Trend Engine \u2013 Mailing List Layer",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 9,
+              "minute": 0,
+              "weekday": "6"
+            }
+          ]
+        },
+        "timezone": "Australia/Melbourne"
+      },
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        -160
+      ],
+      "id": "cron-vb3d4mzv",
+      "name": "Weekly Digest Cron"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-subscriber",
+        "responseMode": "lastNode"
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        40
+      ],
+      "id": "webhook-6396gn2o",
+      "name": "New Subscriber Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "<CRM_SHEET_ID>",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Subscribers",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{$now}}",
+            "email": "={{$json.email}}",
+            "source": "={{$json.source}}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -440,
+        40
+      ],
+      "id": "googleSheets-tp6aqfkn",
+      "name": "Append CRM Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CRED_ID>",
+          "name": "Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://usX.api.mailchimp.com/3.0/lists/<LIST_ID>/members",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <MC_API_KEY>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "email_address": "={{$json.email}}",
+          "status": "subscribed"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        40
+      ],
+      "id": "httpRequest-ouuolx31",
+      "name": "Mailchimp Add Subscriber"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Create a short HTML welcome email with intro, affiliate link, and top 3 content links. Return HTML only."
+            }
+          ]
+        },
+        "jsonOutput": false
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -40,
+        40
+      ],
+      "id": "openAi-cruiau8j",
+      "name": "Generate Welcome Email",
+      "credentials": {
+        "openAiApi": {
+          "id": "<OPENAI_CRED_ID>",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://usX.api.mailchimp.com/3.0/campaigns",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <MC_API_KEY>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "type": "regular",
+          "recipients": {
+            "list_id": "<LIST_ID>"
+          },
+          "settings": {
+            "subject_line": "Welcome!",
+            "from_name": "Your Brand",
+            "reply_to": "info@example.com"
+          },
+          "content": {
+            "html": "={{$json}}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        40
+      ],
+      "id": "httpRequest-hmzv20w2",
+      "name": "Send Welcome Email"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Summarize top blog posts from the last week into an engaging HTML newsletter with affiliate links inserted where relevant."
+            }
+          ]
+        },
+        "jsonOutput": false
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -440,
+        -160
+      ],
+      "id": "openAi-ss74bycj",
+      "name": "Generate Weekly Digest Email",
+      "credentials": {
+        "openAiApi": {
+          "id": "<OPENAI_CRED_ID>",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://usX.api.mailchimp.com/3.0/campaigns",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <MC_API_KEY>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": {
+          "type": "regular",
+          "recipients": {
+            "list_id": "<LIST_ID>"
+          },
+          "settings": {
+            "subject_line": "This Week's Top Trends",
+            "from_name": "Your Brand",
+            "reply_to": "info@example.com"
+          },
+          "content": {
+            "html": "={{$json}}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        -160
+      ],
+      "id": "httpRequest-lredpsdk",
+      "name": "Send Weekly Digest"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://usX.api.mailchimp.com/3.0/reports",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <MC_API_KEY>"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -40,
+        -160
+      ],
+      "id": "httpRequest-vaqlp29d",
+      "name": "Fetch Campaign Stats"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "<CRM_SHEET_ID>",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "EmailStats",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{$now}}",
+            "opens": "={{$json.opens||''}}",
+            "clicks": "={{$json.clicks||''}}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        160,
+        -160
+      ],
+      "id": "googleSheets-32fwxr77",
+      "name": "Append Email Stats",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CRED_ID>",
+          "name": "Google Sheets"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "New Subscriber Webhook": {
+      "main": [
+        [
+          {
+            "node": "Append CRM Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append CRM Sheet": {
+      "main": [
+        [
+          {
+            "node": "Mailchimp Add Subscriber",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mailchimp Add Subscriber": {
+      "main": [
+        [
+          {
+            "node": "Generate Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Welcome Email": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Digest Cron": {
+      "main": [
+        [
+          {
+            "node": "Generate Weekly Digest Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Campaign Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Weekly Digest Email": {
+      "main": [
+        [
+          {
+            "node": "Send Weekly Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Campaign Stats": {
+      "main": [
+        [
+          {
+            "node": "Append Email Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v-2ug0w59a",
+  "id": "wf-7rsgm16c",
+  "tags": [],
+  "meta": {
+    "generated": "2025-08-08T08:41:09.608827"
+  }
+}

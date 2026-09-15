@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models import Job, Activity
 from app.schemas import JobCreate, JobUpdate, JobResponse, JobAction, ActivityCreate
 from app.services import manager, n8n
+from app.services.email_notifier import send_job_notification
 import structlog
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -133,6 +134,17 @@ async def job_action(job_id: int, action: JobAction, db: AsyncSession = Depends(
             await n8n.trigger(job_id, kind, job.to_dict())
         except Exception as e:
             logger.error("n8n_trigger_failed", job_id=job_id, error=str(e))
+
+    # Notify ops when a job is approved — best-effort, never blocks the approval itself.
+    if kind == "approve":
+        try:
+            await send_job_notification(
+                to="ops@autoborosai.com",
+                subject=f"Job approved: {job.t}",
+                body=f"Job \"{job.t}\" for client {job.client} was approved and is proceeding.",
+            )
+        except Exception as e:
+            logger.error("email_notification_failed", job_id=job_id, error=str(e))
 
     logger.info("job_action", job_id=job_id, action=kind)
     return job.to_dict()

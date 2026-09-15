@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     ab_password: str = "autoboros"
     n8n_webhook_url: str = "http://localhost:5678/webhook/autoboros"
     n8n_api_key: str = ""
+    resend_api_key: str = ""
+    email_from: str = "AutoBoros <noreply@autoborosai.com>"
     mcp_server_url: str = "http://localhost:3001"
     # comma-separated list of allowed browser origins for CORS
     cors_origins: str = "http://localhost:5173,http://localhost:4173"
