@@ -130,13 +130,14 @@ Experimental/agent tooling. Currently a single self-contained tool: `evermystic/
 
 Client delivery package for **Y.M.I Roofing** (client: Ben Breheny, ACN 695 710 055). `site/` holds the static website + legal pages deployed to Cloudflare Pages; `ops/` holds agency-internal docs (delivery checklist, Google Sheets/CRM setup, ManyChat spec, SEO tracking, DNS cheatsheet, invoice/welcome templates) and is **not deployed**. See `ymi-roofing/ops/MASTER-DELIVERY-CHECKLIST.md` for the 6-phase launch sequence.
 
-### Key open items (must resolve before go-live)
+### Status & open items
 
-- `WEBHOOK_URL` placeholder in `site/index.html` (~line 883) must be replaced with the real n8n webhook URL ending in `/webhook/ymi-roofing-lead`.
-- Facebook/Instagram footer links are placeholders.
-- ABN not yet confirmed (only ACN 695 710 055 is set); BPC registration number not yet verified but required for display.
-- Real photos still needed to replace emoji icons and placeholder testimonials.
-- n8n CORS is wildcard `*` — restrict to the real domain after go-live.
+Two `index.html` files exist: the **deployable** site lives in the separate `ymiroofing.com.au` repo (lead form → Resend Cloudflare Pages Function, GA4 live, ABN + ACN displayed, ACL wording de-risked, 6 job photos live), while `site/index.html` here is the **design source**, still on the older raw n8n-webhook path.
+
+- **Design source only** (`site/index.html`): still has a placeholder `WEBHOOK_URL` (~line 832, `YOUR-N8N-DOMAIN`), placeholder Facebook/Instagram footer links, and wildcard `*` n8n CORS. The live `ymiroofing.com.au` site does not use this path — don't take these as blocking the deployed site.
+- **Still open — needs the client:** BPC roofing registration + public-liability insurance numbers (currently shown "available on request" — supply details to upgrade to a substantiated, displayed claim); Google Business Profile (needs Ben's identity verification); customer reviews (`YMI_REVIEWS` is empty, pending real post-launch reviews).
+- **Deployment gotcha:** if `RESEND_API_KEY` is not set in Cloudflare Pages env, the deployable lead form silently falls back to `mailto:` (looks like "the form isn't sending"). Set it and send one test lead before go-live.
+- Resolved (no longer blockers): ABN 14 695 710 055 verified against the ABR (2026-08-05) and displayed site-wide; 6 real job photos are live.
 
 ---
 
