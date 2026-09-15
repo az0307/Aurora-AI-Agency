@@ -1,3 +1,27 @@
+> # ⚠️ SUPERSEDED — DO NOT SEND
+>
+> A second document also numbered **AURORA-0001** now exists, with different figures.
+> Issuing both would put two conflicting invoices under one invoice number in front of
+> the same client. **This is the old one.**
+>
+> Two specific problems with the version below:
+>
+> 1. **It bills for work that has never run.** The retainer line covers "lead capture
+>    automation, review machine, chatbot". All seven n8n workflows are `active: false`,
+>    the n8n host does not resolve, and not one message has ever been sent to a customer.
+>    Every other document in this folder says so plainly — `WELCOME-PACKAGE.md` heads that
+>    section "Automation (once switched on)" and `PHASE-2-PROPOSAL.md` says "the automation
+>    is already speced — Phase 2 switches it on". The invoice is the only one that reads as
+>    though it is delivered.
+> 2. **$700 for the whole build is far below market.** A custom tradie site built for lead
+>    generation is quoted $3,000–$10,000 in Australia. The replacement is benchmarked
+>    against market comparables and against hours-times-rate, which agree on $4,000–$5,000.
+>
+> The current invoice and its accompanying discount letter were produced in the session
+> that also audited the pricing. Use those. Keep this file for the record only.
+
+---
+
 # INVOICE — AURORA-0001
 
 > **Before sending:** fill in **every** `[...]` field below — your address and bank details,
