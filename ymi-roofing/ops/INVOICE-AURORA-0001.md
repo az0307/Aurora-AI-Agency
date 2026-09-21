@@ -1,8 +1,8 @@
 > # ⚠️ SUPERSEDED — DO NOT SEND
 >
-> A second document also numbered **AURORA-0001** now exists, with different figures.
-> Issuing both would put two conflicting invoices under one invoice number in front of
-> the same client. **This is the old one.**
+> A second document was drafted under the same number **AURORA-0001** with different
+> figures. Issuing both would put two conflicting invoices under one invoice number in
+> front of the same client, and the figures below are in any case not the ones to use.
 >
 > Two specific problems with the version below:
 >
@@ -17,8 +17,26 @@
 >    generation is quoted $3,000–$10,000 in Australia. The replacement is benchmarked
 >    against market comparables and against hours-times-rate, which agree on $4,000–$5,000.
 >
-> The current invoice and its accompanying discount letter were produced in the session
-> that also audited the pricing. Use those. Keep this file for the record only.
+> **There is currently no approved replacement invoice in this repository.** An earlier
+> draft and discount letter were produced outside version control and no longer exist.
+> Do not fall back to `INVOICE-TEMPLATE.txt` either — it still carries these same
+> $700 + $350x2 = $1,400 figures, including the retainer line for automation that has
+> never run.
+>
+> Two things must be settled before any invoice is issued to this client:
+>
+> 1. **Aurora's ABN.** `Aurora_Services_Agreement_SOURCE.md` gives **15 870 917 390**,
+>    stated as verified against the ABR. This file carries **45 746 317 471**, which came
+>    from an earlier draft and was never checked. It has since been removed from the client
+>    document pack rather than swapped, because neither figure has been confirmed from this
+>    side. One of the two is wrong, and it is a tax-relevant field.
+> 2. **The commercial position.** The Services Agreement sets $700 setup + $350/month
+>    (sections 3.1-3.2). A later pricing audit, benchmarked against the Australian market and
+>    against hours-times-rate, put the work at $4,550 with $2,750 payable and $150/month.
+>    An invoice cannot be raised against both.
+>
+> Until both are settled, this file stays here as the record of what was drafted, and
+> nothing is sendable. Keep it for the record only.
 
 ---
 
