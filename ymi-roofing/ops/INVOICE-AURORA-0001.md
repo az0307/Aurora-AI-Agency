@@ -23,20 +23,20 @@
 > $700 + $350x2 = $1,400 figures, including the retainer line for automation that has
 > never run.
 >
-> Two things must be settled before any invoice is issued to this client:
+> **Aurora's ABN is settled: 15 870 917 390**, matching
+> `Aurora_Services_Agreement_SOURCE.md` and confirmed by Aaron. The
+> **45 746 317 471** printed further down this file is wrong. It came from an earlier
+> draft, was never checked, and briefly reached the client document pack before being
+> corrected there. It is left in place below only because this file is a record of what
+> was drafted — do not copy it forward.
 >
-> 1. **Aurora's ABN.** `Aurora_Services_Agreement_SOURCE.md` gives **15 870 917 390**,
->    stated as verified against the ABR. This file carries **45 746 317 471**, which came
->    from an earlier draft and was never checked. It has since been removed from the client
->    document pack rather than swapped, because neither figure has been confirmed from this
->    side. One of the two is wrong, and it is a tax-relevant field.
-> 2. **The commercial position.** The Services Agreement sets $700 setup + $350/month
->    (sections 3.1-3.2). A later pricing audit, benchmarked against the Australian market and
->    against hours-times-rate, put the work at $4,550 with $2,750 payable and $150/month.
->    An invoice cannot be raised against both.
+> **One thing is still unsettled.** The Services Agreement sets $700 setup + $350/month
+> (sections 3.1-3.2). A later pricing audit, benchmarked against the Australian market and
+> against hours-times-rate, put the work at $4,550 with $2,750 payable and $150/month. An
+> invoice cannot be raised against both, and the Agreement is the document the client
+> signs, so it outranks the audit unless it is renegotiated first.
 >
-> Until both are settled, this file stays here as the record of what was drafted, and
-> nothing is sendable. Keep it for the record only.
+> Until that is settled, nothing here is sendable. Keep this file for the record only.
 
 ---
 
