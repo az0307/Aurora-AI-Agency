@@ -40,7 +40,7 @@ Y.M.I Roofing Pty Ltd (**"Client"**)
 ACN: 695 710 055
 ABN: 14 695 710 055
 Registered address: [Ben's business/registered address]
-Contact: Ben Breheny (Director) — 0422 093 241 — y.m.iroofing@outlook.com
+Contact: Ben Breheny (Director) — 0423 858 503 — ymiroofing@outlook.com
 
 Together "the Parties."
 

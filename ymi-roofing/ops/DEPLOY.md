@@ -128,7 +128,7 @@ return [{
 #### Node 4 — Twilio SMS to Ben
 | Setting | Value |
 |---|---|
-| To | `+61422093241` (Ben's primary) |
+| To | `+61423858503` (Ben's primary) |
 | From | Your Twilio virtual number |
 | Body | (see below) |
 
@@ -145,14 +145,14 @@ return [{
 Tap number above to call back.
 ```
 
-**Optional second SMS to Ben's secondary (0423 858 503):**  
+**Optional second SMS to Ben's secondary (0422 093 241):**  
 Duplicate the Twilio node, change the To number. Wire both from Node 3.
 
 ---
 
 ## 5. Email Notification (Optional)
 
-If Ben wants email alerts to `y.m.iroofing@outlook.com`:
+If Ben wants email alerts to `ymiroofing@outlook.com`:
 
 - **From:** `leads@ymiroofing.com.au` (your domain — NOT the customer's email)
 - **Reply-To:** customer's email if they provided one
