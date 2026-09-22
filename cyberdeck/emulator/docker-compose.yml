@@ -1,0 +1,14 @@
+services:
+  cyberdeck-emu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cyberdeck-emu
+    # Mount the whole subsystem so edited scripts are picked up without rebuild.
+    volumes:
+      - ../:/cyberdeck:ro
+    working_dir: /cyberdeck
+    environment:
+      EMULATED: "1"
+      CYBERDECK_AUTHORIZED: "yes"
+    command: ["bash", "-lc", "PATH=/opt/mock-termux:$PATH scripts/00-termux-bootstrap.sh"]

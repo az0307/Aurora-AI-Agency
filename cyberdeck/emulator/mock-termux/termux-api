@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+echo "  (mock termux-api) no-op in emulator"
+exit 0

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Mock of Termux 'pkg'. Maps pkg subcommands onto apt-get so the S10 bootstrap
+# scripts execute end-to-end inside the emulator (Debian/Kali) with no phone.
+set -euo pipefail
+sub="${1:-}"; shift || true
+case "$sub" in
+  update)  exec apt-get update -y "$@" ;;
+  upgrade) exec apt-get upgrade -y "$@" ;;
+  install)
+    # Drop Termux-only package names apt won't know about.
+    args=(); for a in "$@"; do
+      case "$a" in
+        termux-*|tsu|proot-distro) echo "  (mock pkg) skipping Termux-only pkg: $a" ;;
+        -y) : ;;  # apt gets -y explicitly below
+        *) args+=("$a") ;;
+      esac
+    done
+    exec apt-get install -y --no-install-recommends "${args[@]}" ;;
+  *) echo "  (mock pkg) ignoring: pkg $sub $*"; exit 0 ;;
+esac

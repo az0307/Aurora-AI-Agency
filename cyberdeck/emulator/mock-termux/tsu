@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Mock of Termux 'tsu' (root shell). In the emulator we are already able to
+# run privileged apt, so just exec the requested command (or a shell).
+exec "${@:-bash}"

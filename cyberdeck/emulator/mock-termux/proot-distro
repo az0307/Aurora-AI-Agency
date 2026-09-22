@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Mock of proot-distro. 'install kali' is a no-op here because the emulator
+# container is ALREADY a Kali/Debian rootfs standing in for the chroot.
+echo "  (mock proot-distro) $* — emulator container is the Kali stand-in"
+exit 0

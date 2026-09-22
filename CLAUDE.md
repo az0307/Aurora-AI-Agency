@@ -39,6 +39,7 @@ The `_empire/ARCHITECTURE_GAP_SYNTHESIS.md` document maps the full skill ecosyst
 | **autoboros-cockpit** | `autoboros-cockpit/` | AutoBoros Cockpit v2 — React 19 + Vite rebuild of the operator dashboard (standalone SPA) |
 | **client-portal** | `client-portal/` | Aurora client portal — Next.js 14 (App Router) + Clerk auth + Prisma + Stripe |
 | **ymi-roofing** | `ymi-roofing/` | Client delivery package — Y.M.I Roofing website, ops docs, chatbot spec |
+| **cyberdeck** | `cyberdeck/` | Samsung S10 mobile pentest rig — Termux + Kali NetHunter one-shot provisioning scripts + a local S10 emulator for testing them without a phone |
 | **evermystic** | `evermystic/` | Experimental tooling — Evermystic Haiku executor (single self-contained HTML tool) |
 | **_empire** | `_empire/` | Org-wide strategic documents — architecture gap analysis, skill ecosystem maps |
 
@@ -472,6 +473,34 @@ npm run db:studio           # prisma studio
 - Config via `.env.example` → `.env.local` (Clerk keys, `DATABASE_URL`, Stripe keys). Never commit real secrets.
 
 ---
+
+## cyberdeck
+
+### What it does
+
+Provisions a **Samsung Galaxy S10** into a portable pentest workstation (**Termux + Kali NetHunter**) using idempotent, authorization-gated one-shot scripts, and ships a local **emulator** so those scripts can be developed and smoke-tested without a phone. Provisioning only — the same authorized-engagement posture as `hexstrike-ai` (RoE, own-device only, no third-party targeting; see `cyberdeck/docs/SAFETY.md`).
+
+### Structure
+
+```
+cyberdeck/
+├── lib/common.sh            ← logging, EMULATED detection, device_only wrapper, authorization gate
+├── scripts/                 ← 00-termux-bootstrap → 10-nethunter-install → 20-pentest-toolkit → 30-ssh → 99-verify
+├── emulator/                ← Kali Docker target + mock-termux/ command shims + run-emulator.sh
+├── ci/lint.sh               ← shellcheck over every script
+└── docs/                    ← SETUP.md (on-device) + SAFETY.md (authorization/legal)
+```
+
+### Commands
+
+```bash
+cd cyberdeck
+emulator/run-emulator.sh lint            # shellcheck all scripts
+emulator/run-emulator.sh dry             # run scripts in-process with mock Termux commands, no Docker
+emulator/run-emulator.sh docker --arm64  # arch-accurate full run in the Kali emulator
+```
+
+Every script sources `lib/common.sh` and calls `require_authorization`; `device_only ...` steps print-and-skip when `EMULATED=1`, so one script runs both in the emulator and unchanged on the phone. Never commit `.env` — only `.env.example`.
 
 ## evermystic
 
