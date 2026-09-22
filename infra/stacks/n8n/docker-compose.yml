@@ -22,7 +22,7 @@ services:
       retries: 5
 
   n8n:
-    image: docker.n8n.io/n8nio/n8n:latest
+    image: docker.n8n.io/n8nio/n8n:${N8N_IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -37,10 +37,12 @@ services:
       N8N_PROTOCOL: ${N8N_PROTOCOL:-https}
       WEBHOOK_URL: ${WEBHOOK_URL:-https://localhost/}
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-Australia/Melbourne}
-      # Basic auth as a second gate behind Cloudflare Access:
-      N8N_BASIC_AUTH_ACTIVE: ${N8N_BASIC_AUTH_ACTIVE:-true}
-      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER:-admin}
-      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD:?set N8N_BASIC_AUTH_PASSWORD in .env}
+      # LOGIN GATE: n8n's built-in owner account (set on first run in the UI).
+      # n8n REMOVED N8N_BASIC_AUTH_* in v1.0 — those vars are ignored on current
+      # images, so they are intentionally not set here. Cloudflare Access is the
+      # real outer gate; keep n8n behind it. To pre-provision the owner from env
+      # instead of the first-run screen, set N8N_INSTANCE_OWNER_MANAGED_BY_ENV=true
+      # plus the owner vars (see n8n user-management docs).
       # Encryption key must be stable across restarts (back it up!):
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?set N8N_ENCRYPTION_KEY in .env}
       # Restrict CORS from wildcard once the real domain is known (Y.M.I open item):

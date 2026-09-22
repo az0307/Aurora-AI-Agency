@@ -72,7 +72,7 @@ cd ../agents && cp .env.example .env && $EDITOR .env && docker compose up -d
 ```sh
 curl -I https://n8n.example.com/healthz     # 200 through the tunnel
 ```
-- n8n UI loads (behind Access + basic auth).
+- n8n UI loads (behind Cloudflare Access; set the n8n owner account on first run).
 - Beszel + Uptime Kuma show the host; add an **ntfy** notifier so alerts hit your phone.
 - In Claude Code, ask it to list your Hetzner servers → confirms the MCP loop.
 

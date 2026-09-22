@@ -34,8 +34,8 @@ relying on any number here.
 | [`QuantumDef1337/n8n-soc-automation`](https://github.com/QuantumDef1337/n8n-soc-automation) | SOC templates: real-time alerting, automatic IP blocking, endpoint scanning. |
 
 Directly relevant to the **UltronOmega / HexStrike** security arm — these map onto the
-existing playbooks in `hexstrike-ai/playbooks/`. Many are *blueprints* (purpose + flow
-outline) rather than importable JSON; expect to build the nodes.
+HexStrike playbooks (kept in the HexStrike SPV repo, not this one). Many are *blueprints*
+(purpose + flow outline) rather than importable JSON; expect to build the nodes.
 
 ## Official
 
