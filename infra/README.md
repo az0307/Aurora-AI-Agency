@@ -53,7 +53,7 @@ for an agent to drive reliably.
 | Workload | Where | Sizing | Notes |
 |---|---|---|---|
 | **n8n** (self-hosted "Zapier", incl. Y.M.I lead-capture + AutoBoros workflows) | Hetzner **Singapore** | CPX21 (Singapore = AMD only) | Behind Cloudflare Tunnel; restrict CORS from `*` |
-| **AutoBoros backend** (FastAPI + MCP + Postgres) | Hetzner | CPX31 in `sin`, or cheaper CAX21 in EU | Already Docker/compose-ready in `autoboros/backend/` |
+| **AutoBoros backend** (FastAPI + MCP + Postgres) | Hetzner | CPX31 in `sin`, or cheaper CAX21 in EU | Docker/compose-ready; deployed from the AutoBoros SPV repo (not this one) |
 | **AI-agent sandbox** (Claude Code, TARS, Kimi, OpenCode, OpenHands, Aider, Goose, Crush) | Hetzner (own box or Oracle lab) | CPX31+ (`sin`) / CAX21+ (EU) | Hosted-API model backends → CPU box is enough |
 | **Y.M.I Roofing site** (static) | **Cloudflare Pages** (not a VPS) | — | Sydney edge = lowest AU latency; already the deploy target |
 | **Personal experiments / throwaway agent runs** | **Oracle Free** | 2 OCPU / 12 GB ARM | Disposable; no client data |

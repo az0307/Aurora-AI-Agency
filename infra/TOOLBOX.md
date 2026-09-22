@@ -84,8 +84,8 @@ The "amazing terminal": local emulator (Wave/Warp/Ghostty) + shell sugar + a bro
 - **A true Kali VM** needs **nested virtualization**, which Hetzner **Cloud** VPS does *not*
   support. That requires a **Hetzner dedicated / bare-metal** server running Proxmox (or
   libvirt/KVM), then Kali as a guest. Document that as a separate box when a real VM is needed.
-- The agency already has a **dedicated-Kali** integration in `hexstrike-ai/` (SSH-over-WS +
-  MCP); the container here is the *portable* option, that is the *heavy* one.
+- The agency already has a **dedicated-Kali** integration in the HexStrike SPV repo (SSH-over-WS +
+  MCP; no longer in this repo); the container here is the *portable* option, that is the *heavy* one.
 
 ## Not installed by default (add when needed)
 Activepieces, Ollama/GPU node, Gitea/Woodpecker CI, Docling/Unstructured — all documented in

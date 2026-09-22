@@ -87,8 +87,8 @@ set the n8n secret, point DNS, confirm ABN + BPC registration number, supply rea
 
 **Deliverables**
 - Brand-voice + policy extraction, FAQ generation in Stefan's tone, welcome flow + fallback copy,
-  intent keyword map — run as a 6-phase SOP on the AutoBoros cockpit (seeded as the `Evermystic`
-  client in [`autoboros/backend/app/routers/seed.py`](./autoboros/backend/app/routers/seed.py)).
+  intent keyword map — run as a 6-phase SOP on the AutoBoros cockpit (the AutoBoros engine lives in
+  its own repo/SPV, not this repo).
 - Evermystic Haiku Executor tool ([`evermystic/tools`](./evermystic/tools)).
 
 > Evermystic is the canonical demo/reference client used to seed the AutoBoros cockpit — it is both a
@@ -96,9 +96,9 @@ set the n8n secret, point DNS, confirm ABN + BPC registration number, supply rea
 
 ### Prospective / template
 
-- **Pentest prospects** — the HexStrike external-network pentest proposal
-  ([`hexstrike-ai/proposals`](./hexstrike-ai/proposals)) is a reusable template (placeholder client
-  "Acme Corp Pty Ltd", 7-day PTES engagement, $8,000 AUD + GST). Replace client details per engagement.
+- **Pentest prospects** — the HexStrike external-network pentest proposal template lives with the
+  HexStrike security SPV (separate repo). Placeholder client "Acme Corp Pty Ltd", 7-day PTES
+  engagement, $8,000 AUD + GST; replace client details per engagement.
 
 ---
 
@@ -106,18 +106,19 @@ set the n8n secret, point DNS, confirm ABN + BPC registration number, supply rea
 
 These are Aurora's own systems, not client deliverables. They live across several repos.
 
+> These live in their own repos/SPVs. This repo (`Aurora-AI-Agency`) itself now holds only the
+> client portal, client deliverables, the agency marketing site, and hosting/infra — the AutoBoros,
+> HexStrike and gastown code was moved out to keep it agency- and client-focused.
+
 | Product | Repo / path | Role |
 |---------|-------------|------|
-| **AutoBoros** | [`autoboros/`](./autoboros) · [`AutoBoros.AI-`](https://github.com/az0307/AutoBoros.AI-) | The automation engine — FastAPI + n8n + MCP + React cockpit, L0–L4 job ladder. |
-| **AutoBoros cockpit** | [`autoboros/cockpit`](./autoboros/cockpit) · [`autoboros-cockpit/`](./autoboros-cockpit) | Operator UI for the engine. |
+| **AutoBoros** | [`AutoBoros.AI-`](https://github.com/az0307/AutoBoros.AI-) (separate SPV) | The automation engine — FastAPI + n8n + MCP + React cockpit, L0–L4 job ladder. |
 | **Nexus dashboard** | [`autoborosai-dashboard`](https://github.com/az0307/autoborosai-dashboard) | Next.js enterprise dashboard for monitoring multi-agent systems. |
 | **autoborosai.com** | [`AutoborosAi.com`](https://github.com/az0307/AutoborosAi.com) | Public marketing site + app (React + Hono). |
-| **HexStrike AI** | [`hexstrike-ai/`](./hexstrike-ai) | Red-team platform with live Kali integration. |
-| **Gastown** | [`gastown/`](./gastown) | Internal CLI — scaffolds projects from natural language. |
+| **HexStrike AI** | separate security SPV repo | Red-team platform with live Kali integration. |
 | **Client portal** | [`client-portal/`](./client-portal) | Next.js + Clerk portal where clients see jobs / deliverables / invoices. |
 | **Creator Hub** | [`creator-hub`](https://github.com/az0307/creator-hub) | Agency creator/automation toolkit (n8n + Docker). |
 | **Meta Automation Hub** | [`meta-automation-hub`](https://github.com/az0307/meta-automation-hub) | Governance / SOP layer (Ω6). |
-| **KaliShare / kali-backup-system** | [`KaliShare`](https://github.com/az0307/kalishare) · [`kali-backup-system`](https://github.com/az0307/kali-backup-system) | Security home-lab tooling and backups. |
 
 ---
 

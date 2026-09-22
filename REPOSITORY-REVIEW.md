@@ -4,6 +4,11 @@
 > Status legend: 🟢 healthy · 🟡 needs work · 🔴 stub / blocked.
 > This is a point-in-time snapshot to drive the next round of work — see the per-repo TODOs and the
 > consolidated backlog at the bottom.
+>
+> **Update (2026-09):** `Aurora-AI-Agency` has since been slimmed to agency/client work only — the
+> AutoBoros engine + cockpit, the HexStrike platform, and the gastown CLI were removed and now live
+> in their own SPV repos. Sections below that describe those subsystems as living in this repo are
+> historical; the AutoBoros/HexStrike-specific TODOs move to those repos.
 
 ---
 
