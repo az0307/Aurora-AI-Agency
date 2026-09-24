@@ -1,68 +1,56 @@
-> # ⚠️ SUPERSEDED — DO NOT SEND
+> # ⚠️ DRAFT — hold until the gate below clears · do not send
 >
-> A second document was drafted under the same number **AURORA-0001** with different
-> figures. Issuing both would put two conflicting invoices under one invoice number in
-> front of the same client, and the figures below are in any case not the ones to use.
+> This is the **single canonical AURORA-0001** invoice. It absorbs and replaces the old
+> `INVOICE-TEMPLATE.txt`, which was deleted so two files no longer carry one invoice number
+> (Aurora finance rule: one canonical invoice per number).
 >
-> Two specific problems with the version below:
+> **Pricing is settled at $1,400 (setup $700 + retainer $350 × 2).** An internal pricing
+> audit put the fair build value near $4,550, but Ben was quoted $700 + $350/mo in both the
+> Welcome Package and the Services Agreement. Aurora's own pricing rules forbid repricing a
+> figure the client already agreed to — the $4,550 is the number to charge the *next* client,
+> not to retro-bill this one. The "$700 vs $4,550" question is therefore closed; do not
+> reopen it on this invoice.
 >
-> 1. **It bills for work that has never run.** The retainer line covers "lead capture
->    automation, review machine, chatbot". All seven n8n workflows are `active: false`,
->    the n8n host does not resolve, and not one message has ever been sent to a customer.
->    Every other document in this folder says so plainly — `WELCOME-PACKAGE.md` heads that
->    section "Automation (once switched on)" and `PHASE-2-PROPOSAL.md` says "the automation
->    is already speced — Phase 2 switches it on". The invoice is the only one that reads as
->    though it is delivered.
-> 2. **$700 for the whole build is far below market.** A custom tradie site built for lead
->    generation is quoted $3,000–$10,000 in Australia. The replacement is benchmarked
->    against market comparables and against hours-times-rate, which agree on $4,000–$5,000.
+> **Aurora's ABN is 15 870 917 390** (confirmed by Aaron, matches the Services Agreement).
+> The earlier incorrect ABN has been removed entirely — git history is the record.
 >
-> **There is currently no approved replacement invoice in this repository.** An earlier
-> draft and discount letter were produced outside version control and no longer exist.
-> Do not fall back to `INVOICE-TEMPLATE.txt` either — it still carries these same
-> $700 + $350x2 = $1,400 figures, including the retainer line for automation that has
-> never run.
+> **Before this can be sent, four things must be true:**
+> 1. **Go-live has actually happened** — the setup fee buys a *live* site and the retainer
+>    period only starts at go-live. Per the Welcome Package, go-live is gated on Ben
+>    confirming Sections A+B of the intake and on domain access. Confirm the site is public
+>    before billing for it.
+> 2. **The sender name.** "Aurora AI Agency" is not yet registered as a business name with
+>    ASIC under this ABN, so invoice under the legal entity **Aaron Baker** (shown below as
+>    "trading as Aurora AI Agency"). That is compliant now; the trading-name line becomes
+>    unqualified once ASIC registration is confirmed.
+> 3. **Ben's confirmed entity name and ABN** from intake Section A (currently Y.M.I Roofing
+>    Pty Ltd, ACN 695 710 055, ABN 14 695 710 055 — confirm against the returned form).
+> 4. **No `[placeholders]` remain** — fill the address, dates, and the Agreement date, then
+>    search the file for `[` before it goes out.
 >
-> **Aurora's ABN is settled: 15 870 917 390**, matching
-> `Aurora_Services_Agreement_SOURCE.md` and confirmed by Aaron. The
-> **45 746 317 471** printed further down this file is wrong. It came from an earlier
-> draft, was never checked, and briefly reached the client document pack before being
-> corrected there. It is left in place below only because this file is a record of what
-> was drafted — do not copy it forward.
->
-> **One thing is still unsettled.** The Services Agreement sets $700 setup + $350/month
-> (sections 3.1-3.2). A later pricing audit, benchmarked against the Australian market and
-> against hours-times-rate, put the work at $4,550 with $2,750 payable and $150/month. An
-> invoice cannot be raised against both, and the Agreement is the document the client
-> signs, so it outranks the audit unless it is renegotiated first.
->
-> Until that is settled, nothing here is sendable. Keep this file for the record only.
+> Decision log — 2026-09-22: consolidated the two conflicting AURORA-0001 files into this
+> one; closed the pricing ambiguity per the no-reprice rule; corrected the ABN; rewrote the
+> retainer line so it no longer implies automation that has not run.
 
 ---
 
 # INVOICE — AURORA-0001
 
-> **Before sending:** fill in **every** `[...]` field below — your address and bank details,
-> the issue and due dates, and Ben's confirmed entity name and ABN from the intake form.
-> Then search the document for `[` and confirm no placeholders remain. Delete this note
-> before it goes out.
->
-> Titled "Invoice", not "Tax invoice": the ATO directs businesses that are not registered for
-> GST to issue a standard invoice and to avoid the words "tax invoice".
+> Titled "Invoice", not "Tax invoice": the ATO directs businesses not registered for GST to
+> issue a standard invoice and to avoid the words "tax invoice".
 
 ---
 
 **FROM**
-**Aurora AI Agency**
-Aaron Baker (sole trader)
-ABN: **45 746 317 471**
-[Your address]
-aaron221048@gmail.com
+Aaron Baker (sole trader), trading as **Aurora AI Agency**
+ABN: **15 870 917 390**
+Melton South, VIC 3338 — [full street address outstanding]
+aaron221048@gmail.com · 0401 154 219
 
 **TO**
 Ben Breheny
-[Y.M.I Roofing — confirmed legal entity name from intake form Section A4]
-[ABN once confirmed]
+[Y.M.I Roofing — confirmed legal entity name from intake Section A]
+[ABN once confirmed — Y.M.I Roofing Pty Ltd, ACN 695 710 055, ABN 14 695 710 055 per ABR]
 [Ben's address]
 
 | | |
@@ -77,8 +65,8 @@ Ben Breheny
 
 | Description | Qty | Rate | Amount |
 |---|---:|---:|---:|
-| **Y.M.I Roofing Ignite Package — setup**<br><span style="font-size:90%">Website design & build (ymiroofing.com.au), mobile optimisation, local SEO for Melton & Melbourne's west, structured data, logo integration, branded social share card, photo gallery build, privacy policy &amp; terms of service, consumer-law wording review (not legal advice)</span> | 1 | $700.00 | $700.00 |
-| **Monthly retainer — months 1–2**<br><span style="font-size:90%">Lead capture automation, review machine, chatbot, hosting, maintenance, monthly reporting</span> | 2 | $350.00 | $700.00 |
+| **Y.M.I Roofing Ignite Package — setup**<br><span style="font-size:90%">Website design &amp; build (ymiroofing.com.au), mobile optimisation, local SEO for Melton &amp; Melbourne's west, structured data, logo integration, branded social share card, photo gallery build, privacy policy &amp; terms of service, consumer-law wording review (not legal advice), and configuration of the n8n automation workflows ready for activation</span> | 1 | $700.00 | $700.00 |
+| **Monthly retainer — months 1–2**<br><span style="font-size:90%">Hosting, maintenance, minor site updates, and monthly reporting. Automation features (lead capture, review machine, chatbot) are switched on and added to this retainer as each one goes live — see the current status brief</span> | 2 | $350.00 | $700.00 |
 
 | | |
 |---:|---:|
@@ -86,27 +74,28 @@ Ben Breheny
 | GST | $0.00 * |
 | **TOTAL DUE** | **$1,400.00 AUD** |
 
-<sub>\* No GST charged — Aurora AI Agency is not registered for GST.</sub>
+<sub>\* Aurora (Aaron Baker, ABN 15 870 917 390) is not currently registered for GST — this supply is not subject to GST.</sub>
 
 ---
 
 ## Payment
 
-**Bank transfer**
-- Account name: `[Your account name]`
-- BSB: `[Your BSB]`
-- Account number: `[Your account number]`
+**Bank transfer (Westpac Business One)**
+- Account name: Aaron Baker
+- BSB: `033-121`
+- Account number: `674782`
 - **Reference: `AURORA-0001-YMI`** ← please include, it's how the payment gets matched
 
 **Terms:** Payment due within 7 days of the issue date. Setup work commences on receipt of
 payment. The monthly retainer continues thereafter and may be cancelled by either party with
-30 days' written notice.
+30 days' written notice. Issued under the Services Agreement dated [Date].
 
 ---
 
 ## What's not included
 
-Third-party costs are billed directly to you by the provider, not through Aurora:
+Third-party costs are billed directly to you by the provider, not through Aurora, and stay
+in your name:
 
 | Item | Approx cost |
 |---|---|
@@ -119,4 +108,4 @@ Third-party costs are billed directly to you by the provider, not through Aurora
 ---
 
 Thank you for your business.
-**Aurora AI Agency** · ABN 45 746 317 471
+**Aaron Baker · trading as Aurora AI Agency · ABN 15 870 917 390**
