@@ -1,6 +1,7 @@
 # Aurora Infrastructure — VPS Hosting Strategy
 
 > **Setting this up? Start at [SETUP.md](./SETUP.md)** — every step in order, with exact and pre-filled links.
+> **Prefer pictures?** [docs/VISUAL-GUIDE.md](./docs/VISUAL-GUIDE.md): the whole setup in three diagrams.
 > **Already pay for Claude / ChatGPT / Gemini / SuperGrok / Cursor?** See [SUBSCRIPTIONS.md](./SUBSCRIPTIONS.md).
 
 > Decision document + runnable setup for hosting Aurora AI Agency, AutoBoros, Y.M.I

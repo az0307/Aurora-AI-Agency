@@ -1,5 +1,7 @@
 # Phones — manage everything from your S10 and Reno 11
 
+> Diagram of how the phones fit into everything: [../docs/VISUAL-GUIDE.md](../docs/VISUAL-GUIDE.md).
+
 ## Quick start: no laptop needed
 
 On each phone:

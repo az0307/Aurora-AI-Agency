@@ -14,6 +14,8 @@ cd infra && cp secrets.env.example secrets.env   # then fill it in as you go bel
 
 Tick each box as you go. Skip anything you don't want; blank keys just leave that part off.
 
+**See it first:** [docs/VISUAL-GUIDE.md](./docs/VISUAL-GUIDE.md) has the whole setup, this walkthrough, and the voice-note flow as diagrams.
+
 ---
 
 ## 1. The server (≈AUD $28–39/mo, capped)

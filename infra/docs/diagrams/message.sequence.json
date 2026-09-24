@@ -1,0 +1,189 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "What happens when you send the bot a voice note",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1080,
+      530
+    ]
+  },
+  "participants": [
+    {
+      "id": "you",
+      "type": "external",
+      "label": "You",
+      "sublabel": "phone"
+    },
+    {
+      "id": "telegram",
+      "type": "external",
+      "label": "Telegram",
+      "sublabel": "or WhatsApp"
+    },
+    {
+      "id": "hermes",
+      "type": "backend",
+      "label": "Hermes",
+      "sublabel": "the bot"
+    },
+    {
+      "id": "whisper",
+      "type": "backend",
+      "label": "Whisper",
+      "sublabel": "on the server"
+    },
+    {
+      "id": "router",
+      "type": "backend",
+      "label": "Router",
+      "sublabel": "auto chain"
+    },
+    {
+      "id": "claude",
+      "type": "cloud",
+      "label": "Claude",
+      "sublabel": "Sonnet 5"
+    },
+    {
+      "id": "fallback",
+      "type": "cloud",
+      "label": "Fallback",
+      "sublabel": "Kimi \u00b7 DeepSeek"
+    },
+    {
+      "id": "tools",
+      "type": "external",
+      "label": "App tools",
+      "sublabel": "Composio \u00b7 Zapier"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 244,
+      "label": "Voice in"
+    },
+    {
+      "from": 246,
+      "to": 394,
+      "label": "Think (with fallback)"
+    },
+    {
+      "from": 396,
+      "to": 458,
+      "label": "Act + reply"
+    }
+  ],
+  "messages": [
+    {
+      "from": "you",
+      "to": "telegram",
+      "y": 170,
+      "label": "voice note",
+      "variant": "emphasis"
+    },
+    {
+      "from": "telegram",
+      "to": "hermes",
+      "y": 200,
+      "label": "new message",
+      "variant": "emphasis"
+    },
+    {
+      "from": "hermes",
+      "to": "whisper",
+      "y": 230,
+      "label": "transcribe",
+      "variant": "default"
+    },
+    {
+      "from": "hermes",
+      "to": "router",
+      "y": 260,
+      "label": "model: auto",
+      "variant": "emphasis"
+    },
+    {
+      "from": "router",
+      "to": "claude",
+      "y": 290,
+      "label": "try first",
+      "variant": "emphasis"
+    },
+    {
+      "from": "claude",
+      "to": "router",
+      "y": 320,
+      "label": "busy / error",
+      "variant": "dashed"
+    },
+    {
+      "from": "router",
+      "to": "fallback",
+      "y": 350,
+      "label": "fall back",
+      "variant": "default"
+    },
+    {
+      "from": "router",
+      "to": "hermes",
+      "y": 380,
+      "label": "answer",
+      "variant": "return"
+    },
+    {
+      "from": "hermes",
+      "to": "tools",
+      "y": 410,
+      "label": "add Sheets row",
+      "variant": "emphasis"
+    },
+    {
+      "from": "hermes",
+      "to": "you",
+      "y": 440,
+      "label": "reply",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "hermes",
+      "from": 194,
+      "to": 446,
+      "type": "backend"
+    },
+    {
+      "participant": "whisper",
+      "from": 224,
+      "to": 248,
+      "type": "backend"
+    },
+    {
+      "participant": "router",
+      "from": 254,
+      "to": 386,
+      "type": "backend"
+    },
+    {
+      "participant": "claude",
+      "from": 284,
+      "to": 326,
+      "type": "cloud"
+    },
+    {
+      "participant": "fallback",
+      "from": 344,
+      "to": 372,
+      "type": "cloud"
+    },
+    {
+      "participant": "tools",
+      "from": 404,
+      "to": 432,
+      "type": "external"
+    }
+  ]
+}
