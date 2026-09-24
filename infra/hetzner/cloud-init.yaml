@@ -42,6 +42,8 @@ packages:
   - eza
   - tealdeer
   - zoxide
+  - mosh      # phones connect with mosh (survives Wi-Fi ↔ 5G switches)
+  - tmux
 
 write_files:
   # --- SSH hardening (belt-and-suspenders on top of ssh_pwauth: false) ---

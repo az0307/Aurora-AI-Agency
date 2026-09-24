@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# aurora — one menu for everything: talk to the agents, phone commands, pictures and
+# video, the server, secrets, widgets, guides. Pick with arrows/typing, Enter to run.
+# Shortcut: `a`. Works in Termux, Termux:Float and over SSH. Needs fzf (falls back to
+# a numbered list without it).
+set -uo pipefail
+KIT=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+INFRA=$(cd "$KIT/../.." && pwd)
+SERVER=${AURORA_SERVER:-aurora-01}
+export PATH="$KIT/bin:$PATH"
+B=$'\e[1m'; D=$'\e[2m'; N=$'\e[0m'
+
+pause() { echo; read -rp "${D}Enter to go back${N} " _; }
+remote() { ssh -t -o ConnectTimeout=10 "$SERVER" "$@"; }
+
+# id | label | what it does (shown in the preview pane)
+MENU=$(cat <<'M'
+ask|💬 Ask Hermes (type)|Type a question or a job. Hermes answers here. It can use every tool: web, files, Gmail/Sheets (Composio, Zapier), GitHub, the browser. Uses your default model (general).
+askm|🧠 Ask with a chosen model|Pick a job model first (code, reason, free, uncensored…), then ask.
+voice|🎤 Voice command|Speak. Phone commands (torch, volume, battery, copy, open a site…) run ON the phone with Needle, offline. Anything else goes to Hermes and the answer is read out.
+phone|📱 Phone command (type)|Same as voice, typed: "torch on", "volume 5", "where am I".
+image|🖼  Make an image|Describe it; Hermes makes it on the server and it lands in Pictures/Aurora.
+video|🎬 Make a video|Describe it; 1–10 minutes; lands in Movies/Aurora. ~3–50¢ per second depending on the model.
+models|📊 Model guide|Which model is best for what, what it costs, and what data it may see.
+shell|🖥  Server terminal|mosh + tmux on the server (session "main"). Detach with Ctrl-a d.
+hermes|🤖 Hermes terminal UI|The full Hermes TUI on the server (all slash commands).
+check|✅ Check the server|Read-only health check: containers, exposure, models, Hermes, MCP, Tailscale, RAM/disk.
+live|🧪 Check + test every model|Same, plus one tiny message to every model chain (a few cents).
+logs|📜 Hermes logs|Follow the bot's logs (Ctrl-c to stop).
+restart|🔁 Restart Hermes|After changing its settings.
+desk_on|🖱  Computer desktop: start|Starts the computer-use desktop on the server (then open the two Tailscale links).
+desk_off|⏹  Computer desktop: stop|Gives the ~1–2 GB RAM back.
+cron|⏰ Scheduled jobs|What Hermes runs on a timer (cron). Add one in chat: /cron add "0 21 * * *" "…"
+secrets|🔐 Fill secrets from Bitwarden|Unlocks your vault, writes infra/secrets.env from the "Aurora" folder, locks again.
+create|🚀 Create / update the server|Runs bootstrap.sh: shows the live price first (capped at AUD $39/mo), asks before buying.
+widgets|🧩 Install widgets + quick bar|Home-screen buttons, silent buttons, and the pinned notification with Voice/Ask/Status.
+newwidget|➕ Make your own button|Turn any command into a home-screen button.
+guides|📖 Guides|Read the how-to guides on the phone.
+doctor|🩺 Phone check|Checks Termux, the shell, keys, widgets, Tailscale, SSH, Needle, Bitwarden.
+quit|🚪 Quit|
+M
+)
+
+choose() {
+  if command -v fzf >/dev/null; then
+    printf '%s\n' "$MENU" | tr '|' '\t' | fzf --delimiter='\t' --with-nth=2 --tiebreak=begin,index --reverse --height=100% \
+      --prompt="aurora › " --header="${SERVER} · type to filter · Enter to run" \
+      --preview='echo {3}' --preview-window=down,5,wrap | cut -f1
+  else
+    local i=1 n
+    printf '%s\n' "$MENU" | while IFS='|' read -r _ l _; do printf '%2d) %s\n' $i "$l" >&2; i=$((i+1)); done
+    read -rp "Number (Enter = quit): " n || n=""
+    [[ "$n" =~ ^[0-9]+$ ]] || { echo quit; return; }
+    printf '%s\n' "$MENU" | sed -n "${n}p" | cut -d'|' -f1
+  fi
+}
+
+guides() {
+  local list; list=$(cd "$INFRA" && ls GUIDE.md INVENTORY.md SETUP.md phones/kit/README.md stacks/hermes/README.md stacks/hermes/FEATURES.md stacks/router/README.md SUBSCRIPTIONS.md docs/VISUAL-GUIDE.md 2>/dev/null)
+  local f; f=$(printf '%s\n' "$list" | fzf --reverse --prompt="guide › " --preview "head -40 '$INFRA'/{}") || return
+  if command -v glow >/dev/null; then glow -p "$INFRA/$f"; else less -R "$INFRA/$f"; fi
+}
+
+run() {
+  case "$1" in
+    ask)      aurora-ask; pause ;;
+    askm)     m=$(awk -F'\t' '!/^#/ && $2=="text" {print $1}' "$KIT/data/models.tsv" | fzf --reverse --prompt="model › " --preview "aurora-models --card {1}") && aurora-ask -m "$m"; pause ;;
+    voice)    aurora-needle --voice; pause ;;
+    phone)    aurora-needle; pause ;;
+    image)    aurora-gen image; pause ;;
+    video)    read -rp "Seconds (4–15, Enter = model default): " s; aurora-gen video ${s:+--seconds "$s"}; pause ;;
+    models)   aurora-models ;;
+    shell)    command -v mosh >/dev/null && mosh "$SERVER" -- tmux new -A -s main || remote tmux new -A -s main ;;
+    hermes)   remote docker exec -it hermes hermes ;;
+    check)    remote bash /opt/aurora/check.sh; pause ;;
+    live)     remote bash /opt/aurora/check.sh --live; pause ;;
+    logs)     remote 'cd /opt/aurora/stacks/hermes && docker compose logs -f --tail 80 gateway' ;;
+    restart)  remote 'cd /opt/aurora/stacks/hermes && docker compose restart gateway'; pause ;;
+    desk_on)  remote 'cd /opt/aurora/stacks/computer && docker compose --profile desktop up -d desktop'; pause ;;
+    desk_off) remote 'cd /opt/aurora/stacks/computer && docker compose --profile desktop stop desktop'; pause ;;
+    cron)     remote docker exec hermes hermes cron list; pause ;;
+    secrets)  aurora-secrets fill; pause ;;
+    create)   (cd "$INFRA" && ./bootstrap.sh --dry-run && read -rp "Create/update it for real? [y/N] " y && [ "$y" = y ] && ./bootstrap.sh); pause ;;
+    widgets)  aurora-widgets install; (AURORA_BAR_NOW=1 bash "$HOME/.termux/boot/20-aurora-bar.sh" >/dev/null 2>&1 &); echo "Quick bar: check your notifications."; pause ;;
+    newwidget) read -rp "Button name (e.g. torch-on): " n; read -rp "Command: " c; read -rp "Silent (no terminal)? [y/N] " t
+               aurora-widgets new "$n" "$c" $([ "$t" = y ] && echo --task); pause ;;
+    guides)   guides ;;
+    doctor)   aurora-kit doctor; pause ;;
+    quit|"")  exit 0 ;;
+  esac
+}
+
+if [ $# -gt 0 ]; then run "$1"; exit; fi
+while true; do clear; printf '%s  Aurora%s  %s\n' "$B" "$N" "$D$(date '+%a %H:%M')$N"; run "$(choose)"; done

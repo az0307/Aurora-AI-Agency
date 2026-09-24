@@ -153,12 +153,17 @@ Self-hosting decision document plus runnable setup for standing up an agency box
 Cloudflare) and the Docker stacks that run on it.
 
 - `infra/README.md`, `infra/STACK.md`, `infra/TOOLBOX.md`, `infra/AGENTS.md`, `infra/SERVICES.md` — the strategy, host port map, and agent failover notes.
+- `infra/SETUP.md` (ordered setup), `infra/GUIDE.md` (how voice/text/pictures flow and what goes where), `infra/INVENTORY.md` (what's on the server and phones), `infra/check.sh` (read-only health check run on the server).
+- `infra/phones/` — per-phone guides, Termux configs, setup scripts, and `phones/kit/` (the `a` menu, Needle phone commands, `aurora-ask`/`aurora-gen`, Bitwarden `aurora-secrets`, widget generator).
 - `infra/hetzner/` — `cloud-init.yaml` (base provisioning) + `main.tf.example` (Terraform, hcloud provider).
 - `infra/runbooks/` — `DAY1.md` (stand-up sequence) and `BACKUP.md`.
 - `infra/stacks/` — Docker Compose stacks:
   - `n8n/` — self-hosted n8n + Postgres (+ optional Caddy). Login gate is n8n's built-in owner account (n8n removed `N8N_BASIC_AUTH_*` in v1.0); keep it behind Cloudflare Access. Includes a staged workflow library under `stacks/n8n/workflows/`.
-  - `router/` — a self-hosted **LiteLLM** proxy ("omni-router") fronting OpenRouter, Anthropic, Kimi and Gemini behind one endpoint with cross-provider fallback chains. Binds `127.0.0.1` only. **Never route client PII through the free model tiers** — keep sensitive traffic on the paid `auto` chain.
+  - `router/` — a self-hosted **LiteLLM** proxy ("omni-router") fronting OpenRouter, Anthropic, Kimi and Gemini behind one endpoint with cross-provider fallback chains. Binds `127.0.0.1` only. **Never route client PII through the free model tiers** — keep sensitive traffic on the paid chains (`general`, `code`, `reason`, … — anything without `-free`).
+  - `hermes/` — Hermes Agent (chat gateways, MCP, plugins, image/video gen); `FEATURES.md` lists every feature and what's on.
+  - `computer/` — Playwright MCP + on-demand computer-use desktop (loopback + Tailscale only).
   - `monitoring/`, `dashboard/`, `agents/` — observability, start page, and sandboxed agent stacks.
+  - Router chains are curated per job; run `stacks/router/check-chains.py` after editing them. Uncensored models only appear in the `uncensored*` chains.
 
 Never commit real secrets — only `.env.example` templates.
 

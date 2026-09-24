@@ -14,16 +14,19 @@ errors=[]
 for k,v in fbs.items():
     for t in [k]+v:
         if t not in names: errors.append(f"{k}: unknown model {t}")
-unc={'dolphin','cydonia','skyfall','unslopnemo','euryale','magnum','lunaris','mythomax','hf-stheno','hf-lunaris'}|{n for n in names if n.startswith('local-')}
+unc={'dolphin','cydonia','skyfall','unslopnemo','euryale','euryale-agent','magnum','lunaris','mythomax','hf-stheno','hf-lunaris'}|{n for n in names if n.startswith('local-')}
 model_of={m['model_name']:m['litellm_params']['model'] for m in ml}
 for k,v in fbs.items():
     for t in [k]+v:
+        if k.startswith('uncensored'):
+            if t != k and t not in unc: errors.append(f"{k}: non-uncensored {t} in an uncensored chain")
+            continue
         if t in unc: errors.append(f"{k}: uncensored {t} in a chain")
         if 'free' not in k and (':free' in model_of[t] or model_of[t].endswith('openrouter/free')):
             errors.append(f"{k}: PAID chain reaches free model {t}")
 print("static checks:", "OK" if not errors else errors)
 # Simulate: every model fails except the LAST in each chain -> must end there, in order.
-jobs=['general','general-free','code','code-free','reason','fast','vision','search','research','hermes','auto','auto-free','auto-code','auto-cheap','auto-search']
+jobs=['general','general-free','code','code-free','reason','fast','vision','search','research','hermes','uncensored','uncensored-agent','uncensored-free','auto','auto-free','auto-code','auto-cheap','auto-search']
 ok=True
 for job in jobs:
     chain=[job]+fbs[job]; last=chain[-1]; tried=[]

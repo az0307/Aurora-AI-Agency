@@ -27,7 +27,9 @@ model_aliases:
   vision:    { model: vision,       provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Gemini 3.8 Flash → Claude → GPT (images, video, audio)
   search:    { model: search,       provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Perplexity: live web + citations
   research:  { model: research,     provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Perplexity deep research report (slow)
-  hermes:    { model: hermes,       provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Nous Hermes 4 405B → HF Hermes 3
+  hermes:    { model: hermes,       provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Nous Hermes 4 — no tool calling, so with tools on DeepSeek answers
+  uncensored: { model: uncensored-agent, provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # fewer refusals, CAN use tools (Euryale 70B). Never client data.
+  uncensored-free: { model: uncensored-free, provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # $0 on this box (needs ../ollama). Never client data.
   grok:      { model: grok,         provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }
   opus:      { model: claude-opus,  provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }
   # On your SuperGrok subscription (no API spend). One-time login on the box:
@@ -125,6 +127,37 @@ plugins:
   enabled:
     - disk-cleanup
     - security-guidance
+
+# --- Spoken replies ------------------------------------------------------------------
+# Send /voice tts in Telegram to get answers back as voice bubbles (free Edge voices).
+tts:
+  provider: "edge"
+  edge:
+    voice: "en-AU-NatashaNeural"   # or en-AU-WilliamNeural
+
+# --- Pictures and video ("make an image of…", "make a 6 second video of…") ---------------
+# Both go through OpenRouter with OPENROUTER_API_KEY from data/.env. Files land in
+# data/cache/images and data/cache/videos and are sent back in the chat.
+# Change the model any time: `docker exec -it hermes hermes tools` → Image/Video generation,
+# or just say "use gpt-image-2.5-flare" in the request. Prices: phones/kit/data/models.tsv.
+image_gen:
+  provider: openrouter
+  model: bytedance-seed/seedream-4.5      # ~4¢/image, good all-rounder
+  openrouter:
+    resolution: 2K
+video_gen:
+  provider: openrouter
+  model: google/veo-3.1-lite              # cheapest with sound: 3–8¢ per second
+
+# --- Bitwarden Secrets Manager (optional) ------------------------------------------------
+# Instead of pasting keys into data/.env, keep them in a Bitwarden Secrets Manager
+# PROJECT that only this server can read (a "machine account"). Your personal vault is
+# never on the server. Setup: docker exec -it hermes hermes secrets bitwarden setup
+secrets:
+  bitwarden:
+    enabled: false
+    project_id: ""
+    server_url: ""          # https://vault.bitwarden.eu for EU accounts
 
 # --- Tools over MCP ----------------------------------------------------------------
 mcp_servers:

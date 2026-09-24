@@ -50,7 +50,10 @@ rate-limited or erroring.
 | `vision` | screenshots, photos, video, audio | Gemini 3.8 Flash → Claude Sonnet 5 → GPT-5.6 Sol | paid-only |
 | `search` | live web answers with citations | Perplexity Sonar Pro → Sonar | paid-only |
 | `research` | multi-step research report | Sonar Deep Research → Sonar Reasoning Pro → Sonar Pro | paid-only |
-| `hermes` | Nous models | Hermes 4 405B → HF Hermes 3 70B → DeepSeek V4.1 Flash | paid-only |
+| `hermes` | Nous models | Hermes 4 405B → HF Hermes 3 70B → DeepSeek V4.1 Flash | paid-only; Hermes 4 has **no tool calling**, so agents end up on DeepSeek |
+| `uncensored` | fewer refusals, chat only | Dolphin Venice 24B → Cydonia 24B → Euryale 70B | never client data |
+| `uncensored-agent` | fewer refusals + tools (Hermes) | Euryale L3.1 70B → local Qwen3 8B abliterated | never client data |
+| `uncensored-free` | fewer refusals, $0, private | local Dolphin 3 8B → local Qwen3 8B abliterated | needs `../ollama` |
 
 **Older names keep working** and run the same chain: `auto` = `general`,
 `auto-free` = `general-free`, `auto-code` = `code`, `auto-cheap` = `fast`,
@@ -99,6 +102,28 @@ docker compose -f ../ollama/docker-compose.yml exec ollama ollama pull dolphin3:
 Hugging Face models go through `router.huggingface.co/v1` with one `HF_TOKEN`.
 
 Retries hit the *same* model first (`num_retries`), then the chain takes over.
+### Uncensored models by price (OpenRouter, per 1M tokens in/out, 2026-09-24)
+
+None of these is free on OpenRouter right now; the $0 options run on your own box.
+Only three support tool calling (marked 🛠), which matters for agents like Hermes.
+
+| Tier | Name | Model | Price | Context | Notes |
+|---|---|---|---|---|---|
+| $0 | `local-dolphin`, `local-qwen3-abliterated` 🛠, `local-gemma3-abliterated`, `local-dolphin-mistral` | Ollama on the server | $0 | 8–32k | Slow on CPU (a few words/s); private; needs ~3–5 GB RAM free |
+| Near-free | `lunaris` | Sao10K Lunaris 8B | $0.04 / $0.05 | 8k | Short chats |
+| Near-free | `mythomax` | MythoMax 13B | $0.08 / $0.11 | 8k | Old but cheap storytelling |
+| **Best value** | `dolphin` | Dolphin Mistral 24B **Venice (uncensored)** | $0.20 / $0.90 | 128k | Best general "no refusals" assistant |
+| Cheap | `cydonia` | Cydonia 24B v4.1 (uncensored) | $0.30 / $0.50 | 128k | Fiction, roleplay |
+| Mid | `unslopnemo` | UnslopNemo 12B | $0.40 / $0.40 | 1M | Very long inputs |
+| Mid | `skyfall` | Skyfall 36B | $0.55 / $0.80 | 32k | Smarter storytelling |
+| Mid | `euryale` | Euryale L3.3 70B | $0.65 / $0.75 | 128k | Long-form creative |
+| Mid 🛠 | `euryale-agent` | Euryale L3.1 70B | $0.85 / $0.85 | 128k | The only paid one here that can use tools |
+| Premium | `magnum` | Magnum v4 72B | $2.50 / $5.00 | 32k | Best prose, pricey |
+| HF credits | `hf-stheno`, `hf-lunaris` | via Hugging Face | from your HF credits | 8k | Uses `HF_TOKEN` |
+
+"Uncensored" means fewer refusals, not no rules: provider terms still apply, and the
+PII rule is absolute — none of these ever sees client data.
+
 A model that fails `allowed_fails` times is benched for `cooldown_time` seconds.
 
 ## Point the agents at it

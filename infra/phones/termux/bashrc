@@ -6,10 +6,14 @@ if command -v tmux >/dev/null && [ -z "$TMUX" ] && [ -z "$NO_TMUX" ]; then
   tmux new -A -s phone
 fi
 
-alias aurora='mosh aurora-01 -- tmux new -A -s main || ssh -t aurora-01 tmux new -A -s main'
+alias server='mosh aurora-01 -- tmux new -A -s main || ssh -t aurora-01 tmux new -A -s main'
 alias ah='ssh -t aurora-01 "cd /opt/aurora/stacks/hermes && docker compose logs -f --tail 100 gateway"'   # Hermes logs
 alias aps='ssh aurora-01 docker ps --format "table {{.Names}}\t{{.Status}}"'                              # what's running
 alias arestart-hermes='ssh aurora-01 "cd /opt/aurora/stacks/hermes && docker compose restart gateway"'
 alias ll='ls -alh'
 alias update='pkg update && pkg upgrade -y'
 export EDITOR=nano
+
+# --- Aurora phone kit: `a` (or `aurora`) opens the menu; `server` = the server's tmux --
+export PATH="$HOME/aurora/infra/phones/kit/bin:$PATH"
+alias a=aurora

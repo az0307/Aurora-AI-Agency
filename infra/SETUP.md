@@ -10,6 +10,8 @@ you can) and pasting them into **one file**: `infra/secrets.env`.
 
 ```sh
 cd infra && cp secrets.env.example secrets.env   # then fill it in as you go below
+# Keys already in Bitwarden? Put them in a folder "Aurora" (item name = variable name,
+# key in the password field), then: aurora-secrets fill   (see phones/kit/README.md)
 ```
 
 Tick each box as you go. Skip anything you don't want; blank keys just leave that part off.
@@ -151,7 +153,7 @@ not an API key. [SUBSCRIPTIONS.md](./SUBSCRIPTIONS.md) has the exact steps and t
 - **ChatGPT in Hermes:** `docker exec -it hermes hermes model` → "ChatGPT or Codex Subscription".
 - **Claude Code / Codex / Gemini CLI / Cursor CLI / Antigravity:** on a computer when you have
   one; until then use the Claude app / claude.ai/code on your phone, or run the CLIs on the
-  server over `aurora` (mosh + tmux) with the headless logins in SUBSCRIPTIONS.md.
+  server over `server` (mosh + tmux) with the headless logins in SUBSCRIPTIONS.md.
 
 ## 6c. Your phones
 

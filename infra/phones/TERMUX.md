@@ -97,7 +97,7 @@ With the **Tailscale** app connected:
 
 ```sh
 ssh aurora-01          # plain SSH over Tailscale
-aurora                 # mosh + the server's own tmux session "main" (survives network drops)
+server                 # mosh + the server's own tmux session "main" (survives network drops)
 ```
 
 **Home-screen buttons:** long-press the home screen → Widgets → **Termux:Widget** → drag it

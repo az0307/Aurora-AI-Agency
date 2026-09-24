@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# aurora-models — which model is best for what, with prices. Type to filter, Enter to
+# copy the "/model …" command (paste it in Telegram), Esc to leave.
+#   aurora-models            # interactive (fzf)
+#   aurora-models --print    # plain table
+set -uo pipefail
+KIT=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+DATA="$KIT/data/models.tsv"
+B=$'\e[1m'; D=$'\e[2m'; G=$'\e[32m'; Y=$'\e[33m'; C=$'\e[36m'; N=$'\e[0m'
+
+card() {  # card <name>  → pretty details for one row
+  awk -F'\t' -v n="$1" -v B="$B" -v D="$D" -v G="$G" -v Y="$Y" -v C="$C" -v N="$N" '
+    !/^#/ && $1==n {
+      printf "%s%s%s  %s(%s)%s\n\n", B, $1, N, D, $2, N
+      printf "%sBest at%s   %s\n\n", C, N, $3
+      printf "%sOrder%s     %s\n\n", C, N, $4
+      printf "%sCost%s      %s\n", C, N, $5
+      printf "%sData%s      %s%s%s\n\n", C, N, ($6 ~ /NOT|Never/ ? Y : G), $6, N
+      printf "%sUse%s       %s\n", C, N, $7 }' "$DATA"
+}
+[ "${1:-}" = --card ] && { card "$2"; exit 0; }
+
+if [ "${1:-}" = --print ] || ! command -v fzf >/dev/null; then
+  awk -F'\t' '!/^#/ {printf "%-24s %-7s %-16s %s\n", $1, $2, substr($5,1,16), $3}' "$DATA"
+  exit 0
+fi
+pick=$(awk -F'\t' '!/^#/ {printf "%-24s %-6s %s\n", $1, $2, $3}' "$DATA" |
+  fzf --ansi --tiebreak=begin,index --reverse --height=100% --prompt="model › " \
+      --header=$'Enter: copy the /model command  ·  type to filter  ·  Esc: back' \
+      --preview "bash '$0' --card {1}" --preview-window=down,55%,wrap) || exit 0
+name=$(awk '{print $1}' <<<"$pick")
+use=$(awk -F'\t' -v n="$name" '$1==n {print $7}' "$DATA")
+cmd=$(grep -oE '/model [a-z0-9-]+' <<<"$use" | head -1)
+if [ -n "$cmd" ] && command -v termux-clipboard-set >/dev/null; then
+  printf '%s' "$cmd" | termux-clipboard-set && termux-toast "Copied: $cmd — paste it in the Hermes chat" 2>/dev/null
+  echo "Copied: $cmd"
+else
+  echo "${use}"
+fi

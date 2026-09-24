@@ -68,7 +68,7 @@ fi
 command -v bat >/dev/null && alias cat='bat --paging=never --style=plain'
 alias update='pkg update && pkg upgrade -y'
 alias reload='exec zsh'
-alias aurora='mosh aurora-01 -- tmux new -A -s main || ssh -t aurora-01 tmux new -A -s main'
+alias server='mosh aurora-01 -- tmux new -A -s main || ssh -t aurora-01 tmux new -A -s main'
 alias ah='ssh -t aurora-01 "cd /opt/aurora/stacks/hermes && docker compose logs -f --tail 100 gateway"'
 alias aps='ssh aurora-01 docker ps --format "table {{.Names}}\t{{.Status}}"'
 alias arestart-hermes='ssh aurora-01 "cd /opt/aurora/stacks/hermes && docker compose restart gateway"'
@@ -81,3 +81,7 @@ aurora-addkey() {
   ssh aurora-01 "grep -qxF '$k' ~/.ssh/authorized_keys || echo '$k' >> ~/.ssh/authorized_keys" \
     && echo "Added: ${k:0:40}…"
 }
+
+# --- Aurora phone kit: `a` (or `aurora`) opens the menu; `server` = the server's tmux --
+export PATH="$HOME/aurora/infra/phones/kit/bin:$PATH"
+alias a=aurora

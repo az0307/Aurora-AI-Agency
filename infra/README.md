@@ -1,6 +1,7 @@
 # Aurora Infrastructure — VPS Hosting Strategy
 
 > **Setting this up? Start at [SETUP.md](./SETUP.md)** — every step in order, with exact and pre-filled links.
+> **Using it (voice, text, pictures, what goes where):** [GUIDE.md](./GUIDE.md). **What's installed where:** [INVENTORY.md](./INVENTORY.md).
 > **Prefer pictures?** [docs/VISUAL-GUIDE.md](./docs/VISUAL-GUIDE.md): the whole setup in three diagrams.
 > **Already pay for Claude / ChatGPT / Gemini / SuperGrok / Cursor?** See [SUBSCRIPTIONS.md](./SUBSCRIPTIONS.md).
 > **Is everything working?** On the server: `bash /opt/aurora/check.sh` (add `--live` to test every model chain).

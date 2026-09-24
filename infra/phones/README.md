@@ -19,12 +19,15 @@ On each phone:
    bash ~/aurora/infra/phones/setup/setup-reno11.sh     # on the OPPO Reno 11
    bash ~/aurora/infra/phones/setup/setup-s10.sh        # on the Galaxy S10
    ```
-   It walks you through everything in ~11 steps, with a progress bar and colours:
+   It walks you through everything in 12 steps, with a progress bar and colours:
    - opens each app's F-Droid page for you (Termux add-ons, Tailscale, stores, keyboards)
    - installs the packages, the smart shell, tmux + plugins, configs, widgets, boot script, font
    - creates this phone's SSH key and copies it to the clipboard
    - sets up Tailscale and walks you through the background-app and process-killer fixes
+   - installs the **Aurora kit**: the `a` menu, Needle voice/phone commands, widgets and the pinned quick bar ([kit/README.md](./kit/README.md))
    - ends with a health check (✓/✗)
+
+   Then type **`a`** for the menu. How to use everything: [../GUIDE.md](../GUIDE.md).
 
    If it stops (network, a step you skipped), **run the same command again**: finished steps
    are skipped. `doctor` re-runs just the health check anytime.
