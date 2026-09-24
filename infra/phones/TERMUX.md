@@ -7,6 +7,12 @@ The config files live in [`termux/`](./termux/) and [`server/`](./server/), and 
 both tmux configs load with no errors, TPM installs every plugin, and the Catppuccin status
 bar renders.
 
+> **The fast way:** run the setup script for your phone. It does steps 1–7 below for you, with
+> progress, colours and a health check at the end:
+> `bash ~/aurora/infra/phones/setup/setup-reno11.sh` or `…/setup-s10.sh`
+> (see [README.md](./README.md) for the three commands that come before it).
+> The steps below are what the script does, if you'd rather do it by hand.
+
 ## 1. Install the apps (F-Droid)
 
 Termux, Termux:API, Termux:Widget, Termux:Styling. Links in [APPS.md](./APPS.md).
@@ -31,14 +37,16 @@ ssh-keygen -t ed25519 -C "$(getprop ro.product.model)"   # press Enter through t
 cat ~/.ssh/id_ed25519.pub                                  # copy this line
 ```
 
-Add that line to the server so the phone can log in. From your laptop (already allowed in):
+**Getting the key onto the server, no laptop needed:**
+- **The phone you create the server from (the Reno):** nothing to do. `bootstrap.sh` puts
+  this phone's key on the server.
+- **The other phone (the S10):** its setup script copies its public key to the clipboard.
+  Send it to the Reno (Telegram "Saved Messages", LocalSend, or a Bitwarden note), copy it
+  there, and on the Reno run **`aurora-addkey`**. It adds the key from the clipboard to the
+  server.
 
-```sh
-ssh aurora@aurora-01 'cat >> ~/.ssh/authorized_keys'   # paste the line, Enter, then Ctrl-D
-```
-
-Save the private key's passphrase (if you set one) in Bitwarden. **Each phone gets its own
-key**; if a phone is lost, delete just its line from `~/.ssh/authorized_keys`.
+**Each phone gets its own key.** If a phone is lost, delete just its line from
+`~/.ssh/authorized_keys` on the server.
 
 ## 4. Get the configs onto the phone
 
@@ -102,7 +110,7 @@ out. It lists the scripts from `~/.shortcuts`:
 | `server-status` | containers, RAM, disk |
 | `restart-hermes` | restarts the bot (after editing its settings) |
 
-## 8. On the server (once, from the phone or laptop)
+## 8. On the server (once, from either phone)
 
 ```sh
 ssh aurora-01

@@ -16,6 +16,8 @@ releases. **Play** = Google Play, only where no good open-source build exists.
 |---|---|---|---|---|
 | **F-Droid** | [f-droid.org](https://f-droid.org/packages/org.fdroid.fdroid/) (download the APK from the site) | the open-source app store | ✅ | ✅ |
 | **Droid-ify** | [F-Droid](https://f-droid.org/packages/com.looker.droidify/) | faster, nicer F-Droid client (optional) | ➖ | ➖ |
+| **Aurora Store** | [F-Droid](https://f-droid.org/packages/com.aurora.store/) | install Play Store apps (Telegram, Claude, GitHub…) without a Google account, or with one | ✅ | ✅ |
+| **IzzyOnDroid repo** | one tap: `fdroidrepos://apt.izzysoft.de/fdroid/repo` (F-Droid asks to add it) | a big extra F-Droid repo of open-source apps | ✅ | ✅ |
 | **Obtainium** | [F-Droid](https://f-droid.org/packages/dev.imranr.obtainium.fdroid/) · [GitHub](https://github.com/ImranR98/Obtainium) | install/update apps from GitHub releases | ✅ | ✅ |
 
 ## 2. Terminal (Termux family — all from F-Droid)
@@ -26,7 +28,10 @@ releases. **Play** = Google Play, only where no good open-source build exists.
 | **Termux:API** | [F-Droid](https://f-droid.org/packages/com.termux.api/) | lets scripts use battery, clipboard, notifications, torch… (also needed for the tmux battery module + copy to clipboard) | ✅ | ✅ |
 | **Termux:Widget** | [F-Droid](https://f-droid.org/packages/com.termux.widget/) | home-screen buttons that run scripts (e.g. "connect to server") | ✅ | ✅ |
 | **Termux:Styling** | [F-Droid](https://f-droid.org/packages/com.termux.styling/) | fonts (Nerd Font for the tmux theme icons) and colours | ✅ | ✅ |
-| **Termux:Boot** | [F-Droid](https://f-droid.org/packages/com.termux.boot/) | start scripts when the phone boots | ➖ | ➖ |
+| **Termux:Boot** | [F-Droid](https://f-droid.org/packages/com.termux.boot/) | runs `~/.termux/boot/` scripts at startup (the setup installs one: wake-lock + tmux ready) | ✅ | ✅ |
+| **Termux:Float** | [F-Droid](https://f-droid.org/packages/com.termux.window/) | a floating terminal window over other apps | ✅ | ✅ |
+| **Termux:GUI** | [F-Droid](https://f-droid.org/packages/com.termux.gui/) | lets scripts show real Android dialogs, buttons and lists | ➖ | ✅ |
+| **Termux:Tasker** | [F-Droid](https://f-droid.org/packages/com.termux.tasker/) | run Termux scripts from Tasker / automation apps | ➖ | ➖ |
 | **Termux:X11** | [GitHub](https://github.com/termux/termux-x11) via Obtainium | a Linux desktop on the phone (not on F-Droid) | ❌ | ➖ (Reno has the RAM) |
 | **Termius** | [Play](https://play.google.com/store/apps/details?id=com.server.auditor.ssh.client) | polished SSH app with saved hosts + snippets; alternative to Termux for quick SSH | ➖ | ➖ |
 | **ConnectBot** | [F-Droid](https://f-droid.org/packages/org.connectbot/) | lightweight open-source SSH client | ➖ | ➖ |
@@ -50,7 +55,19 @@ releases. **Play** = Google Play, only where no good open-source build exists.
 | **GitHub** | [Play](https://play.google.com/store/apps/details?id=com.github.android) | review/merge PRs, read issues | ✅ | ✅ |
 | **Thunderbird** | [F-Droid](https://f-droid.org/packages/net.thunderbird.android/) | email, if you want an open-source client | ➖ | ➖ |
 
-## 5. Files, editing, moving stuff between devices
+## 5. Keyboard (predictive text + terminal keys)
+
+| App | Get it | What for | S10 | Reno 11 |
+|---|---|---|---|---|
+| **HeliBoard** | [F-Droid](https://f-droid.org/packages/helium314.keyboard/) | open-source keyboard with **word prediction, autocorrect and gesture typing** (add a dictionary in its settings), no data sent anywhere | ✅ | ✅ |
+| **Unexpected Keyboard** | [F-Droid](https://f-droid.org/packages/juloo.keyboard2/) | tiny keyboard **built for terminals**: Ctrl, Esc, Tab and arrows on swipes; switch to it inside Termux | ✅ | ✅ |
+| **FlorisBoard** | [F-Droid](https://f-droid.org/packages/dev.patrickgold.florisboard/) | alternative modern keyboard with suggestions (pick this *or* HeliBoard) | ➖ | ➖ |
+
+Tip: keep HeliBoard as your normal keyboard, and in Termux long-press the keyboard switcher
+to swap to Unexpected Keyboard. In Termux, the shell's own predictions (grey text) do the
+autocomplete; keyboard autocorrect there just gets in the way.
+
+## 6. Files, editing, moving stuff between devices
 
 | App | Get it | What for | S10 | Reno 11 |
 |---|---|---|---|---|

@@ -1,0 +1,82 @@
+# ~/.zshrc for Termux — a "smart" shell for a phone keyboard.
+#  • predictive suggestions (grey text from your history; → or End accepts it)
+#  • syntax colours as you type (unknown commands turn red before you hit Enter)
+#  • typo correction ("zsh: correct 'gti' to 'git' [nyae]?")
+#  • tab completion with a fuzzy menu (fzf-tab), ↑/↓ searches history for what you've typed
+#  • `z <part of a folder name>` jumps there (zoxide); Ctrl-r = fuzzy history search
+# Installed by setup-phone.sh; plugins live in ~/.zsh/plugins.
+
+# --- Auto-attach tmux (one "phone" session; NO_TMUX=1 zsh for a plain shell) ------------
+if command -v tmux >/dev/null && [ -z "$TMUX" ] && [ -z "$NO_TMUX" ] && [[ -o interactive ]]; then
+  exec tmux new -A -s phone
+fi
+
+# --- History (shared between tmux panes, big, deduplicated) ------------------------------
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt SHARE_HISTORY HIST_IGNORE_ALL_DUPS HIST_REDUCE_BLANKS HIST_IGNORE_SPACE EXTENDED_HISTORY
+
+# --- Smart correction ------------------------------------------------------------------
+setopt CORRECT                 # offers a fix for mistyped commands: [n]o [y]es [a]bort [e]dit
+SPROMPT="zsh: correct %F{red}'%R'%f to %F{green}'%r'%f [nyae]? "
+setopt AUTO_CD                 # type a folder name to cd into it
+setopt INTERACTIVE_COMMENTS
+setopt NO_BEEP
+
+# --- Completion (case-insensitive, fuzzy-ish, with descriptions) -------------------------
+fpath=(~/.zsh/plugins/zsh-completions/src $fpath)
+autoload -Uz compinit && compinit -C
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
+zstyle ':completion:*' menu no
+zstyle ':completion:*:descriptions' format '[%d]'
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath 2>/dev/null || ls $realpath'
+
+_plug() { [ -f ~/.zsh/plugins/$1/$2 ] && source ~/.zsh/plugins/$1/$2; }
+_plug fzf-tab fzf-tab.plugin.zsh                                  # must load after compinit
+
+# --- Predictive suggestions (from history, then completion) ------------------------------
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=40
+_plug zsh-autosuggestions zsh-autosuggestions.zsh
+bindkey '^[[F' autosuggest-accept      # End key (extra-keys row) accepts the whole suggestion
+bindkey '^[[C' forward-char            # → accepts it one character at a time
+
+# --- Syntax highlighting (must come before history-substring-search) ---------------------
+_plug zsh-syntax-highlighting zsh-syntax-highlighting.zsh
+_plug zsh-history-substring-search zsh-history-substring-search.zsh
+bindkey '^[[A' history-substring-search-up      # ↑ : previous command containing what you typed
+bindkey '^[[B' history-substring-search-down    # ↓
+
+# --- Tools ------------------------------------------------------------------------------
+command -v zoxide   >/dev/null && eval "$(zoxide init zsh)"
+command -v fzf      >/dev/null && source <(fzf --zsh 2>/dev/null)      # Ctrl-r fuzzy history, Ctrl-t files
+command -v starship >/dev/null && eval "$(starship init zsh)"
+export EDITOR=nano PAGER=less
+
+# --- Shortcuts -------------------------------------------------------------------------
+if command -v eza >/dev/null; then
+  alias ls='eza --icons --group-directories-first'
+  alias ll='eza -alh --icons --git'
+else
+  alias ls='ls --color=auto'
+  alias ll='ls -alh --color=auto'
+fi
+command -v bat >/dev/null && alias cat='bat --paging=never --style=plain'
+alias update='pkg update && pkg upgrade -y'
+alias reload='exec zsh'
+alias aurora='mosh aurora-01 -- tmux new -A -s main || ssh -t aurora-01 tmux new -A -s main'
+alias ah='ssh -t aurora-01 "cd /opt/aurora/stacks/hermes && docker compose logs -f --tail 100 gateway"'
+alias aps='ssh aurora-01 docker ps --format "table {{.Names}}\t{{.Status}}"'
+alias arestart-hermes='ssh aurora-01 "cd /opt/aurora/stacks/hermes && docker compose restart gateway"'
+alias doctor='bash ~/aurora/infra/phones/setup/setup-phone.sh doctor'
+
+# Add another phone's SSH key to the server: copy its key (clipboard), then run `aurora-addkey`.
+aurora-addkey() {
+  local k; k=$(termux-clipboard-get 2>/dev/null)
+  [[ "$k" == ssh-ed25519\ * || "$k" == ssh-rsa\ * ]] || { echo "Clipboard doesn't hold an SSH public key."; return 1; }
+  ssh aurora-01 "grep -qxF '$k' ~/.ssh/authorized_keys || echo '$k' >> ~/.ssh/authorized_keys" \
+    && echo "Added: ${k:0:40}…"
+}

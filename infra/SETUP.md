@@ -3,6 +3,11 @@
 Everything is already configured in this repo. What's left is creating accounts/keys (only
 you can) and pasting them into **one file**: `infra/secrets.env`.
 
+> **No laptop? Do all of this from your OPPO Reno 11.** First run the phone setup
+> ([phones/README.md](./phones/README.md), one script). It installs everything this guide
+> needs in Termux (bash, curl, jq, ssh), clones the repo to `~/aurora`, and creates the
+> phone's SSH key. Then run the commands below in Termux, editing files with `nano`.
+
 ```sh
 cd infra && cp secrets.env.example secrets.env   # then fill it in as you go below
 ```
@@ -16,10 +21,8 @@ Tick each box as you go. Skip anything you don't want; blank keys just leave tha
 - [ ] **Hetzner account + project** → <https://console.hetzner.com/> → *New project* → name it `aurora`.
 - [ ] **API token** → in the project: *Security → API tokens → Generate API token* → **Read & Write**
       → paste into `HCLOUD_TOKEN=`.
-- [ ] **SSH key** (on *your* computer, once):
-      ```sh
-      ssh-keygen -t ed25519 -C "aurora"       # press Enter through the prompts
-      ```
+- [ ] **SSH key**: the phone setup script already made one (`~/.ssh/id_ed25519.pub`), and
+      `bootstrap.sh` uses it automatically. On a computer instead: `ssh-keygen -t ed25519`.
 - [ ] **Dry run** (creates nothing, shows the real monthly price vs your $39 cap):
       ```sh
       ./bootstrap.sh --dry-run
@@ -99,14 +102,14 @@ Do Telegram first — it's 2 minutes.
 
 ## 5. Private access (Tailscale)
 
-- [ ] Install Tailscale on your phone + laptop: <https://tailscale.com/download> → sign in.
+- [ ] Install Tailscale on your phones (and any computer): <https://tailscale.com/download> → sign in.
 - [ ] <https://login.tailscale.com/admin/settings/keys> → **Generate auth key** → tick
       **Pre-approved** → copy → `TS_AUTHKEY=`
 - [ ] <https://login.tailscale.com/admin/dns> → enable **MagicDNS** and **HTTPS Certificates**.
 
 ## 6. Ship the keys and start everything
 
-From your computer (re-running is safe — it reuses the same server):
+From the Reno's Termux (or a computer); re-running is safe, since it reuses the same server:
 ```sh
 ./bootstrap.sh          # copies secrets.env to the box
 ssh aurora@<IP>
@@ -142,8 +145,9 @@ not an API key. [SUBSCRIPTIONS.md](./SUBSCRIPTIONS.md) has the exact steps and t
 - **SuperGrok in Hermes:** `docker exec -it hermes hermes auth add xai-oauth --no-browser` →
   then `/model supergrok` or `/model supergrok-build` in any chat.
 - **ChatGPT in Hermes:** `docker exec -it hermes hermes model` → "ChatGPT or Codex Subscription".
-- **Claude Code / Codex / Gemini CLI / Cursor CLI / Antigravity:** on your laptop, logged in with
-  each plan's account.
+- **Claude Code / Codex / Gemini CLI / Cursor CLI / Antigravity:** on a computer when you have
+  one; until then use the Claude app / claude.ai/code on your phone, or run the CLIs on the
+  server over `aurora` (mosh + tmux) with the headless logins in SUBSCRIPTIONS.md.
 
 ## 6c. Your phones
 
