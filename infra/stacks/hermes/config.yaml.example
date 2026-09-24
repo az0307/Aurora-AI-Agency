@@ -50,3 +50,28 @@ mcp_servers:
     headers:
       x-consumer-api-key: "${COMPOSIO_CONSUMER_KEY}"
     lazy: true          # don't connect until a Composio tool is actually used
+
+  # Zapier MCP: 9,000+ apps through your own Zapier account (your existing Zaps' app
+  # connections are reused). Create a server for "Other client" at mcp.zapier.com →
+  # Generate token → ZAPIER_MCP_TOKEN in data/.env. Add/remove actions at mcp.zapier.com.
+  zapier:
+    url: "https://mcp.zapier.com/api/v1/connect"
+    headers:
+      Authorization: "Bearer ${ZAPIER_MCP_TOKEN}"
+    lazy: true
+
+# --- Voice: send a voice note in Telegram / WhatsApp / Discord / Slack ------------------
+# Transcribed with Whisper, then handled like a typed message ("voice commands").
+# "local" = faster-whisper ON THIS BOX: free, private (audio never leaves the server).
+# It installs itself onto the data volume on the first voice note (~150 MB model).
+# Want faster/more accurate? set GROQ_API_KEY in data/.env and provider: "groq"
+# (Whisper large-v3-turbo, a fraction of a cent per minute).
+stt:
+  enabled: true
+  provider: "local"
+  language: "en"
+  local:
+    model: "base"                  # tiny | base | small (better, ~2x slower on CPU)
+    unload_after_idle_seconds: 300 # free the RAM 5 min after the last voice note
+  groq:
+    model: "whisper-large-v3-turbo"
