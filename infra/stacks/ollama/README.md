@@ -76,3 +76,21 @@ that speak it directly.
 - First `pull` downloads several GB into the `ollama_models` volume — size the disk accordingly.
 - Pin `ollama/ollama` and `open-webui` to a reviewed version + `@sha256` for production
   (see [`../../STACK.md`](../../STACK.md)).
+
+## Calling local models through the router
+
+This stack joins the router's `aurora-llm` Docker network, so the router reaches it as
+`http://ollama:11434` and nothing extra is published. **Start `../router` first** (it
+creates the network); otherwise this stack fails with "network aurora-llm not found".
+
+The router already has entries for these local models (all uncensored, call-by-name only).
+Each fits an 8 GB box, one at a time:
+
+| Router name | Pull | Size |
+|---|---|---|
+| `local-dolphin` | `ollama pull dolphin3:8b` | ~5 GB |
+| `local-dolphin-mistral` | `ollama pull dolphin-mistral:7b` | ~4 GB |
+| `local-qwen3-abliterated` | `ollama pull huihui_ai/qwen3-abliterated:8b` | ~5 GB |
+| `local-gemma3-abliterated` | `ollama pull huihui_ai/gemma3-abliterated:4b` | ~3 GB (fastest) |
+
+Run pulls with `docker compose exec ollama ollama pull <name>`.

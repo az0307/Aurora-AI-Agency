@@ -26,6 +26,9 @@ services:
       - ollama_models:/root/.ollama   # pulled model weights live here — can grow to many GB
     ports:
       - "127.0.0.1:11434:11434"       # OpenAI-compatible API at http://127.0.0.1:11434
+    networks:
+      - default
+      - llm                           # router reaches this as http://ollama:11434
 
     # --- GPU tier (opt-in) -------------------------------------------------------------
     # CPU is fine for tiny/quantized models; real throughput needs an NVIDIA GPU + the
@@ -60,3 +63,9 @@ services:
 volumes:
   ollama_models:
   openwebui_data:
+
+networks:
+  # Owned by ../router (start the router first). Lets the router call local models.
+  llm:
+    name: aurora-llm
+    external: true

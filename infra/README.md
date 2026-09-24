@@ -1,5 +1,7 @@
 # Aurora Infrastructure — VPS Hosting Strategy
 
+> **Setting this up? Start at [SETUP.md](./SETUP.md)** — every step in order, with exact and pre-filled links.
+
 > Decision document + runnable setup for hosting Aurora AI Agency, AutoBoros, Y.M.I
 > Roofing, self-hosted automation, and AI-agent workloads.
 > Last reviewed: **2026-07-28**. Prices exclude VAT/GST and move — re-check before buying.

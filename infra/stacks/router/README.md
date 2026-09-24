@@ -42,8 +42,36 @@ curl -s http://127.0.0.1:4000/health/liveliness   # {"status":"healthy"} when re
 | `auto-cheap` | cheap bulk work, non-sensitive | DeepSeek V4.1 Flash → HF Qwen3.8-27B → free router |
 | `auto-free` | $0, **non-sensitive only** | OpenRouter free router → Nemotron-3 Super → Qwen3.8-27B → Gemma-4-31B |
 | `hermes` | Nous Hermes | Hermes 4 405B → HF Hermes 3 70B → DeepSeek |
+| `auto-search` | live web answers with citations | Perplexity Sonar Pro → Sonar |
 
-Every entry is also callable by name (`grok`, `claude-opus`, `hf-gpt-oss`, `free-coder`, …).
+Every entry is also callable by name:
+
+| Family | Via OpenRouter | Via Hugging Face (`HF_TOKEN`) |
+|---|---|---|
+| Perplexity | `perplexity-sonar`, `perplexity-sonar-pro`, `perplexity-reasoning`, `perplexity-research` | — |
+| DeepSeek | `deepseek-flash`, `deepseek-pro` | `hf-deepseek`, `hf-deepseek-r1` |
+| Kimi (Moonshot) | `kimi-k3`, `kimi-code-or` (+ `kimi-cheap` direct) | `hf-kimi`, `hf-kimi-k3` |
+| GLM (Zhipu) | `glm`, `glm-flash`, `free-glm` | `hf-glm` |
+| MiniMax | `minimax` | `hf-minimax` |
+| Qwen | `qwen-max`, `qwen-flash`, `free-qwen` | `hf-qwen`, `hf-qwen-coder` |
+| Grok / Claude / Hermes | `grok`, `grok-build`, `claude-opus`, `hermes-405b` | `hf-hermes`, `hf-gpt-oss` |
+| **Uncensored** (paid) | `dolphin`, `cydonia`, `skyfall`, `unslopnemo`, `euryale`, `magnum`, `lunaris`, `mythomax` | `hf-stheno`, `hf-lunaris` |
+| **Uncensored, free** (local, needs `../ollama`) | `local-dolphin`, `local-dolphin-mistral`, `local-qwen3-abliterated`, `local-gemma3-abliterated` | — |
+
+**Uncensored models are call-by-name only.** None of them is in any fallback chain, so no
+request ever falls through to one by accident. Cheapest paid: `lunaris` (~$0.04/M in) and
+`mythomax`. Provider terms still apply: legal adult/creative content is fine, illegal
+content is not, anywhere.
+
+**Free = local.** OpenRouter currently has no free uncensored model, so the `$0` ones run
+on this box's CPU through Ollama. They're slow (a few tokens/sec), and only one is loaded
+at a time. Start this router first (it creates the shared `aurora-llm` network), then
+`../ollama`, then pull what you want:
+
+```sh
+docker compose -f ../ollama/docker-compose.yml exec ollama ollama pull dolphin3:8b
+# also: dolphin-mistral:7b · huihui_ai/qwen3-abliterated:8b · huihui_ai/gemma3-abliterated:4b
+```
 Hugging Face models go through `router.huggingface.co/v1` with one `HF_TOKEN`.
 
 Retries hit the *same* model first (`num_retries`), then the chain takes over.

@@ -23,6 +23,9 @@ services:
       - ./config.yaml:/app/config.yaml:ro
     ports:
       - "127.0.0.1:4000:4000"   # OpenAI /v1 · Anthropic /v1/messages · UI /ui
+    networks:
+      - default
+      - llm                     # shared with ../ollama so local models are reachable as http://ollama:11434
     healthcheck:
       # Python is always present in the image; curl may not be.
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness')\" || exit 1"]
@@ -46,3 +49,8 @@ services:
 
 # volumes:
 #   router_db:
+
+networks:
+  # Created by this stack; ../ollama joins it as `external`. Internal only, nothing published.
+  llm:
+    name: aurora-llm
