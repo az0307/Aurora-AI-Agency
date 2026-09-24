@@ -1,0 +1,40 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Setup walkthrough — empty phone to a working bot",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "phones", "label": "Your phones (Termux)" },
+    { "id": "accounts", "label": "Accounts + chat" },
+    { "id": "server", "label": "aurora-01 (Hetzner)" }
+  ],
+  "phases": [
+    { "id": "prepare", "label": "1 · Prepare the phone", "fromCol": 0, "toCol": 1 },
+    { "id": "create", "label": "2 · Create the server", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "run", "label": "3 · Run + connect", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["fdroid", "phone_setup", "keys", "dry_run", "create", "stacks", "bot", "lock_down"],
+  "nodes": [
+    { "id": "fdroid", "lane": "phones", "col": 0, "width": 140, "type": "frontend", "label": "F-Droid + Termux", "sublabel": "on the Reno 11" },
+    { "id": "phone_setup", "lane": "phones", "col": 1, "width": 140, "type": "frontend", "label": "setup-reno11.sh", "sublabel": "apps, shell, tmux, key", "tag": "resumable" },
+    { "id": "keys", "lane": "accounts", "col": 1, "width": 140, "type": "external", "label": "Get keys", "sublabel": "Hetzner · OpenRouter · bot" },
+    { "id": "dry_run", "lane": "phones", "col": 2, "width": 140, "type": "security", "label": "bootstrap --dry-run", "sublabel": "price check", "tag": "≤ AUD $39" },
+    { "id": "create", "lane": "server", "col": 3, "width": 140, "type": "cloud", "label": "Create aurora-01", "sublabel": "cpx31 · SSH-only" },
+    { "id": "stacks", "lane": "server", "col": 4, "width": 140, "type": "backend", "label": "Start stacks", "sublabel": "router, n8n, Hermes" },
+    { "id": "s10_setup", "lane": "phones", "col": 4, "width": 140, "type": "frontend", "label": "setup-s10.sh", "sublabel": "then aurora-addkey" },
+    { "id": "bot", "lane": "accounts", "col": 5, "width": 140, "type": "external", "label": "Message the bot", "sublabel": "Telegram: hi" },
+    { "id": "lock_down", "lane": "server", "col": 5, "width": 140, "type": "security", "label": "Lock down", "sublabel": "close public SSH" }
+  ],
+  "edges": [
+    { "id": "e-fdroid-setup", "from": "fdroid", "to": "phone_setup", "variant": "emphasis" },
+    { "id": "e-setup-keys", "from": "phone_setup", "to": "keys", "label": "secrets.env", "variant": "emphasis" },
+    { "id": "e-keys-dry", "from": "keys", "to": "dry_run", "variant": "emphasis" },
+    { "id": "e-dry-create", "from": "dry_run", "to": "create", "label": "confirm", "variant": "emphasis" },
+    { "id": "e-create-stacks", "from": "create", "to": "stacks", "variant": "emphasis" },
+    { "id": "e-stacks-bot", "from": "stacks", "to": "bot", "variant": "emphasis" },
+    { "id": "e-bot-lock", "from": "bot", "to": "lock_down", "label": "it works", "variant": "emphasis" },
+    { "id": "e-stacks-s10", "from": "stacks", "to": "s10_setup", "label": "S10 joins", "variant": "dashed", "role": "branch" }
+  ]
+}

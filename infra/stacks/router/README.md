@@ -2,7 +2,7 @@
 
 A self-hosted **LiteLLM** proxy that fronts **OpenRouter** (and its free models),
 Anthropic, Kimi, Hugging Face and Gemini behind **one** endpoint. Agents call a
-single alias (`auto` or `auto-free`); when a model rate-limits or errors, the
+single job alias (`general`, `general-free`, `code`, …); when a model rate-limits or errors, the
 router **falls through a chain** to the next one instead of failing the request.
 
 - **OpenAI-compatible:** `http://127.0.0.1:4000/v1` — OpenCode, Aider, Goose, Crush, TARS
@@ -33,16 +33,40 @@ docker compose up -d
 curl -s http://127.0.0.1:4000/health/liveliness   # {"status":"healthy"} when ready
 ```
 
-## The two aliases (what agents call)
+## Job aliases (what agents call)
 
-| Alias | Use it for | Chain (edit in `config.yaml`) |
-|---|---|---|
-| `auto` | **quality, PAID-ONLY (PII-safe)** | Claude Sonnet 5 → Kimi Code → DeepSeek V4.1 Flash |
-| `auto-code` | coding | Grok Build → Kimi K2.7 Code → Claude |
-| `auto-cheap` | cheap bulk work, non-sensitive | DeepSeek V4.1 Flash → HF Qwen3.8-27B → free router |
-| `auto-free` | $0, **non-sensitive only** | OpenRouter free router → Nemotron-3 Super → Qwen3.8-27B → Gemma-4-31B |
-| `hermes` | Nous Hermes | Hermes 4 405B → HF Hermes 3 70B → DeepSeek |
-| `auto-search` | live web answers with citations | Perplexity Sonar Pro → Sonar |
+Pick by **job**, not by vendor. Each chain is curated best → fallback: the first
+model is the one to use for that job; the others only answer when it's down,
+rate-limited or erroring.
+
+| Alias | Job | Chain (edit in `config.yaml`) | Data |
+|---|---|---|---|
+| **`general`** | everyday default | Claude Sonnet 5 → GPT-5.6 Sol → Kimi Code → DeepSeek V4.1 Flash | **paid-only, PII-safe** |
+| **`general-free`** | everyday, $0 | Nemotron 3 Ultra 550B → Inkling → Qwen3.8-27B → Gemma 4 31B → OpenRouter free router | non-sensitive only |
+| `code` | coding | Claude Sonnet 5 → Grok Build → Kimi K2.7 Code → DeepSeek V4 Pro | paid-only |
+| `code-free` | coding, $0 | North Mini Code → Laguna S 2.1 → Qwen3.8-27B → Nemotron 3 Ultra | non-sensitive only |
+| `reason` | hard problems, plans, reviews | Claude Opus 5.5 → GPT-5.6 Sol → Kimi K3 → DeepSeek V4 Pro | paid-only |
+| `fast` | cheap bulk work | DeepSeek V4.1 Flash → MiniMax M3 → Gemini 3.8 Flash → Qwen3.8 Flash | paid-only |
+| `vision` | screenshots, photos, video, audio | Gemini 3.8 Flash → Claude Sonnet 5 → GPT-5.6 Sol | paid-only |
+| `search` | live web answers with citations | Perplexity Sonar Pro → Sonar | paid-only |
+| `research` | multi-step research report | Sonar Deep Research → Sonar Reasoning Pro → Sonar Pro | paid-only |
+| `hermes` | Nous models | Hermes 4 405B → HF Hermes 3 70B → DeepSeek V4.1 Flash | paid-only |
+
+**Older names keep working** and run the same chain: `auto` = `general`,
+`auto-free` = `general-free`, `auto-code` = `code`, `auto-cheap` = `fast`,
+`auto-search` = `search`. They are full entries, not LiteLLM `model_group_alias`
+shortcuts, because an alias does **not** carry its target's fallback chain (tested:
+the request fails on the first error instead of falling back).
+
+Every free model in a chain supports tool calling, so agents like Hermes can use them.
+
+**Check the chains after any edit** (offline, no keys needed):
+
+```sh
+python3 -m venv /tmp/ll && /tmp/ll/bin/pip install -q litellm pyyaml
+/tmp/ll/bin/python check-chains.py config.yaml 2>/dev/null
+# static checks: OK, then one PASS line per job alias
+```
 
 Every entry is also callable by name:
 
@@ -54,7 +78,7 @@ Every entry is also callable by name:
 | GLM (Zhipu) | `glm`, `glm-flash`, `free-glm` | `hf-glm` |
 | MiniMax | `minimax` | `hf-minimax` |
 | Qwen | `qwen-max`, `qwen-flash`, `free-qwen` | `hf-qwen`, `hf-qwen-coder` |
-| Grok / Claude / Hermes | `grok`, `grok-build`, `claude-opus`, `hermes-405b` | `hf-hermes`, `hf-gpt-oss` |
+| Grok / Claude / GPT / Gemini / Hermes | `grok`, `grok-build`, `claude-opus`, `gpt`, `gemini-flash`, `hermes-405b` | `hf-hermes`, `hf-gpt-oss` |
 | **Uncensored** (paid) | `dolphin`, `cydonia`, `skyfall`, `unslopnemo`, `euryale`, `magnum`, `lunaris`, `mythomax` | `hf-stheno`, `hf-lunaris` |
 | **Uncensored, free** (local, needs `../ollama`) | `local-dolphin`, `local-dolphin-mistral`, `local-qwen3-abliterated`, `local-gemma3-abliterated` | — |
 
@@ -84,17 +108,17 @@ A model that fails `allowed_fails` times is benched for `cooldown_time` seconds.
 claude-router() {
   ANTHROPIC_BASE_URL="http://127.0.0.1:4000" \
   ANTHROPIC_AUTH_TOKEN="$LITELLM_MASTER_KEY" \
-  ANTHROPIC_MODEL="auto" \
-    claude "$@"          # or ANTHROPIC_MODEL=auto-free for the cheap chain
+  ANTHROPIC_MODEL="code" \
+    claude "$@"          # or general / reason / code-free
 }
 ```
 
 **OpenAI-compatible agents** (OpenCode, Aider, Goose, Crush, TARS) — point the
-base URL at the proxy, key = master key, model = `auto` / `auto-free`:
+base URL at the proxy, key = master key, model = a job alias (`general`, `code`, `general-free`, …):
 ```sh
 export OPENAI_BASE_URL="http://127.0.0.1:4000/v1"
 export OPENAI_API_KEY="$LITELLM_MASTER_KEY"
-# e.g. aider --model auto-free   ·   opencode (set provider baseURL + model in its config)
+# e.g. aider --model code-free   ·   opencode (set provider baseURL + model in its config)
 ```
 
 ## Free-model caveats (read before relying on them)
@@ -105,7 +129,7 @@ export OPENAI_API_KEY="$LITELLM_MASTER_KEY"
   disappearing model doesn't break routing.
 - Free tiers may **train on your inputs** and have low daily caps — never send
   client PII (Y.M.I data, credentials) through a free model. Keep those on the
-  paid `auto` chain, or exclude them at the agent layer.
+  paid chains (anything without `-free`), or exclude them at the agent layer.
 - Gemini's free tier comes from an **AI Studio** key (`GEMINI_API_KEY`), separate
   from OpenRouter.
 

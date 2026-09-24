@@ -63,16 +63,18 @@ chain** when a model rate-limits or errors. Full stack + config in
   cross-provider fallbacks/retries/cooldowns and normalizes everything to one API.
 - Every agent points at the **one** URL instead of juggling per-provider creds:
   - **Claude Code** (Anthropic API): `ANTHROPIC_BASE_URL=http://127.0.0.1:4000`,
-    `ANTHROPIC_AUTH_TOKEN=$LITELLM_MASTER_KEY`, `ANTHROPIC_MODEL=auto` (or `auto-free`).
+    `ANTHROPIC_AUTH_TOKEN=$LITELLM_MASTER_KEY`, `ANTHROPIC_MODEL=code` (or `general`, `reason`, `code-free`).
   - **OpenCode / Aider / Goose / Crush / TARS** (OpenAI API): base URL
-    `http://127.0.0.1:4000/v1`, key `$LITELLM_MASTER_KEY`, model `auto` / `auto-free`.
-- Two aliases: **`auto`** = quality-first and **PAID-ONLY** (Claude → Kimi) — safe for
-  client PII, it never drops to a free tier; **`auto-free`** = cost-first (OpenRouter's
-  self-updating free router → free models → Kimi) for **non-sensitive** workloads only.
+    `http://127.0.0.1:4000/v1`, key `$LITELLM_MASTER_KEY`, model = a job alias (`code`, `general`, `code-free`, …).
+- **Job aliases**, each a chain curated best → fallback: `general`, `code`, `reason`,
+  `fast`, `vision`, `search`, `research` are **PAID-ONLY** (safe for client PII, never
+  drop to a free tier); `general-free` and `code-free` are $0 for **non-sensitive** work
+  only. Old names (`auto`, `auto-free`, `auto-code`, `auto-cheap`, `auto-search`) still
+  work. Full table: [stacks/router/README.md](./stacks/router/README.md).
 
-**Caveat:** free models rotate, are rate-limited, and may train on inputs — so `auto-free`
-is for non-sensitive work only, and client PII stays on the paid **`auto`** chain (which
-has **no** free fallback). See the stack README for the live-free-list link and security notes.
+**Caveat:** free models rotate, are rate-limited, and may train on inputs — so the `-free`
+chains are for non-sensitive work only, and client PII stays on the paid chains (which
+have **no** free fallback). See the stack README for the live-free-list link and security notes.
 
 ## Where each runs
 

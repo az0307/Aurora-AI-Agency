@@ -3,11 +3,18 @@
 Everything is already configured in this repo. What's left is creating accounts/keys (only
 you can) and pasting them into **one file**: `infra/secrets.env`.
 
+> **No laptop? Do all of this from your OPPO Reno 11.** First run the phone setup
+> ([phones/README.md](./phones/README.md), one script). It installs everything this guide
+> needs in Termux (bash, curl, jq, ssh), clones the repo to `~/aurora`, and creates the
+> phone's SSH key. Then run the commands below in Termux, editing files with `nano`.
+
 ```sh
 cd infra && cp secrets.env.example secrets.env   # then fill it in as you go below
 ```
 
 Tick each box as you go. Skip anything you don't want; blank keys just leave that part off.
+
+**See it first:** [docs/VISUAL-GUIDE.md](./docs/VISUAL-GUIDE.md) has the whole setup, this walkthrough, and the voice-note flow as diagrams.
 
 ---
 
@@ -16,10 +23,8 @@ Tick each box as you go. Skip anything you don't want; blank keys just leave tha
 - [ ] **Hetzner account + project** → <https://console.hetzner.com/> → *New project* → name it `aurora`.
 - [ ] **API token** → in the project: *Security → API tokens → Generate API token* → **Read & Write**
       → paste into `HCLOUD_TOKEN=`.
-- [ ] **SSH key** (on *your* computer, once):
-      ```sh
-      ssh-keygen -t ed25519 -C "aurora"       # press Enter through the prompts
-      ```
+- [ ] **SSH key**: the phone setup script already made one (`~/.ssh/id_ed25519.pub`), and
+      `bootstrap.sh` uses it automatically. On a computer instead: `ssh-keygen -t ed25519`.
 - [ ] **Dry run** (creates nothing, shows the real monthly price vs your $39 cap):
       ```sh
       ./bootstrap.sh --dry-run
@@ -32,7 +37,7 @@ Tick each box as you go. Skip anything you don't want; blank keys just leave tha
 | Key | Get it here | Paste into | Notes |
 |---|---|---|---|
 | OpenRouter | <https://openrouter.ai/settings/keys> | `OPENROUTER_API_KEY` | **Most important.** Covers free models, Grok Build, Hermes 4, Perplexity, DeepSeek, Kimi, GLM, MiniMax, Qwen, uncensored models. Add $10 credit. |
-| Anthropic (Claude) | <https://console.anthropic.com/settings/keys> | `ANTHROPIC_API_KEY` | The paid-only `auto` chain for client work. |
+| Anthropic (Claude) | <https://console.anthropic.com/settings/keys> | `ANTHROPIC_API_KEY` | First pick in the `general`, `code` and `reason` chains, and the computer-use desktop. |
 | Hugging Face | <https://huggingface.co/settings/tokens/new?ownUserPermissions=inference.serverless.write&tokenType=fineGrained> | `HF_TOKEN` | **Pre-filled link**: the "Make calls to Inference Providers" permission is already ticked; just name it `aurora` and create. |
 | Gemini | <https://aistudio.google.com/apikey> | `GEMINI_API_KEY` | For the Gemini CLI. |
 | xAI (Grok) | <https://console.x.ai/> → API Keys | `XAI_API_KEY` | Optional; Grok already works through OpenRouter. A SuperGrok subscription is the chat app, **not** API credit. |
@@ -74,7 +79,8 @@ Do Telegram first — it's 2 minutes.
       paste [`stacks/hermes/slack-manifest.json`](./stacks/hermes/slack-manifest.json) → Save → reinstall.
 
 ### WhatsApp
-- [ ] Put your number (digits, country code, e.g. `61412345678`) in `WHATSAPP_ALLOWED_USERS=`.
+- [ ] Put your number (digits, country code, e.g. `61412345678`) in `WHATSAPP_ALLOWED_USERS=`,
+      and set `WHATSAPP_ENABLED=true` in Hermes' `data/.env` (it's off by default).
 - [ ] After the server is up (step 6): `docker exec -it hermes hermes whatsapp` → on your phone,
       WhatsApp → **Settings → Linked devices → Link a device** → scan the QR.
       Use a **spare number** — this bridge is unofficial and can get a number restricted.
@@ -90,16 +96,22 @@ Do Telegram first — it's 2 minutes.
   - (Your *Claude* Zapier server is separate — manage it at
     <https://mcp.zapier.com/mcp/servers/96cad99a-e273-412b-a97a-1aa5a2d4f86b/config>.)
 
+- [ ] **GitHub** (optional, lets Hermes/Claude work on your repos):
+      <https://github.com/settings/personal-access-tokens/new> → fine-grained, only the repos you
+      want → `GITHUB_PAT=`
+- [ ] **More MCP tools** (Desktop Commander on your laptop, Context7, Hugging Face, Notion, …):
+      see [mcp/README.md](./mcp/README.md).
+
 ## 5. Private access (Tailscale)
 
-- [ ] Install Tailscale on your phone + laptop: <https://tailscale.com/download> → sign in.
+- [ ] Install Tailscale on your phones (and any computer): <https://tailscale.com/download> → sign in.
 - [ ] <https://login.tailscale.com/admin/settings/keys> → **Generate auth key** → tick
       **Pre-approved** → copy → `TS_AUTHKEY=`
 - [ ] <https://login.tailscale.com/admin/dns> → enable **MagicDNS** and **HTTPS Certificates**.
 
 ## 6. Ship the keys and start everything
 
-From your computer (re-running is safe — it reuses the same server):
+From the Reno's Termux (or a computer); re-running is safe, since it reuses the same server:
 ```sh
 ./bootstrap.sh          # copies secrets.env to the box
 ssh aurora@<IP>
@@ -110,20 +122,51 @@ cd /opt/aurora/stacks
 # a) router (creates the shared network the others use)
 cd router && cp config.yaml.example config.yaml && cp .env.example .env && nano .env && docker compose up -d && cd ..
 # b) n8n — first uncomment the two `ports:` / `127.0.0.1:5678:5678` lines in docker-compose.yml
-#    (so Tailscale can reach it), and set N8N_HOST=localhost, N8N_PROTOCOL=http in .env
+#    (so Tailscale can reach it). In .env set N8N_HOST=aurora-01.<your-tailnet>.ts.net,
+#    N8N_PROTOCOL=https, WEBHOOK_URL=https://aurora-01.<your-tailnet>.ts.net/  (your tailnet
+#    name is on https://login.tailscale.com/admin/dns). Only the `postgres n8n` services start;
+#    Caddy isn't needed with Tailscale.
 cd n8n && cp .env.example .env && nano .env && docker compose -f docker-compose.yml up -d postgres n8n && cd ..
 # c) Hermes (the bot)
 cd hermes && mkdir -p data/workspace && cp config.yaml.example data/config.yaml \
   && cp .env.example data/.env && chmod 600 data/.env && nano data/.env && docker compose up -d && cd ..
 # d) Tailscale
 cd tailscale && cp .env.example .env && nano .env && docker compose up -d && cd ..
+# e) monitoring (Uptime Kuma + log viewer only; Beszel needs its own key first)
+cd monitoring && docker compose up -d uptime-kuma dozzle && cd ..
+# f) computer: Playwright browser for the agents (the phone-viewable desktop is on demand)
+cd computer && cp .env.example .env && chmod 600 .env && nano .env && docker compose up -d && cd ..
 ```
 In each `nano`, copy the matching values from `/opt/aurora/secrets.env`
 (`sudo cat /opt/aurora/secrets.env`). For Hermes, `ROUTER_API_KEY` = the router's
 `LITELLM_MASTER_KEY` — make one with:
 `python3 -c "import secrets;print('sk-'+secrets.token_urlsafe(32))"`
 
+## 6b. Plug in the subscriptions you already pay for
+
+Claude, ChatGPT, Google AI Pro, SuperGrok and Cursor each work through their own tool/login,
+not an API key. [SUBSCRIPTIONS.md](./SUBSCRIPTIONS.md) has the exact steps and the traps:
+- **SuperGrok in Hermes:** `docker exec -it hermes hermes auth add xai-oauth --no-browser` →
+  then `/model supergrok` or `/model supergrok-build` in any chat.
+- **ChatGPT in Hermes:** `docker exec -it hermes hermes model` → "ChatGPT or Codex Subscription".
+- **Claude Code / Codex / Gemini CLI / Cursor CLI / Antigravity:** on a computer when you have
+  one; until then use the Claude app / claude.ai/code on your phone, or run the CLIs on the
+  server over `aurora` (mosh + tmux) with the headless logins in SUBSCRIPTIONS.md.
+
+## 6c. Your phones
+
+App lists per phone (F-Droid/GitHub), the Android background-kill fixes, Termux + tmux with
+plugins, and home-screen buttons: **[phones/README.md](./phones/README.md)**.
+
 ## 7. Check it works
+
+First, one command on the box checks everything (containers, open ports, router
+aliases, Hermes, MCP, Tailscale, RAM/disk) and says what to fix:
+```sh
+bash /opt/aurora/check.sh          # free
+bash /opt/aurora/check.sh --live   # also asks every model chain "reply OK" (a few cents)
+```
+Then from your phone:
 
 - [ ] Message your Telegram bot "hi" → it answers.
 - [ ] Send it a **voice note** → it transcribes and acts on it (voice commands).
@@ -131,6 +174,9 @@ In each `nano`, copy the matching values from `/opt/aurora/secrets.env`
 - [ ] "Add a row to my Leads sheet with name Test" → Composio/Zapier asks you to authorize once.
 - [ ] Open `https://aurora-01.<your-tailnet>.ts.net` on your phone (after the `tailscale serve`
       lines in [stacks/tailscale/README.md](./stacks/tailscale/README.md)).
+- [ ] "Open example.com in the browser and screenshot it" → Hermes uses Playwright.
+- [ ] Optional: start the desktop (`stacks/computer`, `--profile desktop`), open its chat
+      on your phone and ask Claude to do something in Firefox while you watch.
 
 ## 8. Lock it down (after it works)
 
@@ -141,6 +187,8 @@ In each `nano`, copy the matching values from `/opt/aurora/secrets.env`
 
 ---
 
-**In your `/model` menu:** `auto` (default, paid, safe for client data) · `code` (Grok Build) ·
-`cheap` · `free` · `hermes` · `search` (Perplexity) · `grok` · `opus`. Uncensored models are
+**In your `/model` menu** (each is a chain curated best → fallback, by job):
+`general` (default, paid, safe for client data) · `free` · `code` · `code-free` · `reason` ·
+`fast` · `vision` · `search` · `research` · `hermes` · `grok` · `opus`. Full chains:
+[stacks/hermes/README.md](./stacks/hermes/README.md#models). Uncensored models are
 call-by-name only — see [stacks/router/README.md](./stacks/router/README.md).

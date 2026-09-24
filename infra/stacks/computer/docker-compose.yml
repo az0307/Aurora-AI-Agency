@@ -1,0 +1,68 @@
+# Computer stack — let the agents (and you) drive a real browser and a real desktop.
+#
+#   playwright  (always on)   Playwright MCP: a Chromium the agents control over MCP —
+#                             open pages, click, type, fill forms, screenshot, save PDF.
+#                             Hermes, Claude Code, Gemini CLI … all connect to
+#                             http://127.0.0.1:8931/mcp. Logins persist in the volume.
+#   desktop     (on demand)   Anthropic's computer-use demo: a full Linux desktop that
+#                             Claude operates by looking at the screen and using the
+#                             mouse/keyboard, with a chat panel. Open it in your PHONE's
+#                             browser over Tailscale and watch/take over.
+#
+#   docker compose up -d                      # playwright only
+#   docker compose --profile desktop up -d    # + the desktop (~200 MB idle, ~1–1.5 GB with Firefox busy)
+#   docker compose --profile desktop stop desktop   # give the RAM back
+#
+# Everything binds to 127.0.0.1. Reach the desktop from your phone over Tailscale:
+#   tailscale serve --bg --https=8501 http://127.0.0.1:8501   # chat
+#   tailscale serve --bg --https=6080 http://127.0.0.1:6080   # desktop
+#   then open https://aurora-01.<tailnet>.ts.net:8501 and
+#   https://aurora-01.<tailnet>.ts.net:6080/vnc.html?autoconnect=1&resize=scale
+# Never publish these ports: whoever reaches them controls a logged-in browser.
+# Pin image digests for production (see ../../STACK.md) — these tags move.
+
+services:
+  playwright:
+    image: mcr.microsoft.com/playwright/mcp:latest
+    container_name: playwright-mcp
+    restart: unless-stopped
+    init: true
+    # The image's entrypoint already runs headless Chromium without the Chrome sandbox
+    # (the container is the sandbox); these flags are appended to it.
+    command:
+      - --port=8931
+      - --host=0.0.0.0
+      - --allowed-hosts=*            # safe only because the port is loopback-bound below
+      - --shared-browser-context     # every agent sees the same tabs + logins
+      - --user-data-dir=/home/node/profile
+      - --output-dir=/home/node/output
+      - --caps=vision,pdf
+      - --viewport-size=1280x800
+    volumes:
+      - playwright_home:/home/node   # browser profile (logins) + screenshots/PDFs
+    ports:
+      - "127.0.0.1:8931:8931"
+    shm_size: 1g
+    mem_limit: 1g
+
+  desktop:
+    image: ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-latest
+    container_name: computer-desktop
+    profiles: ["desktop"]
+    restart: "no"
+    env_file: .env                   # ANTHROPIC_API_KEY
+    environment:
+      WIDTH: "1280"                  # keep ≤ WXGA: bigger screenshots = worse clicks
+      HEIGHT: "800"
+    volumes:
+      - desktop_config:/home/computeruse/.anthropic
+    ports:
+      # The image's combined page (container port 8080) hard-codes localhost links, so
+      # it can't work from a phone. Publish the two halves and open them in two tabs:
+      - "127.0.0.1:8501:8501"        # chat with Claude (tell it what to do)
+      - "127.0.0.1:6080:6080"        # the live desktop (noVNC): watch or take over
+    mem_limit: 2g
+
+volumes:
+  playwright_home:
+  desktop_config:

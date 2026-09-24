@@ -1,0 +1,265 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Aurora AI Agency \u2014 how the whole setup fits together",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "phones",
+      "type": "frontend",
+      "label": "Your phones",
+      "sublabel": "Reno 11 + Galaxy S10",
+      "pos": [
+        20,
+        300
+      ],
+      "size": [
+        130,
+        64
+      ],
+      "tag": "Termux \u00b7 tmux"
+    },
+    {
+      "id": "chat",
+      "type": "external",
+      "label": "Chat apps",
+      "sublabel": "Telegram \u00b7 WhatsApp \u00b7 Discord \u00b7 Slack",
+      "pos": [
+        210,
+        300
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "hermes",
+      "type": "backend",
+      "label": "Hermes Agent",
+      "sublabel": "the 24/7 bot",
+      "pos": [
+        430,
+        300
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "tag": "voice notes \u2192 Whisper"
+    },
+    {
+      "id": "router",
+      "type": "backend",
+      "label": "LiteLLM router",
+      "sublabel": "one endpoint :4000",
+      "pos": [
+        630,
+        300
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "tag": "fallback chains"
+    },
+    {
+      "id": "openrouter",
+      "type": "external",
+      "label": "OpenRouter",
+      "sublabel": "Grok \u00b7 DeepSeek \u00b7 Kimi \u00b7 free",
+      "pos": [
+        830,
+        300
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "direct",
+      "type": "external",
+      "label": "Direct providers",
+      "sublabel": "Claude \u00b7 Hugging Face \u00b7 Kimi",
+      "pos": [
+        830,
+        120
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "tools",
+      "type": "external",
+      "label": "App tools (MCP)",
+      "sublabel": "Composio \u00b7 Zapier \u00b7 GitHub",
+      "pos": [
+        430,
+        120
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "tailscale",
+      "type": "security",
+      "label": "Tailscale",
+      "sublabel": "private network",
+      "pos": [
+        210,
+        480
+      ],
+      "size": [
+        160,
+        64
+      ],
+      "tag": "no public ports"
+    },
+    {
+      "id": "n8n",
+      "type": "backend",
+      "label": "n8n + dashboards",
+      "sublabel": "workflows \u00b7 Uptime Kuma",
+      "pos": [
+        430,
+        480
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "ollama",
+      "type": "backend",
+      "label": "Ollama",
+      "sublabel": "free local models",
+      "pos": [
+        630,
+        480
+      ],
+      "size": [
+        140,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Hetzner cpx31 \u00b7 Singapore (aurora-01) \u00b7 \u2264 AUD $39/mo",
+      "wraps": [
+        "hermes",
+        "router",
+        "n8n",
+        "ollama"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "phones-chat",
+      "from": "phones",
+      "to": "chat",
+      "label": "message",
+      "variant": "emphasis"
+    },
+    {
+      "id": "chat-hermes",
+      "from": "chat",
+      "to": "hermes",
+      "label": "bots",
+      "variant": "emphasis"
+    },
+    {
+      "id": "hermes-router",
+      "from": "hermes",
+      "to": "router",
+      "label": "alias",
+      "variant": "emphasis"
+    },
+    {
+      "id": "router-openrouter",
+      "from": "router",
+      "to": "openrouter",
+      "label": "API",
+      "variant": "emphasis"
+    },
+    {
+      "id": "router-direct",
+      "from": "router",
+      "to": "direct",
+      "label": "paid-only auto",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "hermes-tools",
+      "from": "hermes",
+      "to": "tools",
+      "label": "MCP",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDy": -30
+    },
+    {
+      "id": "router-ollama",
+      "from": "router",
+      "to": "ollama",
+      "label": "aurora-llm net",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "phones-tailscale",
+      "from": "phones",
+      "to": "tailscale",
+      "label": "ssh \u00b7 mosh",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "tailscale-n8n",
+      "from": "tailscale",
+      "to": "n8n",
+      "label": "serve",
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "You",
+      "items": [
+        "Both phones: Termux + tmux, Tailscale, Telegram, ntfy alerts",
+        "No laptop needed: the Reno runs bootstrap.sh"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "The server",
+      "items": [
+        "Hermes answers in 4 chat apps; brain = the router",
+        "n8n, Uptime Kuma, Ollama reachable only over Tailscale"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Safety",
+      "items": [
+        "Cloud firewall: SSH only, then zero public ports",
+        "Client data stays on the paid-only `auto` chain"
+      ]
+    }
+  ]
+}

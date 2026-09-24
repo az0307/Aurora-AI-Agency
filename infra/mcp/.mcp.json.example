@@ -1,7 +1,7 @@
 {
   "//": "Copy to .mcp.json (git-ignored) and fill tokens via env vars. Lets Claude/agents manage the fleet + drive the on-demand pool.",
   "//tokens": "Scope one Hetzner token per Project (= per client) to bound blast radius. Never commit real tokens.",
-  "//package-names": "Every command/package/version below was verified against its registry (PyPI/npm) + upstream README on 2026-07-29. Re-confirm before bumping anything with write/provisioning access.",
+  "//package-names": "Every command/package/version below was verified against its registry (PyPI/npm) and every remote URL was probed with an MCP initialize, most recently 2026-09-24. Re-confirm before bumping anything with write/provisioning access.",
   "//per-agent": "This uses Claude Code's ${VAR} expansion. OpenCode wants {env:VAR}, Kimi Code uses env/bearerTokenEnvVar — translate per AGENTS.md, don't symlink one file.",
   "mcpServers": {
     "hetzner": {
@@ -10,7 +10,10 @@
       "//pin": "Pinned to npm 1.0.0 — the only published version (released 2026-01-06). This is write/provisioning access: review the diff and re-verify the version before bumping.",
       "//env": "VERIFIED: the server reads HETZNER_API_TOKEN (its own env name), not HCLOUD_TOKEN. Value is expanded from your operator shell var of the same name.",
       "command": "npx",
-      "args": ["-y", "hetzner-mcp-server@1.0.0"],
+      "args": [
+        "-y",
+        "hetzner-mcp-server@1.0.0"
+      ],
       "env": {
         "HETZNER_API_TOKEN": "${HETZNER_API_TOKEN}"
       }
@@ -18,10 +21,13 @@
     "n8n": {
       "//": "Deep knowledge of n8n's ~2,285 node schemas so Claude can AUTHOR and VALIDATE workflows instead of guessing at node shapes. See stacks/n8n/RESOURCES.md.",
       "//source": "https://github.com/czlonkowski/n8n-mcp — verified 2026-07-29. Companion skills: czlonkowski/n8n-skills. To also MANAGE a live instance, see czlonkowski/n8n-manager-for-ai-agents.",
-      "//pin": "REQUIRED FILL-IN: replace 'latest' with a reviewed npm version before use. Confirm the current package name/version against the upstream README.",
+      "//pin": "Pinned to 2.89.0 (latest on npm, verified 2026-09-24). Reviewed-version pin; re-verify before bumping.",
       "//env": "N8N_API_URL/N8N_API_KEY are only needed for live-instance features; node-documentation lookups work without them.",
       "command": "npx",
-      "args": ["-y", "n8n-mcp@latest"],
+      "args": [
+        "-y",
+        "n8n-mcp@2.89.0"
+      ],
       "env": {
         "N8N_API_URL": "${N8N_API_URL}",
         "N8N_API_KEY": "${N8N_API_KEY}"
@@ -32,25 +38,37 @@
       "//source": "VERIFIED: github.com/QuantGeekDev/docker-mcp, published to PyPI as 'docker-mcp'. 'uvx docker-mcp' is the documented run command. Requires Python 3.12+.",
       "//pin": "Pinned to 0.2.0 — latest PyPI release (2024-12-05). Write access to the Docker socket: re-review before bumping.",
       "command": "uvx",
-      "args": ["docker-mcp==0.2.0"]
+      "args": [
+        "docker-mcp==0.2.0"
+      ]
     },
     "playwright": {
       "//": "Browser automation (navigate, click, extract, screenshot). Pair with the on-demand 'browser' profile or run standalone.",
       "//source": "VERIFIED: npm '@playwright/mcp' (Microsoft). Pinned to 0.0.78 (latest stable, 2026-07). Fast-moving — bump deliberately.",
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@0.0.78"]
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.78"
+      ]
     },
     "filesystem": {
       "//": "Scoped file access — point ONLY at a workspace dir, never /.",
       "//source": "VERIFIED: npm '@modelcontextprotocol/server-filesystem' (Anthropic). Date-versioned; pinned to 2026.7.10 (latest).",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem@2026.7.10", "/opt/aurora/workspace"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem@2026.7.10",
+        "/opt/aurora/workspace"
+      ]
     },
     "postgres": {
       "//": "Query n8n / scratch DBs. Prefer a read-only DSN; --access-mode=restricted also blocks writes at the server layer.",
       "//source": "VERIFIED: github.com/crystaldba/postgres-mcp, PyPI 'postgres-mcp' (Postgres MCP Pro). Reads DATABASE_URI. Pinned to 0.3.0 (latest, 2025-05-16).",
       "command": "uvx",
-      "args": ["postgres-mcp==0.3.0", "--access-mode=restricted"],
+      "args": [
+        "postgres-mcp==0.3.0",
+        "--access-mode=restricted"
+      ],
       "env": {
         "DATABASE_URI": "${POSTGRES_DSN}"
       }
@@ -59,23 +77,113 @@
       "//": "HTTP fetch / web content for agents. Pair with the on-demand SearXNG for private search.",
       "//source": "VERIFIED: PyPI 'mcp-server-fetch' (Anthropic). Date-versioned; pinned to 2026.7.10 (latest).",
       "command": "uvx",
-      "args": ["mcp-server-fetch==2026.7.10"]
+      "args": [
+        "mcp-server-fetch==2026.7.10"
+      ]
     },
     "git": {
       "//": "Local repo operations, scoped to the workspace.",
       "//source": "VERIFIED: PyPI 'mcp-server-git' (Anthropic). Date-versioned; pinned to 2026.7.10 (latest).",
       "command": "uvx",
-      "args": ["mcp-server-git==2026.7.10", "--repository", "/opt/aurora/workspace"]
+      "args": [
+        "mcp-server-git==2026.7.10",
+        "--repository",
+        "/opt/aurora/workspace"
+      ]
     },
     "hostinger": {
       "//": "OPTIONAL. Official first-party MCP. Lifecycle + metrics only (list/start/stop/restart).",
       "//source": "https://www.hostinger.com/support/11079316-hostinger-api-mcp-server/ — VERIFIED: npm 'hostinger-api-mcp'. Pinned to 1.25.0 (latest). Reads HOSTINGER_API_TOKEN.",
       "command": "npx",
-      "args": ["-y", "hostinger-api-mcp@1.25.0"],
+      "args": [
+        "-y",
+        "hostinger-api-mcp@1.25.0"
+      ],
       "env": {
         "HOSTINGER_API_TOKEN": "${HOSTINGER_API_TOKEN}"
       }
     },
-    "//oracle": "No first-class MCP recommended. Treat the free box as cattle: rebuild from hetzner/cloud-init.yaml rather than managing it live. Use the OCI CLI if you must."
-  }
+    "//oracle": "No first-class MCP recommended. Treat the free box as cattle: rebuild from hetzner/cloud-init.yaml rather than managing it live. Use the OCI CLI if you must.",
+    "memory": {
+      "//": "LOCAL. Persistent knowledge-graph memory across sessions (stored in a local JSON file).",
+      "//source": "VERIFIED: npm '@modelcontextprotocol/server-memory' (Anthropic), pinned to 2026.8.31 (latest, 2026-09-24).",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory@2026.8.31"
+      ]
+    },
+    "sequential-thinking": {
+      "//": "LOCAL. Structured step-by-step reasoning scratchpad for long tasks.",
+      "//source": "VERIFIED: npm '@modelcontextprotocol/server-sequential-thinking' (Anthropic), pinned to 2026.8.31.",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking@2026.8.31"
+      ]
+    },
+    "desktop-commander": {
+      "//": "LOCAL, LAPTOP ONLY. Full terminal + file editing on the machine it runs on. Do NOT enable this on the server: its allowedDirectories setting limits file tools only, NOT terminal commands.",
+      "//source": "VERIFIED: npm '@wonderwhy-er/desktop-commander' (github.com/wonderwhy-er/DesktopCommanderMCP), pinned to 0.2.51 (latest, 2026-09-24).",
+      "//setup": "After first run, in a SEPARATE chat: set_config_value telemetryEnabled=false, allowedDirectories=[your projects dir], blockedCommands as you like. See infra/mcp/README.md.",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@wonderwhy-er/desktop-commander@0.2.51"
+      ]
+    },
+    "context7": {
+      "//": "REMOTE. Up-to-date library/API docs for coding (what this repo's audits used). Works without a key; add CONTEXT7_API_KEY for higher limits.",
+      "//source": "VERIFIED endpoint (answers MCP initialize, 2026-09-24).",
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"
+      }
+    },
+    "github": {
+      "//": "REMOTE. GitHub's official hosted MCP (repos, PRs, issues, Actions). Replaces the deprecated npm '@modelcontextprotocol/server-github'.",
+      "//auth": "Fine-grained PAT (github.com/settings/personal-access-tokens/new), only the repos/permissions you need.",
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PAT}"
+      }
+    },
+    "huggingface": {
+      "//": "REMOTE. Hugging Face Hub: search models/datasets/Spaces/papers, read model cards. Public use works without a token.",
+      "type": "http",
+      "url": "https://huggingface.co/mcp",
+      "headers": {
+        "Authorization": "Bearer ${HF_TOKEN}"
+      }
+    },
+    "zapier": {
+      "//": "REMOTE. 9,000+ apps via your Zapier account. Create a SEPARATE server for this client at mcp.zapier.com (one server per MCP client) and generate its connection token.",
+      "type": "http",
+      "url": "https://mcp.zapier.com/api/v1/connect",
+      "headers": {
+        "Authorization": "Bearer ${ZAPIER_MCP_TOKEN_CLAUDE}"
+      }
+    },
+    "composio": {
+      "//": "REMOTE. 1000+ apps via Composio Connect, headless consumer-key auth.",
+      "type": "http",
+      "url": "https://connect.composio.dev/mcp",
+      "headers": {
+        "x-consumer-api-key": "${COMPOSIO_CONSUMER_KEY}"
+      }
+    },
+    "notion": {
+      "//": "REMOTE, OAuth. No key: Claude Code opens a browser sign-in the first time (run /mcp).",
+      "type": "http",
+      "url": "https://mcp.notion.com/mcp"
+    },
+    "linear": {
+      "//": "REMOTE, OAuth. Optional: only if you use Linear. Sign in via /mcp.",
+      "type": "http",
+      "url": "https://mcp.linear.app/mcp"
+    }
+  },
+  "//local-vs-remote": "LOCAL entries (command/args) run a process on THIS machine. REMOTE entries (type: http) are hosted services reached over HTTPS; they need a token header or an OAuth sign-in via /mcp."
 }

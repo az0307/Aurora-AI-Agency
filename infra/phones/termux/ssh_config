@@ -1,0 +1,12 @@
+# ~/.ssh/config in Termux. Uses the Tailscale name (MagicDNS), so it works from anywhere
+# once the Tailscale app is connected — even after public SSH is closed on the server.
+Host aurora-01
+  HostName aurora-01
+  User aurora
+  IdentityFile ~/.ssh/id_ed25519
+  ServerAliveInterval 30
+  ServerAliveCountMax 4
+  # Reuse one connection for several ssh sessions (faster on mobile data):
+  ControlMaster auto
+  ControlPath ~/.ssh/cm-%r@%h:%p
+  ControlPersist 10m

@@ -7,6 +7,11 @@
 #   docker compose up -d
 #   docker compose logs -f gateway         # watch the platforms connect
 #
+# Image variants (set in ./.env next to this file, NOT data/.env):
+#   HERMES_TAG=latest           slim: chat, tools, headless browser, MCP (default)
+#   HERMES_TAG=latest-desktop   + the bot's own Linux desktop for computer_use and a
+#                               visible browser (~1.4 GB bigger; set HERMES_MEM=3g too)
+#
 # No ports are published. Every chat platform here connects OUTBOUND (Telegram polling,
 # Discord gateway, Slack Socket Mode, WhatsApp Web bridge), so the box needs no inbound
 # port and no public URL. The dashboard is loopback-only: reach it over Tailscale or
@@ -31,7 +36,10 @@ services:
       - HERMES_UID=${HERMES_UID:-1000}
       - HERMES_GID=${HERMES_GID:-1000}
     command: ["gateway", "run"]
-    mem_limit: 1536m
+    # 1.5 GB is enough for chat + tools. With the -desktop image (the bot's own screen
+    # + a visible browser) raise it: HERMES_MEM=3g in ./.env (next to this file).
+    mem_limit: ${HERMES_MEM:-1536m}
+    shm_size: 1g                    # Chromium crashes with Docker's 64 MB default
 
   dashboard:
     image: nousresearch/hermes-agent:${HERMES_TAG:-latest}

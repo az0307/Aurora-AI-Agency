@@ -50,10 +50,10 @@ for t in curl jq ssh tar; do command -v "$t" >/dev/null || die "$t is required o
 
 # --- Secrets: file first, then the shell environment overrides it -------------------
 SECRET_KEYS=(TZ N8N_DOMAIN OPENROUTER_API_KEY ANTHROPIC_API_KEY GEMINI_API_KEY XAI_API_KEY
-             OPENAI_API_KEY KIMI_API_KEY HF_TOKEN
+             OPENAI_API_KEY KIMI_API_KEY HF_TOKEN CURSOR_API_KEY
              TELEGRAM_BOT_TOKEN TELEGRAM_ALLOWED_USERS DISCORD_BOT_TOKEN DISCORD_ALLOWED_USERS
              SLACK_BOT_TOKEN SLACK_APP_TOKEN SLACK_ALLOWED_USERS WHATSAPP_ALLOWED_USERS
-             COMPOSIO_CONSUMER_KEY ZAPIER_MCP_TOKEN GROQ_API_KEY TS_AUTHKEY
+             COMPOSIO_CONSUMER_KEY ZAPIER_MCP_TOKEN GROQ_API_KEY GITHUB_PAT CONTEXT7_API_KEY TS_AUTHKEY
              INTELLIGENCE_API_KEY)
 # (No associative arrays: macOS still ships bash 3.2.)
 for k in HCLOUD_TOKEN "${SECRET_KEYS[@]}"; do
@@ -188,7 +188,8 @@ for _ in $(seq 1 90); do "${SSH[@]}" true 2>/dev/null && break; sleep 10; done
 say "Shipping infra/ to /opt/aurora"
 tar -C "$DIR" -czf - --exclude='secrets.env' --exclude='.env' --exclude='*.tfstate*' \
   --exclude='.terraform' --exclude='main.tf' --exclude='.mcp.json' . \
-  | "${SSH[@]}" "bash -c 'sudo mkdir -p /opt/aurora && sudo tar -xzf - -C /opt/aurora'"
+  | "${SSH[@]}" "bash -c 'sudo mkdir -p /opt/aurora && sudo tar --no-same-owner -xzf - -C /opt/aurora \
+      && sudo chown -R aurora:aurora /opt/aurora'"   # the aurora user edits .env files + runs compose
 
 say "Shipping secrets (mode 600; the Hetzner token stays on this machine)"
 {

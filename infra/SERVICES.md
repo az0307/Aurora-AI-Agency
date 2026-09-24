@@ -48,6 +48,7 @@ Deploy per-box only if you want them; each is its own compose stack:
 | Stack | What | Port | Notes |
 |---|---|---|---|
 | [`stacks/hermes/`](./stacks/hermes/) | **Hermes Agent** — one agent in Telegram, Discord, Slack, WhatsApp; brain = the router; tools incl. Composio (MCP) | 9119 (dashboard) | All chat platforms connect outbound — no public port. See [README](./stacks/hermes/README.md) |
+| [`stacks/computer/`](./stacks/computer/) | **Computer** — Playwright MCP (a shared browser every agent drives) + an on-demand Linux desktop Claude operates by screenshot, viewable from your phone | 8931 (MCP) · 8501 / 6080 (desktop, on demand) | See [README](./stacks/computer/README.md) |
 | [`stacks/tailscale/`](./stacks/tailscale/) | **Tailscale** — puts the box on your private tailnet; `tailscale serve` publishes the UIs to your devices only | — | Lets you close public SSH entirely. See [README](./stacks/tailscale/README.md) |
 | [`stacks/router/`](./stacks/router/) | **Omni-router** (LiteLLM) — one endpoint over OpenRouter + free models + Anthropic/Kimi/Gemini, with fallbacks | 4000 | OpenAI `/v1` + Anthropic `/v1/messages`; agents point here. See [README](./stacks/router/README.md) & [`AGENTS.md`](./AGENTS.md) |
 | [`stacks/activepieces/`](./stacks/activepieces/) | Activepieces — Zapier-style automation UI | 8081 | Alternative/complement to n8n |
@@ -60,6 +61,7 @@ fighting over one host port is the easiest mistake to make here.
 | Port | Service | Stack |
 |---|---|---|
 | 3000 | Dokploy UI | (installed by Dokploy, not compose) |
+| 3000 | WhatsApp Web bridge (loopback; when Hermes' WhatsApp is on) — **conflicts with Dokploy** | hermes |
 | 3001 | Uptime Kuma | monitoring |
 | 3002 | Homepage | dashboard |
 | 3003 | OpenHands | agents |
@@ -67,13 +69,17 @@ fighting over one host port is the easiest mistake to make here.
 | 3080 | open-webui (`ui` profile) | ollama |
 | 4000 | LiteLLM omni-router (OpenAI `/v1` + Anthropic `/v1/messages` + `/ui`) | router |
 | 5678 | n8n | n8n |
+| 6080 | computer-use desktop screen (noVNC, `desktop` profile) | computer |
 | 6333 | Qdrant | ondemand |
 | 8080 | Dozzle | monitoring |
 | 8081 | Activepieces | activepieces |
 | 8090 | Beszel | monitoring |
+| 8095 | WhatsApp Cloud webhook (only if used; default 8090 would clash with Beszel) | hermes |
+| 8501 | computer-use chat (Streamlit, `desktop` profile) | computer |
 | 8888 | ntfy | monitoring |
-| 9119 | Hermes Agent dashboard | hermes |
+| 8931 | Playwright MCP (`/mcp`) | computer |
 | 9000 / 9001 | MinIO API / console | ondemand |
+| 9119 | Hermes Agent dashboard | hermes |
 | 11434 | Ollama API | ollama |
 | 55432 / 56379 | scratch Postgres / Redis | ondemand |
 
@@ -82,6 +88,9 @@ Configured in [`mcp/.mcp.json.example`](./mcp/.mcp.json.example). Confirm each p
 against its upstream before granting access; pin versions for anything with write access.
 
 **MCPs to run server-side (per agent, in its own config format — see [`AGENTS.md`](./AGENTS.md)):**
+
+Full list with local vs remote, where each runs, keys, and Desktop Commander safety:
+[mcp/README.md](./mcp/README.md).
 
 | MCP | Gives the agent | Notes |
 |---|---|---|
