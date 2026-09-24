@@ -108,10 +108,41 @@ model_list:
       model: openrouter/qwen/qwen3.8-flash
       api_key: os.environ/OPENROUTER_API_KEY
 
-  # ---- Dolphin (UNCENSORED — call by name only; never in an automatic chain) ---
-  - model_name: dolphin
+  # ---- UNCENSORED / creative-writing models ----------------------------------
+  # Call these BY NAME only. None of them is in any fallback chain, so no request can
+  # fall through to an uncensored model by accident. Provider terms still apply: legal
+  # adult/creative content is fine; anything illegal is not, on any provider.
+  - model_name: dolphin             # Dolphin-Mistral 24B Venice edition — general assistant, no refusals
     litellm_params:
       model: openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: cydonia             # TheDrummer Cydonia 24B — creative writing / roleplay
+    litellm_params:
+      model: openrouter/thedrummer/cydonia-24b-v4.1
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: skyfall             # TheDrummer Skyfall 36B (32k context)
+    litellm_params:
+      model: openrouter/thedrummer/skyfall-36b-v2
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: unslopnemo          # TheDrummer UnslopNemo 12B — cheap, 1M context
+    litellm_params:
+      model: openrouter/thedrummer/unslopnemo-12b
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: euryale             # Sao10K Euryale 70B (Llama 3.3) — long-form creative
+    litellm_params:
+      model: openrouter/sao10k/l3.3-euryale-70b
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: magnum              # Anthracite Magnum v4 72B (pricier, 32k context)
+    litellm_params:
+      model: openrouter/anthracite-org/magnum-v4-72b
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: lunaris             # Sao10K Lunaris 8B — near-free ($0.04/M in), 8k context
+    litellm_params:
+      model: openrouter/sao10k/l3-lunaris-8b
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: mythomax            # Gryphe MythoMax 13B — classic, very cheap, 8k context
+    litellm_params:
+      model: openrouter/gryphe/mythomax-l2-13b
       api_key: os.environ/OPENROUTER_API_KEY
 
   - model_name: openrouter-auto     # OpenRouter picks + falls back server-side
@@ -199,6 +230,40 @@ model_list:
       model: openai/Qwen/Qwen3-Coder-Next
       api_base: https://router.huggingface.co/v1
       api_key: os.environ/HF_TOKEN
+
+  - model_name: hf-stheno           # UNCENSORED — Sao10K Stheno 8B (call by name only)
+    litellm_params:
+      model: openai/Sao10K/L3-8B-Stheno-v3.2
+      api_base: https://router.huggingface.co/v1
+      api_key: os.environ/HF_TOKEN
+  - model_name: hf-lunaris          # UNCENSORED — Sao10K Lunaris 8B (call by name only)
+    litellm_params:
+      model: openai/Sao10K/L3-8B-Lunaris-v1
+      api_base: https://router.huggingface.co/v1
+      api_key: os.environ/HF_TOKEN
+
+  # ---- FREE local models on this box (needs ../ollama running) ----------------
+  # $0 per token: they run on the server's own CPU via Ollama, over the shared
+  # `aurora-llm` Docker network. Slow on CPU (a few tokens/sec) and only ONE is held in
+  # memory at a time — sized for an 8 GB box. Pull before first use, e.g.:
+  #   docker compose -f ../ollama/docker-compose.yml exec ollama ollama pull dolphin3:8b
+  # UNCENSORED — call by name only; never in a fallback chain.
+  - model_name: local-dolphin       # Dolphin 3 8B (Llama 3.1), ~5 GB
+    litellm_params:
+      model: ollama_chat/dolphin3:8b
+      api_base: http://ollama:11434
+  - model_name: local-dolphin-mistral   # Dolphin-Mistral 7B, ~4 GB
+    litellm_params:
+      model: ollama_chat/dolphin-mistral:7b
+      api_base: http://ollama:11434
+  - model_name: local-qwen3-abliterated # Qwen3 8B abliterated (refusals removed), ~5 GB
+    litellm_params:
+      model: ollama_chat/huihui_ai/qwen3-abliterated:8b
+      api_base: http://ollama:11434
+  - model_name: local-gemma3-abliterated # Gemma 3 4B abliterated, ~3 GB, fastest
+    litellm_params:
+      model: ollama_chat/huihui_ai/gemma3-abliterated:4b
+      api_base: http://ollama:11434
 
   # ---- Aliases the agents call (first hop of each chain) ---------------------
   - model_name: auto
