@@ -145,6 +145,11 @@ not an API key. [SUBSCRIPTIONS.md](./SUBSCRIPTIONS.md) has the exact steps and t
 - **Claude Code / Codex / Gemini CLI / Cursor CLI / Antigravity:** on your laptop, logged in with
   each plan's account.
 
+## 6c. Your phones
+
+App lists per phone (F-Droid/GitHub), the Android background-kill fixes, Termux + tmux with
+plugins, and home-screen buttons: **[phones/README.md](./phones/README.md)**.
+
 ## 7. Check it works
 
 - [ ] Message your Telegram bot "hi" → it answers.
