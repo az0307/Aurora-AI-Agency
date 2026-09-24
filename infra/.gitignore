@@ -17,3 +17,6 @@ hetzner/main.tf
 
 # Local Homepage config with tokens
 stacks/dashboard/config/
+
+# Filled-in bootstrap secrets (only secrets.env.example is tracked)
+secrets.env
