@@ -66,6 +66,28 @@ mcp_servers:
       Authorization: "Bearer ${ZAPIER_MCP_TOKEN}"
     lazy: true
 
+  # Current library/API docs (works without a key; CONTEXT7_API_KEY raises limits).
+  context7:
+    url: "https://mcp.context7.com/mcp"
+    headers:
+      CONTEXT7_API_KEY: "${CONTEXT7_API_KEY}"
+    lazy: true
+
+  # Hugging Face Hub: search/read models, datasets, Spaces, papers.
+  huggingface:
+    url: "https://huggingface.co/mcp"
+    headers:
+      Authorization: "Bearer ${HF_TOKEN}"
+    lazy: true
+
+  # GitHub's official hosted MCP: repos, PRs, issues, Actions. Use a fine-grained PAT
+  # limited to the repos/permissions you want the bot to have.
+  github:
+    url: "https://api.githubcopilot.com/mcp/"
+    headers:
+      Authorization: "Bearer ${GITHUB_PAT}"
+    lazy: true
+
 # --- Voice: send a voice note in Telegram / WhatsApp / Discord / Slack ------------------
 # Transcribed with Whisper, then handled like a typed message ("voice commands").
 # "local" = faster-whisper ON THIS BOX: free, private (audio never leaves the server).

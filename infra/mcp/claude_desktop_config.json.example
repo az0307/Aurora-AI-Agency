@@ -1,0 +1,23 @@
+{
+  "//": "Claude DESKTOP app on your laptop. Merge into: Mac ~/Library/Application Support/Claude/claude_desktop_config.json · Windows %APPDATA%\\Claude\\claude_desktop_config.json · Linux ~/.config/Claude/claude_desktop_config.json — then restart Claude. Remote servers (GitHub, Notion, Zapier, Hugging Face, Context7…) are added in Claude Desktop under Settings → Connectors → Add custom connector (paste the URL), not in this file. See README.md.",
+  "mcpServers": {
+    "desktop-commander": {
+      "//": "Terminal + file editing on THIS laptop. First run, in a separate chat: set telemetryEnabled=false and allowedDirectories to your projects folder. allowedDirectories does not limit terminal commands.",
+      "command": "npx",
+      "args": ["-y", "@wonderwhy-er/desktop-commander@0.2.51"]
+    },
+    "filesystem": {
+      "//": "Read/write ONLY inside the folders listed after the package name. Change the path to your own projects folder.",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem@2026.8.31", "/Users/YOU/Projects"]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory@2026.8.31"]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking@2026.8.31"]
+    }
+  }
+}

@@ -85,6 +85,9 @@ against its upstream before granting access; pin versions for anything with writ
 
 **MCPs to run server-side (per agent, in its own config format — see [`AGENTS.md`](./AGENTS.md)):**
 
+Full list with local vs remote, where each runs, keys, and Desktop Commander safety:
+[mcp/README.md](./mcp/README.md).
+
 | MCP | Gives the agent | Notes |
 |---|---|---|
 | **n8n** | author + validate workflows against real node schemas | `czlonkowski/n8n-mcp`; pairs with the staged library in [`stacks/n8n/workflows/`](./stacks/n8n/workflows/) — see [RESOURCES.md](./stacks/n8n/RESOURCES.md) |

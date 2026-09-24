@@ -91,6 +91,12 @@ Do Telegram first — it's 2 minutes.
   - (Your *Claude* Zapier server is separate — manage it at
     <https://mcp.zapier.com/mcp/servers/96cad99a-e273-412b-a97a-1aa5a2d4f86b/config>.)
 
+- [ ] **GitHub** (optional, lets Hermes/Claude work on your repos):
+      <https://github.com/settings/personal-access-tokens/new> → fine-grained, only the repos you
+      want → `GITHUB_PAT=`
+- [ ] **More MCP tools** (Desktop Commander on your laptop, Context7, Hugging Face, Notion, …):
+      see [mcp/README.md](./mcp/README.md).
+
 ## 5. Private access (Tailscale)
 
 - [ ] Install Tailscale on your phone + laptop: <https://tailscale.com/download> → sign in.
