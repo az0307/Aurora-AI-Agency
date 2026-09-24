@@ -47,6 +47,8 @@ Deploy per-box only if you want them; each is its own compose stack:
 
 | Stack | What | Port | Notes |
 |---|---|---|---|
+| [`stacks/hermes/`](./stacks/hermes/) | **Hermes Agent** — one agent in Telegram, Discord, Slack, WhatsApp; brain = the router; tools incl. Composio (MCP) | 9119 (dashboard) | All chat platforms connect outbound — no public port. See [README](./stacks/hermes/README.md) |
+| [`stacks/tailscale/`](./stacks/tailscale/) | **Tailscale** — puts the box on your private tailnet; `tailscale serve` publishes the UIs to your devices only | — | Lets you close public SSH entirely. See [README](./stacks/tailscale/README.md) |
 | [`stacks/router/`](./stacks/router/) | **Omni-router** (LiteLLM) — one endpoint over OpenRouter + free models + Anthropic/Kimi/Gemini, with fallbacks | 4000 | OpenAI `/v1` + Anthropic `/v1/messages`; agents point here. See [README](./stacks/router/README.md) & [`AGENTS.md`](./AGENTS.md) |
 | [`stacks/activepieces/`](./stacks/activepieces/) | Activepieces — Zapier-style automation UI | 8081 | Alternative/complement to n8n |
 | [`stacks/ollama/`](./stacks/ollama/) | Ollama — self-hosted open-weight models (Hermes/Qwen/etc.) | 11434 | CPU-only for small quantized models; real throughput needs a **GPU box (materially pricier tier)** — see its [README](./stacks/ollama/README.md). Optional `ui` profile (open-webui) on 3080. |
@@ -70,6 +72,7 @@ fighting over one host port is the easiest mistake to make here.
 | 8081 | Activepieces | activepieces |
 | 8090 | Beszel | monitoring |
 | 8888 | ntfy | monitoring |
+| 9119 | Hermes Agent dashboard | hermes |
 | 9000 / 9001 | MinIO API / console | ondemand |
 | 11434 | Ollama API | ollama |
 | 55432 / 56379 | scratch Postgres / Redis | ondemand |

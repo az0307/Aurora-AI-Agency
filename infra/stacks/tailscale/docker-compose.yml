@@ -1,0 +1,29 @@
+# Tailscale — puts THIS BOX on your private tailnet, so n8n, the router, Hermes'
+# dashboard and monitoring are reachable from your phone/laptop with NOTHING exposed
+# to the internet. Once it works, you can close public SSH too (see README.md).
+#
+#   cp .env.example .env && $EDITOR .env      # TS_AUTHKEY
+#   docker compose up -d
+#   docker exec tailscale tailscale status
+#
+# Host networking + kernel networking: the tailnet IP lands on the host itself, so the
+# host's own sshd and every 127.0.0.1 service are reachable through it.
+
+services:
+  tailscale:
+    image: tailscale/tailscale:${TS_TAG:-stable}
+    container_name: tailscale
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - net_admin
+      - net_raw
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY:?set TS_AUTHKEY in .env}
+      TS_HOSTNAME: ${TS_HOSTNAME:-aurora-01}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "false"
+    volumes:
+      - ./state:/var/lib/tailscale    # login + serve config survive restarts

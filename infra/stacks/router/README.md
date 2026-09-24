@@ -1,7 +1,7 @@
 # Omni-router — one endpoint, every model, automatic fallbacks
 
 A self-hosted **LiteLLM** proxy that fronts **OpenRouter** (and its free models),
-Anthropic, Moonshot/Kimi, and Google Gemini behind **one** endpoint. Agents call a
+Anthropic, Kimi, Hugging Face and Gemini behind **one** endpoint. Agents call a
 single alias (`auto` or `auto-free`); when a model rate-limits or errors, the
 router **falls through a chain** to the next one instead of failing the request.
 
@@ -35,10 +35,16 @@ curl -s http://127.0.0.1:4000/health/liveliness   # {"status":"healthy"} when re
 
 ## The two aliases (what agents call)
 
-| Alias | Strategy | Chain (edit in `config.yaml`) |
+| Alias | Use it for | Chain (edit in `config.yaml`) |
 |---|---|---|
-| `auto` | **quality-first · PAID-ONLY (PII-safe)** — never drops to a free tier | claude → kimi |
-| `auto-free` | **cost-first · non-sensitive only** — free first, escalate on failure | openrouter/free → free-llama-70b → free-qwen-72b → kimi |
+| `auto` | **quality, PAID-ONLY (PII-safe)** | Claude Sonnet 5 → Kimi Code → DeepSeek V4.1 Flash |
+| `auto-code` | coding | Grok Build → Kimi K2.7 Code → Claude |
+| `auto-cheap` | cheap bulk work, non-sensitive | DeepSeek V4.1 Flash → HF Qwen3.8-27B → free router |
+| `auto-free` | $0, **non-sensitive only** | OpenRouter free router → Nemotron-3 Super → Qwen3.8-27B → Gemma-4-31B |
+| `hermes` | Nous Hermes | Hermes 4 405B → HF Hermes 3 70B → DeepSeek |
+
+Every entry is also callable by name (`grok`, `claude-opus`, `hf-gpt-oss`, `free-coder`, …).
+Hugging Face models go through `router.huggingface.co/v1` with one `HF_TOKEN`.
 
 Retries hit the *same* model first (`num_retries`), then the chain takes over.
 A model that fails `allowed_fails` times is benched for `cooldown_time` seconds.

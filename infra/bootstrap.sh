@@ -50,7 +50,10 @@ for t in curl jq ssh tar; do command -v "$t" >/dev/null || die "$t is required o
 
 # --- Secrets: file first, then the shell environment overrides it -------------------
 SECRET_KEYS=(TZ N8N_DOMAIN OPENROUTER_API_KEY ANTHROPIC_API_KEY GEMINI_API_KEY XAI_API_KEY
-             OPENAI_API_KEY KIMI_API_KEY INTELLIGENCE_API_KEY HF_TOKEN)
+             OPENAI_API_KEY KIMI_API_KEY HF_TOKEN
+             TELEGRAM_BOT_TOKEN TELEGRAM_ALLOWED_USERS DISCORD_BOT_TOKEN DISCORD_ALLOWED_USERS
+             SLACK_BOT_TOKEN SLACK_APP_TOKEN SLACK_ALLOWED_USERS WHATSAPP_ALLOWED_USERS
+             COMPOSIO_CONSUMER_KEY TS_AUTHKEY INTELLIGENCE_API_KEY)
 # (No associative arrays: macOS still ships bash 3.2.)
 for k in HCLOUD_TOKEN "${SECRET_KEYS[@]}"; do
   [ -n "${!k:-}" ] && printf -v "ENVSAVE_$k" '%s' "${!k}"

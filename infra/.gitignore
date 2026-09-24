@@ -20,3 +20,7 @@ stacks/dashboard/config/
 
 # Filled-in bootstrap secrets (only secrets.env.example is tracked)
 secrets.env
+
+# Hermes runtime data (sessions, memories, its .env) and Tailscale node state
+stacks/hermes/data/
+stacks/tailscale/state/
