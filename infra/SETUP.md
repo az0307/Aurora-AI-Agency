@@ -37,7 +37,7 @@ Tick each box as you go. Skip anything you don't want; blank keys just leave tha
 | Key | Get it here | Paste into | Notes |
 |---|---|---|---|
 | OpenRouter | <https://openrouter.ai/settings/keys> | `OPENROUTER_API_KEY` | **Most important.** Covers free models, Grok Build, Hermes 4, Perplexity, DeepSeek, Kimi, GLM, MiniMax, Qwen, uncensored models. Add $10 credit. |
-| Anthropic (Claude) | <https://console.anthropic.com/settings/keys> | `ANTHROPIC_API_KEY` | The paid-only `auto` chain for client work. |
+| Anthropic (Claude) | <https://console.anthropic.com/settings/keys> | `ANTHROPIC_API_KEY` | First pick in the `general`, `code` and `reason` chains, and the computer-use desktop. |
 | Hugging Face | <https://huggingface.co/settings/tokens/new?ownUserPermissions=inference.serverless.write&tokenType=fineGrained> | `HF_TOKEN` | **Pre-filled link**: the "Make calls to Inference Providers" permission is already ticked; just name it `aurora` and create. |
 | Gemini | <https://aistudio.google.com/apikey> | `GEMINI_API_KEY` | For the Gemini CLI. |
 | xAI (Grok) | <https://console.x.ai/> → API Keys | `XAI_API_KEY` | Optional; Grok already works through OpenRouter. A SuperGrok subscription is the chat app, **not** API credit. |
@@ -134,6 +134,8 @@ cd hermes && mkdir -p data/workspace && cp config.yaml.example data/config.yaml 
 cd tailscale && cp .env.example .env && nano .env && docker compose up -d && cd ..
 # e) monitoring (Uptime Kuma + log viewer only; Beszel needs its own key first)
 cd monitoring && docker compose up -d uptime-kuma dozzle && cd ..
+# f) computer: Playwright browser for the agents (the phone-viewable desktop is on demand)
+cd computer && cp .env.example .env && chmod 600 .env && nano .env && docker compose up -d && cd ..
 ```
 In each `nano`, copy the matching values from `/opt/aurora/secrets.env`
 (`sudo cat /opt/aurora/secrets.env`). For Hermes, `ROUTER_API_KEY` = the router's
@@ -158,12 +160,23 @@ plugins, and home-screen buttons: **[phones/README.md](./phones/README.md)**.
 
 ## 7. Check it works
 
+First, one command on the box checks everything (containers, open ports, router
+aliases, Hermes, MCP, Tailscale, RAM/disk) and says what to fix:
+```sh
+bash /opt/aurora/check.sh          # free
+bash /opt/aurora/check.sh --live   # also asks every model chain "reply OK" (a few cents)
+```
+Then from your phone:
+
 - [ ] Message your Telegram bot "hi" → it answers.
 - [ ] Send it a **voice note** → it transcribes and acts on it (voice commands).
 - [ ] Send `/model search` then "what's the weather in Melbourne?" → Perplexity answer with sources.
 - [ ] "Add a row to my Leads sheet with name Test" → Composio/Zapier asks you to authorize once.
 - [ ] Open `https://aurora-01.<your-tailnet>.ts.net` on your phone (after the `tailscale serve`
       lines in [stacks/tailscale/README.md](./stacks/tailscale/README.md)).
+- [ ] "Open example.com in the browser and screenshot it" → Hermes uses Playwright.
+- [ ] Optional: start the desktop (`stacks/computer`, `--profile desktop`), open its chat
+      on your phone and ask Claude to do something in Firefox while you watch.
 
 ## 8. Lock it down (after it works)
 
@@ -174,6 +187,8 @@ plugins, and home-screen buttons: **[phones/README.md](./phones/README.md)**.
 
 ---
 
-**In your `/model` menu:** `auto` (default, paid, safe for client data) · `code` (Grok Build) ·
-`cheap` · `free` · `hermes` · `search` (Perplexity) · `grok` · `opus`. Uncensored models are
+**In your `/model` menu** (each is a chain curated best → fallback, by job):
+`general` (default, paid, safe for client data) · `free` · `code` · `code-free` · `reason` ·
+`fast` · `vision` · `search` · `research` · `hermes` · `grok` · `opus`. Full chains:
+[stacks/hermes/README.md](./stacks/hermes/README.md#models). Uncensored models are
 call-by-name only — see [stacks/router/README.md](./stacks/router/README.md).

@@ -26,6 +26,8 @@ ts serve --bg --https=443  http://127.0.0.1:5678   # n8n            https://auro
 ts serve --bg --https=4000 http://127.0.0.1:4000   # LiteLLM router  (…:4000/ui)
 ts serve --bg --https=9119 http://127.0.0.1:9119   # Hermes dashboard
 ts serve --bg --https=3001 http://127.0.0.1:3001   # Uptime Kuma
+ts serve --bg --https=8501 http://127.0.0.1:8501   # computer-use chat  (when the desktop is up)
+ts serve --bg --https=6080 http://127.0.0.1:6080   # computer-use screen (…:6080/vnc.html?autoconnect=1&resize=scale)
 ts serve status
 ```
 

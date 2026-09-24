@@ -188,7 +188,8 @@ for _ in $(seq 1 90); do "${SSH[@]}" true 2>/dev/null && break; sleep 10; done
 say "Shipping infra/ to /opt/aurora"
 tar -C "$DIR" -czf - --exclude='secrets.env' --exclude='.env' --exclude='*.tfstate*' \
   --exclude='.terraform' --exclude='main.tf' --exclude='.mcp.json' . \
-  | "${SSH[@]}" "bash -c 'sudo mkdir -p /opt/aurora && sudo tar -xzf - -C /opt/aurora'"
+  | "${SSH[@]}" "bash -c 'sudo mkdir -p /opt/aurora && sudo tar --no-same-owner -xzf - -C /opt/aurora \
+      && sudo chown -R aurora:aurora /opt/aurora'"   # the aurora user edits .env files + runs compose
 
 say "Shipping secrets (mode 600; the Hetzner token stays on this machine)"
 {

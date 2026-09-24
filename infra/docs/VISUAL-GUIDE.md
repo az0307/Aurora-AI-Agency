@@ -34,7 +34,7 @@ diagram is the small `*.json` file next to it. Edit that and re-render; don't ed
 
 **Side paths:**
 - **Up from the router → Direct providers** (Claude, Hugging Face, Kimi): the paid-only
-  `auto` chain for anything with client data.
+  `general` chain (older name `auto`) for anything with client data.
 - **Up from Hermes → App tools**: Composio, Zapier and GitHub over MCP. This is how the bot
   actually *does* things (Sheets rows, emails, issues).
 - **Down from the router → Ollama** (dashed): free local models, including the uncensored
@@ -83,10 +83,11 @@ Time runs **top to bottom**. The tall bars show who's busy.
    leaves it.
 
 **Think (with fallback)**
-4. Hermes asks the **router** for `model: auto`.
+4. Hermes asks the **router** for its default chain (`general`; the diagram's `auto` is the
+   same chain under its older name).
 5. The router **tries Claude first**.
 6. If Claude is **busy or errors** (purple dashes)…
-7. …the router **falls back** to Kimi or DeepSeek automatically. `auto` never falls to a
+7. …the router **falls back** automatically: GPT-5.6, then Kimi, then DeepSeek. `general` never falls to a
    free model, so client details stay on paid providers.
 8. The **answer** comes back to Hermes.
 

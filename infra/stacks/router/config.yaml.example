@@ -7,13 +7,30 @@
 # lists in 2026-09. Free (:free) models ROTATE — re-check before relying on one:
 #   https://openrouter.ai/models?max_price=0      https://router.huggingface.co/v1/models
 #
-# What agents call (the "best selection" — pick by job, not by vendor):
-#   auto       quality-first, PAID-ONLY (safe for client PII)    Claude → Kimi → DeepSeek
-#   auto-code  coding                                            Grok Build → Kimi Code → Claude
-#   auto-cheap cheap bulk work (non-sensitive)                   DeepSeek → HF Qwen → free
-#   auto-free  $0, NON-sensitive only                            OpenRouter free router → free chain
-#   hermes     Nous Hermes 4 405B (paid, OpenRouter)             → HF Hermes 3 70B
-#   auto-search  Perplexity Sonar Pro (live web + citations)       → Sonar
+# What agents call — CURATED BY JOB. Each chain is ordered best → fallback: the first
+# model is the one we'd pick for that job; the rest only answer when it's down,
+# rate-limited or erroring. Model ids + prices checked against OpenRouter 2026-09-24.
+#
+#   JOB            ALIAS         CHAIN (best → fallback)                                   DATA
+#   everyday       general       Claude Sonnet 5 → GPT-5.6 Sol → Kimi Code → DeepSeek V4.1  paid-only, PII-safe
+#   everyday, $0   general-free  Nemotron 3 Ultra → Inkling → Qwen3.8-27B → Gemma 4 → free   NON-sensitive only
+#   coding         code          Claude Sonnet 5 → Grok Build → Kimi K2.7 Code → DeepSeek Pro paid-only
+#   coding, $0     code-free     North Mini Code → Laguna S 2.1 → Qwen3.8-27B → Nemotron    NON-sensitive only
+#   hard thinking  reason        Claude Opus 5.5 → GPT-5.6 Sol → Kimi K3 → DeepSeek Pro     paid-only
+#   cheap bulk     fast          DeepSeek V4.1 Flash → MiniMax M3 → Gemini 3.8 Flash → Qwen  paid-only
+#   images/video   vision        Gemini 3.8 Flash → Claude Sonnet 5 → GPT-5.6 Sol           paid-only
+#   web answers    search        Perplexity Sonar Pro → Sonar                                paid-only
+#   deep research  research      Sonar Deep Research → Sonar Reasoning Pro → Sonar Pro       paid-only
+#   Nous models    hermes        Hermes 4 405B → HF Hermes 3 70B → DeepSeek V4.1            paid-only
+#
+# Older names still work and run the same chain as their job alias:
+#   auto = general · auto-free = general-free · auto-code = code · auto-cheap = fast
+#   auto-search = search
+# They are separate entries on purpose: a LiteLLM model_group_alias does NOT carry
+# the target's fallback chain (tested against litellm 1.8x — see README).
+#
+# Every free model in a chain supports tool calling (agents need it). Uncensored
+# models are in no chain: call them by name.
 # Any entry below can also be called directly by its model_name.
 
 model_list:
@@ -56,9 +73,13 @@ model_list:
     litellm_params:
       model: openrouter/moonshotai/kimi-k2.7-code
       api_key: os.environ/OPENROUTER_API_KEY
-  - model_name: gemini-flash-or
+  - model_name: gemini-flash        # Gemini 3.8 Flash: 1M context, reads images/video/audio
     litellm_params:
       model: openrouter/google/gemini-3.8-flash
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: gpt                 # OpenAI GPT-5.6 Sol (pay-per-use; your ChatGPT plan is separate)
+    litellm_params:
+      model: openrouter/openai/gpt-5.6-sol
       api_key: os.environ/OPENROUTER_API_KEY
   # ---- Perplexity (web-search-grounded answers, via OpenRouter) ---------------
   - model_name: perplexity-sonar          # fast search answers, cheapest
@@ -172,6 +193,18 @@ model_list:
       model: openrouter/cohere/north-mini-code:free
       api_key: os.environ/OPENROUTER_API_KEY
 
+  - model_name: free-nemotron-ultra # NVIDIA Nemotron 3 Ultra 550B, 1M context — best free generalist
+    litellm_params:
+      model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: free-inkling        # Thinking Machines Inkling, 1M context
+    litellm_params:
+      model: openrouter/thinkingmachines/inkling:free
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: free-laguna         # Poolside Laguna S 2.1 — coding
+    litellm_params:
+      model: openrouter/poolside/laguna-s-2.1:free
+      api_key: os.environ/OPENROUTER_API_KEY
   - model_name: free-glm            # 32k context only
     litellm_params:
       model: openrouter/z-ai/glm-5.2:free
@@ -265,29 +298,66 @@ model_list:
       model: ollama_chat/huihui_ai/gemma3-abliterated:4b
       api_base: http://ollama:11434
 
-  # ---- Aliases the agents call (first hop of each chain) ---------------------
-  - model_name: auto
+  # ---- JOB ALIASES — what agents call (first hop of each curated chain) -----
+  - model_name: general       # everyday default — paid-only
     litellm_params:
       model: anthropic/claude-sonnet-5
       api_key: os.environ/ANTHROPIC_API_KEY
-  - model_name: auto-code
+  - model_name: general-free  # everyday, $0 — non-sensitive only
     litellm_params:
-      model: openrouter/x-ai/grok-build-0.1
+      model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
       api_key: os.environ/OPENROUTER_API_KEY
-  - model_name: auto-cheap
+  - model_name: code          # coding
+    litellm_params:
+      model: anthropic/claude-sonnet-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: code-free     # coding, $0 — non-sensitive only
+    litellm_params:
+      model: openrouter/cohere/north-mini-code:free
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: reason        # hard problems, planning, reviews
+    litellm_params:
+      model: anthropic/claude-opus-5-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: fast          # cheap bulk work
     litellm_params:
       model: openrouter/deepseek/deepseek-v4.1-flash
       api_key: os.environ/OPENROUTER_API_KEY
-  - model_name: auto-free
+  - model_name: vision        # screenshots, photos, video, audio
     litellm_params:
-      model: openrouter/openrouter/free
+      model: openrouter/google/gemini-3.8-flash
       api_key: os.environ/OPENROUTER_API_KEY
-  - model_name: hermes
+  - model_name: search        # live web + citations (Sonar has no tool calling)
+    litellm_params:
+      model: openrouter/perplexity/sonar-pro
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: research      # multi-step research report; slow, pricier
+    litellm_params:
+      model: openrouter/perplexity/sonar-deep-research
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: hermes        # Nous Hermes 4
     litellm_params:
       model: openrouter/nousresearch/hermes-4-405b
       api_key: os.environ/OPENROUTER_API_KEY
 
-  - model_name: auto-search         # web-grounded answers with citations
+  # ---- Older names, kept so existing agents / workflows keep working ---------
+  - model_name: auto          # = general
+    litellm_params:
+      model: anthropic/claude-sonnet-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: auto-free     # = general-free
+    litellm_params:
+      model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: auto-code     # = code
+    litellm_params:
+      model: anthropic/claude-sonnet-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: auto-cheap    # = fast
+    litellm_params:
+      model: openrouter/deepseek/deepseek-v4.1-flash
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: auto-search   # = search
     litellm_params:
       model: openrouter/perplexity/sonar-pro
       api_key: os.environ/OPENROUTER_API_KEY
@@ -297,18 +367,31 @@ litellm_settings:
   request_timeout: 600
   num_retries: 2                # retry the SAME model on transient errors first…
   # …then walk these chains left→right until one succeeds.
-  # SAFETY: `auto` and `claude-*` are PAID-ONLY so client PII never lands on a free /
-  # data-training tier. Free models appear ONLY under auto-free / auto-cheap, which are
-  # for non-sensitive work by contract (see the stack README).
+  # SAFETY: every chain WITHOUT "-free" in its name is PAID-ONLY, so client PII never
+  # lands on a free / data-training tier. Free models appear only in general-free,
+  # code-free and auto-free — non-sensitive work only, by contract (see README).
   fallbacks:
-    - auto: ["kimi-cheap", "deepseek-flash"]
-    - claude-primary: ["kimi-cheap", "deepseek-flash"]
-    - auto-code: ["kimi-code-or", "claude-primary"]
-    - auto-cheap: ["hf-qwen", "free-auto"]
-    - auto-free: ["free-nemotron-super", "free-qwen", "free-gemma"]
+    # job aliases
+    - general: ["gpt", "kimi-cheap", "deepseek-flash"]
+    - general-free: ["free-inkling", "free-qwen", "free-gemma", "free-auto"]
+    - code: ["grok-build", "kimi-code-or", "deepseek-pro"]
+    - code-free: ["free-laguna", "free-qwen", "free-nemotron-ultra"]
+    - reason: ["gpt", "kimi-k3", "deepseek-pro"]
+    - fast: ["minimax", "gemini-flash", "qwen-flash"]
+    - vision: ["claude-primary", "gpt"]
+    - search: ["perplexity-sonar"]
+    - research: ["perplexity-reasoning", "perplexity-sonar-pro"]
     - hermes: ["hf-hermes", "deepseek-flash"]
-    - grok-build: ["kimi-code-or", "claude-primary"]
+    # older names (same chains)
+    - auto: ["gpt", "kimi-cheap", "deepseek-flash"]
+    - auto-free: ["free-inkling", "free-qwen", "free-gemma", "free-auto"]
+    - auto-code: ["grok-build", "kimi-code-or", "deepseek-pro"]
+    - auto-cheap: ["minimax", "gemini-flash", "qwen-flash"]
     - auto-search: ["perplexity-sonar"]
+    # single models called by name
+    - claude-primary: ["gpt", "kimi-cheap", "deepseek-flash"]
+    - claude-opus: ["claude-primary", "gpt"]
+    - grok-build: ["kimi-code-or", "claude-primary"]
     - deepseek-pro: ["hf-deepseek", "deepseek-flash"]
     - kimi-k3: ["hf-kimi-k3", "kimi-code-or"]
     - glm: ["hf-glm", "glm-flash"]
@@ -316,8 +399,9 @@ litellm_settings:
     - qwen-max: ["hf-qwen", "qwen-flash"]
   # If a request is too big for a model's context window, retry on a bigger one:
   context_window_fallbacks:
-    - free-qwen: ["free-nemotron-super"]
+    - free-qwen: ["free-nemotron-ultra"]
     - hermes: ["claude-primary"]
+    - grok-build: ["gemini-flash"]
 
 router_settings:
   routing_strategy: simple-shuffle

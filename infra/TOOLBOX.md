@@ -61,10 +61,10 @@ installs + the Kimi-as-cheap-backend trick + the failover chain in [`AGENTS.md`]
 ## Model routing — the omni-router
 One endpoint for every model, with automatic fallbacks: a **LiteLLM** proxy
 ([`stacks/router/`](./stacks/router/)) fronts **OpenRouter** (+ its free `:free` models),
-Anthropic, Kimi, and Gemini. Agents call one alias (`auto` / `auto-free`, port 4000) and a
+Anthropic, Kimi, and Gemini. Agents call one job alias (`general`, `code`, `general-free`, …; port 4000) and a
 rate-limited model drops to the next in the chain — OpenAI `/v1` for OpenCode/Aider/TARS,
-Anthropic `/v1/messages` for Claude Code. **`auto` is paid-only (safe for client PII);
-`auto-free` is free-first for non-sensitive work.** Details in [`AGENTS.md`](./AGENTS.md).
+Anthropic `/v1/messages` for Claude Code. **Every chain without `-free` is paid-only (safe
+for client PII); the `-free` ones are $0 for non-sensitive work.** Details in [`AGENTS.md`](./AGENTS.md).
 
 ## Skills
 Mirror your Claude skills to `/opt/aurora/skills/`, plus the **n8n skills**

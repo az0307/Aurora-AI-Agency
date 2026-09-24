@@ -2,33 +2,59 @@
 # Full reference: the upstream cli-config.yaml.example (NousResearch/hermes-agent).
 # ${VARS} are read from data/.env.
 
+_config_version: 46   # matches upstream cli-config.yaml.example (2026-09); `hermes doctor --fix` migrates later versions
+
 # --- Brain: the LiteLLM router on this box --------------------------------------
-# All model selection, fallbacks and free-vs-paid policy live in ../router/config.yaml;
-# Hermes just asks the router for an alias.
-# Default is `auto` — PAID-ONLY (Claude → Kimi → DeepSeek) because chat messages can
-# contain client details, and free tiers may train on inputs. Switch per-chat with
-# /model <alias> when the task is non-sensitive.
+# All model choice, ordering and fallbacks live in ../router/config.yaml, curated by
+# JOB (best model first, then fallbacks). Hermes just asks the router for a job alias.
+# Default is `general` — PAID-ONLY (Claude Sonnet 5 → GPT-5.6 → Kimi → DeepSeek)
+# because chat messages can contain client details and free tiers may train on
+# inputs. Switch per chat with /model <alias>.
 model:
-  default: "auto"
+  default: "general"
   provider: custom
   base_url: "http://127.0.0.1:4000/v1"
   api_key: "${ROUTER_API_KEY}"
 
-# /model <name> in any chat switches to these router aliases.
+# /model <name> in any chat switches to one of these. Each is a curated chain.
 model_aliases:
-  code:   { model: auto-code,   provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Grok Build → Kimi Code → Claude
-  cheap:  { model: auto-cheap,  provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # DeepSeek → HF Qwen → free (non-sensitive)
-  free:   { model: auto-free,   provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # $0, non-sensitive only
-  hermes: { model: hermes,      provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Nous Hermes 4 405B → HF Hermes 3
-  grok:   { model: grok,        provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }
-  opus:   { model: claude-opus, provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }
-  search: { model: auto-search, provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Perplexity: live web + citations
+  general:   { model: general,      provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # everyday, paid-only (default)
+  free:      { model: general-free, provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # everyday, $0 — non-sensitive only
+  code:      { model: code,         provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Claude Sonnet 5 → Grok Build → Kimi Code → DeepSeek Pro
+  code-free: { model: code-free,    provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # $0 coding — non-sensitive only
+  reason:    { model: reason,       provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Claude Opus 5.5 → GPT-5.6 → Kimi K3 (hard problems)
+  fast:      { model: fast,         provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # DeepSeek Flash → MiniMax → Gemini Flash (cheap bulk)
+  vision:    { model: vision,       provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Gemini 3.8 Flash → Claude → GPT (images, video, audio)
+  search:    { model: search,       provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Perplexity: live web + citations
+  research:  { model: research,     provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Perplexity deep research report (slow)
+  hermes:    { model: hermes,       provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Nous Hermes 4 405B → HF Hermes 3
+  grok:      { model: grok,         provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }
+  opus:      { model: claude-opus,  provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }
   # On your SuperGrok subscription (no API spend). One-time login on the box:
   #   docker exec -it hermes hermes auth add xai-oauth --no-browser
   # HTTP 403 after login = xAI restricts some SuperGrok tiers; use `grok`/`code` instead.
   supergrok:       { model: grok-4.6,       provider: xai-oauth }
   supergrok-build: { model: grok-build-0.1, provider: xai-oauth }
   # ChatGPT plan: run `docker exec -it hermes hermes model` → "ChatGPT or Codex Subscription".
+
+# Side jobs Hermes runs in the background, each on the router alias that fits it
+# (instead of burning the main model). `curator` is the weekly skill-library tidy-up.
+auxiliary:
+  vision:          { model: vision,  base_url: "http://127.0.0.1:4000/v1", api_key: "${ROUTER_API_KEY}" }
+  compression:     { model: fast,    base_url: "http://127.0.0.1:4000/v1", api_key: "${ROUTER_API_KEY}" }
+  title_generation: { model: fast,   base_url: "http://127.0.0.1:4000/v1", api_key: "${ROUTER_API_KEY}" }
+  curator:         { model: fast,    base_url: "http://127.0.0.1:4000/v1", api_key: "${ROUTER_API_KEY}", timeout: 600 }
+  goal_judge:      { model: general, base_url: "http://127.0.0.1:4000/v1", api_key: "${ROUTER_API_KEY}" }
+  approval:        { model: general, base_url: "http://127.0.0.1:4000/v1", api_key: "${ROUTER_API_KEY}" }
+
+# Curator: keeps the skills the agent writes for itself tidy. Prunes unused ones
+# (archived, never deleted) and, with consolidate on, merges near-duplicates on the
+# cheap `fast` chain. `hermes curator status` / `/curator` in chat.
+curator:
+  enabled: true
+  consolidate: true
+  interval_hours: 168
+  backup: { enabled: true, keep: 3 }
 
 # If the router itself is down, go straight to the providers (keys in data/.env).
 # Paid models only, same PII rule as `auto`.
@@ -38,12 +64,67 @@ fallback_providers:
   - provider: huggingface
     model: deepseek-ai/DeepSeek-V4.1-Flash
 
-# --- Shell tool ------------------------------------------------------------------
+# --- Shell tool + long/background work ----------------------------------------------
 # "local" = commands run inside the hermes container (no Docker socket, no host access).
+# `timeout` caps ONE foreground command; long jobs run as background processes
+# (the agent starts them with background=true and polls them), so they aren't cut off.
 terminal:
   backend: "local"
   cwd: "/opt/data/workspace"
   timeout: 180
+
+agent:
+  max_turns: 500           # tool calls per task before it stops and reports
+  gateway_timeout: 7200    # a chat task only times out after 2 h with NO activity
+
+cron:
+  catch_up_missed: true    # run jobs missed while the box was rebooting
+
+# Approvals for risky shell commands. `smart` = a model auto-approves low-risk
+# commands, blocks clearly dangerous ones, and asks you only when unsure.
+# Unrestricted: send /yolo in a chat (that session only), or set mode: off to make
+# it permanent. The agent is still fenced inside its container either way.
+approvals:
+  mode: smart
+  timeout: 300
+  cron_mode: deny          # background jobs never run a dangerous command unasked
+
+# --- Web, browser, computer use ---------------------------------------------------
+# Web search/extract works with no key (Hermes rotates free tiers). For
+# unthrottled search add a key, e.g. TAVILY_API_KEY or FIRECRAWL_API_KEY in data/.env.
+web:
+  cache_ttl_minutes: 20
+
+browser:
+  record_sessions: false
+  inactivity_timeout: 300
+
+# The bot's own Linux desktop ("Bot Screen") for computer_use + a visible browser.
+# Needs the -desktop image (HERMES_TAG=latest-desktop in .env) and more RAM; it
+# starts on first use and stops itself after 30 idle minutes.
+bot_desktop:
+  geometry: "1280x800"
+  auto_start: true
+  min_free_memory_mb: 1200
+  idle_stop_minutes: 30
+
+# Tools per chat app. `computer_use` adds desktop control (only works with the
+# -desktop image); drop it from a line to take that ability away on that app.
+platform_toolsets:
+  cli: [hermes-cli, computer_use]
+  telegram: [hermes-telegram, computer_use]
+  discord: [hermes-discord]
+  whatsapp: [hermes-whatsapp]
+  slack: [hermes-slack]
+
+# --- Plugins (all opt-in; `hermes plugins list` shows what's installed) ----------------
+#   disk-cleanup       tidies temp files the agent made, at the end of each session
+#   security-guidance  warns when the agent writes risky code (secrets, eval, SQL…)
+# More: `docker exec -it hermes hermes plugins search <word>` → install → enable.
+plugins:
+  enabled:
+    - disk-cleanup
+    - security-guidance
 
 # --- Tools over MCP ----------------------------------------------------------------
 mcp_servers:
@@ -86,6 +167,21 @@ mcp_servers:
     url: "https://api.githubcopilot.com/mcp/"
     headers:
       Authorization: "Bearer ${GITHUB_PAT}"
+    lazy: true
+
+  # Playwright browser (../computer stack): the agent opens pages, clicks, fills
+  # forms, screenshots, saves PDFs. Logins persist in that stack's profile.
+  playwright:
+    url: "http://127.0.0.1:8931/mcp"
+    lazy: true
+
+  # Desktop Commander: files, search/replace edits, long-running terminal sessions
+  # with live output. Runs INSIDE this container (same fence as the shell tool).
+  desktop-commander:
+    command: "npx"
+    args: ["-y", "@wonderwhy-er/desktop-commander@0.2.51"]
+    timeout: 600
+    connect_timeout: 180   # the first start downloads it with npx (can take >30 s)
     lazy: true
 
 # --- Voice: send a voice note in Telegram / WhatsApp / Discord / Slack ------------------

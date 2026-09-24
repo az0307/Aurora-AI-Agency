@@ -3,6 +3,8 @@
 > **Setting this up? Start at [SETUP.md](./SETUP.md)** — every step in order, with exact and pre-filled links.
 > **Prefer pictures?** [docs/VISUAL-GUIDE.md](./docs/VISUAL-GUIDE.md): the whole setup in three diagrams.
 > **Already pay for Claude / ChatGPT / Gemini / SuperGrok / Cursor?** See [SUBSCRIPTIONS.md](./SUBSCRIPTIONS.md).
+> **Is everything working?** On the server: `bash /opt/aurora/check.sh` (add `--live` to test every model chain).
+> **Agents that use a browser / desktop:** [stacks/computer](./stacks/computer/README.md). Hermes' models, plugins, background jobs: [stacks/hermes](./stacks/hermes/README.md).
 
 > Decision document + runnable setup for hosting Aurora AI Agency, AutoBoros, Y.M.I
 > Roofing, self-hosted automation, and AI-agent workloads.
