@@ -15,7 +15,7 @@ services:
       SANDBOX_RUNTIME_CONTAINER_IMAGE: ${SANDBOX_IMAGE:-docker.all-hands.dev/all-hands-ai/runtime:latest}
       LOG_ALL_EVENTS: "true"
       # Optional: preset the model/key instead of entering it in the UI.
-      LLM_MODEL: ${LLM_MODEL:-anthropic/claude-opus-4-8}
+      LLM_MODEL: ${LLM_MODEL:-anthropic/claude-sonnet-5}
       LLM_API_KEY: ${LLM_API_KEY:-}
     volumes:
       # ⚠️ SECURITY: OpenHands needs the Docker socket to spawn its per-task sandbox

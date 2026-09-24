@@ -74,7 +74,8 @@ Do Telegram first — it's 2 minutes.
       paste [`stacks/hermes/slack-manifest.json`](./stacks/hermes/slack-manifest.json) → Save → reinstall.
 
 ### WhatsApp
-- [ ] Put your number (digits, country code, e.g. `61412345678`) in `WHATSAPP_ALLOWED_USERS=`.
+- [ ] Put your number (digits, country code, e.g. `61412345678`) in `WHATSAPP_ALLOWED_USERS=`,
+      and set `WHATSAPP_ENABLED=true` in Hermes' `data/.env` (it's off by default).
 - [ ] After the server is up (step 6): `docker exec -it hermes hermes whatsapp` → on your phone,
       WhatsApp → **Settings → Linked devices → Link a device** → scan the QR.
       Use a **spare number** — this bridge is unofficial and can get a number restricted.
@@ -110,18 +111,33 @@ cd /opt/aurora/stacks
 # a) router (creates the shared network the others use)
 cd router && cp config.yaml.example config.yaml && cp .env.example .env && nano .env && docker compose up -d && cd ..
 # b) n8n — first uncomment the two `ports:` / `127.0.0.1:5678:5678` lines in docker-compose.yml
-#    (so Tailscale can reach it), and set N8N_HOST=localhost, N8N_PROTOCOL=http in .env
+#    (so Tailscale can reach it). In .env set N8N_HOST=aurora-01.<your-tailnet>.ts.net,
+#    N8N_PROTOCOL=https, WEBHOOK_URL=https://aurora-01.<your-tailnet>.ts.net/  (your tailnet
+#    name is on https://login.tailscale.com/admin/dns). Only the `postgres n8n` services start;
+#    Caddy isn't needed with Tailscale.
 cd n8n && cp .env.example .env && nano .env && docker compose -f docker-compose.yml up -d postgres n8n && cd ..
 # c) Hermes (the bot)
 cd hermes && mkdir -p data/workspace && cp config.yaml.example data/config.yaml \
   && cp .env.example data/.env && chmod 600 data/.env && nano data/.env && docker compose up -d && cd ..
 # d) Tailscale
 cd tailscale && cp .env.example .env && nano .env && docker compose up -d && cd ..
+# e) monitoring (Uptime Kuma + log viewer only; Beszel needs its own key first)
+cd monitoring && docker compose up -d uptime-kuma dozzle && cd ..
 ```
 In each `nano`, copy the matching values from `/opt/aurora/secrets.env`
 (`sudo cat /opt/aurora/secrets.env`). For Hermes, `ROUTER_API_KEY` = the router's
 `LITELLM_MASTER_KEY` — make one with:
 `python3 -c "import secrets;print('sk-'+secrets.token_urlsafe(32))"`
+
+## 6b. Plug in the subscriptions you already pay for
+
+Claude, ChatGPT, Google AI Pro, SuperGrok and Cursor each work through their own tool/login,
+not an API key. [SUBSCRIPTIONS.md](./SUBSCRIPTIONS.md) has the exact steps and the traps:
+- **SuperGrok in Hermes:** `docker exec -it hermes hermes auth add xai-oauth --no-browser` →
+  then `/model supergrok` or `/model supergrok-build` in any chat.
+- **ChatGPT in Hermes:** `docker exec -it hermes hermes model` → "ChatGPT or Codex Subscription".
+- **Claude Code / Codex / Gemini CLI / Cursor CLI / Antigravity:** on your laptop, logged in with
+  each plan's account.
 
 ## 7. Check it works
 

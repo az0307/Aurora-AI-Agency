@@ -23,6 +23,12 @@ model_aliases:
   grok:   { model: grok,        provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }
   opus:   { model: claude-opus, provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }
   search: { model: auto-search, provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Perplexity: live web + citations
+  # On your SuperGrok subscription (no API spend). One-time login on the box:
+  #   docker exec -it hermes hermes auth add xai-oauth --no-browser
+  # HTTP 403 after login = xAI restricts some SuperGrok tiers; use `grok`/`code` instead.
+  supergrok:       { model: grok-4.6,       provider: xai-oauth }
+  supergrok-build: { model: grok-build-0.1, provider: xai-oauth }
+  # ChatGPT plan: run `docker exec -it hermes hermes model` → "ChatGPT or Codex Subscription".
 
 # If the router itself is down, go straight to the providers (keys in data/.env).
 # Paid models only, same PII rule as `auto`.

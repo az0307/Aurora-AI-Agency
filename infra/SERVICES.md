@@ -60,6 +60,7 @@ fighting over one host port is the easiest mistake to make here.
 | Port | Service | Stack |
 |---|---|---|
 | 3000 | Dokploy UI | (installed by Dokploy, not compose) |
+| 3000 | WhatsApp Web bridge (loopback; when Hermes' WhatsApp is on) — **conflicts with Dokploy** | hermes |
 | 3001 | Uptime Kuma | monitoring |
 | 3002 | Homepage | dashboard |
 | 3003 | OpenHands | agents |
@@ -72,6 +73,7 @@ fighting over one host port is the easiest mistake to make here.
 | 8081 | Activepieces | activepieces |
 | 8090 | Beszel | monitoring |
 | 8888 | ntfy | monitoring |
+| 8095 | WhatsApp Cloud webhook (only if used; default 8090 would clash with Beszel) | hermes |
 | 9119 | Hermes Agent dashboard | hermes |
 | 9000 / 9001 | MinIO API / console | ondemand |
 | 11434 | Ollama API | ollama |

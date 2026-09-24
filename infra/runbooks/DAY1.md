@@ -1,5 +1,9 @@
 # Day-1 runbook — stand up a box
 
+> **Superseded for new setups → use [../SETUP.md](../SETUP.md)** (Tailscale-first, one
+> checklist with exact links, provisioning via `bootstrap.sh`). This runbook is the older
+> Dokploy + Cloudflare Tunnel route; keep it for client boxes that need public hostnames.
+
 Goal: from nothing to a hardened box running Dokploy + n8n, reachable only through
 Cloudflare, manageable by Claude. ~30–45 min.
 
@@ -10,7 +14,8 @@ Cloudflare, manageable by Claude. ~30–45 min.
 
 ## 1. Provision the box
 **Option A — Claude via MCP:** configure `mcp/.mcp.json.example` → `.mcp.json` with your
-Hetzner token, then ask Claude to create a `cax21` in `sin` (Singapore) using
+Hetzner token, then ask Claude to create a `cpx31` in `sin` (Singapore; ARM `cax*` types are
+EU-only and would be rejected there) using
 `hetzner/cloud-init.yaml` as user-data.
 
 **Option B — Terraform:**

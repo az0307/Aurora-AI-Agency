@@ -54,6 +54,7 @@ In any chat, `/model <alias>` switches the brain for that conversation:
 | `hermes` | Nous Hermes 4 405B → HF Hermes 3 70B | Hermes models |
 | `search` | Perplexity Sonar Pro → Sonar | current facts, with sources |
 | `grok`, `opus` | Grok 4.7, Claude Opus 5.5 | direct |
+| `supergrok`, `supergrok-build` | Grok 4.6 / Grok Build **on your SuperGrok plan** | after `hermes auth add xai-oauth --no-browser` (see [SUBSCRIPTIONS.md](../../SUBSCRIPTIONS.md)) |
 
 To change what an alias does, edit `../router/config.yaml`, not this stack.
 
@@ -69,6 +70,16 @@ To change what an alias does, edit `../router/config.yaml`, not this stack.
 Loopback-only on port 9119 (it holds API keys). Over Tailscale:
 `tailscale serve --bg --https=9119 http://127.0.0.1:9119`, or over SSH:
 `ssh -L 9119:127.0.0.1:9119 aurora@<box>`.
+
+## Ports it uses (host networking)
+
+Hermes shares the host's network, so these must stay free on the box:
+
+| Port | What | Clash to avoid |
+|---|---|---|
+| 9119 | dashboard (loopback) | — |
+| 3000 | WhatsApp Web bridge (loopback, only when `WHATSAPP_ENABLED=true`) | **Dokploy and OpenBot also want 3000** — don't run them on this box with WhatsApp on. The bridge tries to take the port back if something holds it. |
+| 8095 | WhatsApp **Cloud** webhook, if used (set `WHATSAPP_CLOUD_WEBHOOK_PORT=8095`) | default 8090 = Beszel |
 
 ## Resource use
 
