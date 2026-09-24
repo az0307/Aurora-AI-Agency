@@ -1,67 +1,139 @@
-# LiteLLM omni-router config — ONE endpoint over many providers, with fallbacks.
-# Copy to config.yaml. Docs: https://docs.litellm.ai/docs/proxy/configs
+# LiteLLM omni-router config — ONE endpoint over OpenRouter, Hugging Face, Anthropic,
+# Kimi and Gemini, with fallback chains. Copy to config.yaml.
+# Docs: https://docs.litellm.ai/docs/proxy/configs
 # Secrets come from the environment (os.environ/…) — NEVER hard-code keys here.
 #
-# Two aliases are what agents actually call:
-#   auto       → quality-first: best paid model, degrade to free ON FAILURE only
-#   auto-free  → cost-first:     free model first, escalate to paid ON FAILURE only
-# The `fallbacks:` block below defines the drop-through order for each.
+# Every model id below was checked against the live OpenRouter / Hugging Face model
+# lists in 2026-09. Free (:free) models ROTATE — re-check before relying on one:
+#   https://openrouter.ai/models?max_price=0      https://router.huggingface.co/v1/models
+#
+# What agents call (the "best selection" — pick by job, not by vendor):
+#   auto       quality-first, PAID-ONLY (safe for client PII)    Claude → Kimi → DeepSeek
+#   auto-code  coding                                            Grok Build → Kimi Code → Claude
+#   auto-cheap cheap bulk work (non-sensitive)                   DeepSeek → HF Qwen → free
+#   auto-free  $0, NON-sensitive only                            OpenRouter free router → free chain
+#   hermes     Nous Hermes 4 405B (paid, OpenRouter)             → HF Hermes 3 70B
+# Any entry below can also be called directly by its model_name.
 
 model_list:
-  # ---- Quality tier (paid) ---------------------------------------------------
+  # ---- Anthropic (paid, direct) ----------------------------------------------
   - model_name: claude-primary
     litellm_params:
-      # set to your CURRENT Anthropic API model id (verify at docs.anthropic.com)
-      model: anthropic/claude-sonnet-4-5
+      model: anthropic/claude-sonnet-5
       api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: claude-opus
+    litellm_params:
+      model: anthropic/claude-opus-5-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  # ---- Kimi Code (subscription, OpenAI-compatible) ---------------------------
+  # NOT the Moonshot Open Platform — keys/endpoints are not interchangeable.
   - model_name: kimi-cheap
     litellm_params:
-      # Kimi CODE API (subscription), OpenAI-compatible. This is NOT the Moonshot
-      # Open Platform — its keys/endpoints are not interchangeable. Docs: kimi.com/code/docs
       model: openai/kimi-for-coding
       api_base: https://api.kimi.com/coding/v1
       api_key: os.environ/KIMI_API_KEY
-      # (For general, non-code Kimi via the Moonshot Open Platform instead:
-      #  model: openai/kimi-k2-<ver>, api_base: https://api.moonshot.ai/v1.)
 
-  # ---- Free tier (OpenRouter ":free" variants) -------------------------------
-  # These ROTATE and are rate-limited. Confirm the current free list before use:
-  #   https://openrouter.ai/models?max_price=0
-  - model_name: free-auto
+  # ---- OpenRouter (paid) -----------------------------------------------------
+  - model_name: grok-build          # xAI's coding model
     litellm_params:
-      # OpenRouter's self-updating FREE router (slug openrouter/free) — picks a
-      # currently-available free model, so a single retired :free id can't break the
-      # chain. (deepseek-r1:free was retired — this avoids pinning one volatile slug.)
-      model: openrouter/openrouter/free
+      model: openrouter/x-ai/grok-build-0.1
       api_key: os.environ/OPENROUTER_API_KEY
-  - model_name: free-llama-70b
+  - model_name: grok
     litellm_params:
-      model: openrouter/meta-llama/llama-3.3-70b-instruct:free
+      model: openrouter/x-ai/grok-4.7
       api_key: os.environ/OPENROUTER_API_KEY
-  - model_name: free-qwen-72b
+  - model_name: hermes-405b         # Nous Hermes 4
     litellm_params:
-      model: openrouter/qwen/qwen-2.5-72b-instruct:free
+      model: openrouter/nousresearch/hermes-4-405b
       api_key: os.environ/OPENROUTER_API_KEY
-  # OpenRouter's own auto-router — lets OpenRouter pick + fall back server-side.
-  - model_name: openrouter-auto
+  - model_name: deepseek-flash      # very cheap, strong general model
+    litellm_params:
+      model: openrouter/deepseek/deepseek-v4.1-flash
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: kimi-code-or        # Kimi Code via OpenRouter (no Kimi subscription needed)
+    litellm_params:
+      model: openrouter/moonshotai/kimi-k2.7-code
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: gemini-flash-or
+    litellm_params:
+      model: openrouter/google/gemini-3.8-flash
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: openrouter-auto     # OpenRouter picks + falls back server-side
     litellm_params:
       model: openrouter/openrouter/auto
       api_key: os.environ/OPENROUTER_API_KEY
 
-  # ---- Gemini free tier (Google AI Studio key) -------------------------------
-  - model_name: gemini-flash
-    litellm_params:
-      model: gemini/gemini-2.0-flash
-      api_key: os.environ/GEMINI_API_KEY
-
-  # ---- Router aliases the agents call ---------------------------------------
-  - model_name: auto            # quality-first entrypoint
-    litellm_params:
-      model: anthropic/claude-sonnet-4-5
-      api_key: os.environ/ANTHROPIC_API_KEY
-  - model_name: auto-free       # cost-first entrypoint (NON-sensitive workloads only)
+  # ---- OpenRouter FREE (rate-limited; may train on inputs — no client PII) ----
+  - model_name: free-auto           # self-updating: a retired :free id can't break it
     litellm_params:
       model: openrouter/openrouter/free
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: free-nemotron-super
+    litellm_params:
+      model: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: free-qwen
+    litellm_params:
+      model: openrouter/qwen/qwen3.8-27b:free
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: free-gemma
+    litellm_params:
+      model: openrouter/google/gemma-4-31b-it:free
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: free-coder
+    litellm_params:
+      model: openrouter/cohere/north-mini-code:free
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  # ---- Hugging Face Inference Providers (OpenAI-compatible router) -----------
+  # Pay-per-use with a monthly free credit on the HF account; one HF_TOKEN covers all.
+  - model_name: hf-qwen
+    litellm_params:
+      model: openai/Qwen/Qwen3.8-27B
+      api_base: https://router.huggingface.co/v1
+      api_key: os.environ/HF_TOKEN
+  - model_name: hf-deepseek
+    litellm_params:
+      model: openai/deepseek-ai/DeepSeek-V4.1-Flash
+      api_base: https://router.huggingface.co/v1
+      api_key: os.environ/HF_TOKEN
+  - model_name: hf-gpt-oss
+    litellm_params:
+      model: openai/openai/gpt-oss-120b
+      api_base: https://router.huggingface.co/v1
+      api_key: os.environ/HF_TOKEN
+  - model_name: hf-kimi
+    litellm_params:
+      model: openai/moonshotai/Kimi-K2.6
+      api_base: https://router.huggingface.co/v1
+      api_key: os.environ/HF_TOKEN
+  - model_name: hf-hermes
+    litellm_params:
+      model: openai/NousResearch/Hermes-3-Llama-3.1-70B
+      api_base: https://router.huggingface.co/v1
+      api_key: os.environ/HF_TOKEN
+
+  # ---- Aliases the agents call (first hop of each chain) ---------------------
+  - model_name: auto
+    litellm_params:
+      model: anthropic/claude-sonnet-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: auto-code
+    litellm_params:
+      model: openrouter/x-ai/grok-build-0.1
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: auto-cheap
+    litellm_params:
+      model: openrouter/deepseek/deepseek-v4.1-flash
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: auto-free
+    litellm_params:
+      model: openrouter/openrouter/free
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: hermes
+    litellm_params:
+      model: openrouter/nousresearch/hermes-4-405b
       api_key: os.environ/OPENROUTER_API_KEY
 
 litellm_settings:
@@ -69,25 +141,26 @@ litellm_settings:
   request_timeout: 600
   num_retries: 2                # retry the SAME model on transient errors first…
   # …then walk these chains left→right until one succeeds.
-  # SAFETY: `auto` and `claude-primary` are PAID-ONLY so client PII never lands on a
-  # free/data-training tier. Free models live ONLY under `auto-free`, which is for
-  # non-sensitive workloads by contract (see AGENTS.md / the stack README).
+  # SAFETY: `auto` and `claude-*` are PAID-ONLY so client PII never lands on a free /
+  # data-training tier. Free models appear ONLY under auto-free / auto-cheap, which are
+  # for non-sensitive work by contract (see the stack README).
   fallbacks:
-    - auto: ["kimi-cheap"]
-    - auto-free: ["free-llama-70b", "free-qwen-72b", "kimi-cheap"]
-    - claude-primary: ["kimi-cheap"]
-  # If a request exceeds a model's context window, retry on a bigger one:
+    - auto: ["kimi-cheap", "deepseek-flash"]
+    - claude-primary: ["kimi-cheap", "deepseek-flash"]
+    - auto-code: ["kimi-code-or", "claude-primary"]
+    - auto-cheap: ["hf-qwen", "free-auto"]
+    - auto-free: ["free-nemotron-super", "free-qwen", "free-gemma"]
+    - hermes: ["hf-hermes", "deepseek-flash"]
+    - grok-build: ["kimi-code-or", "claude-primary"]
+  # If a request is too big for a model's context window, retry on a bigger one:
   context_window_fallbacks:
-    - free-llama-70b: ["free-auto", "claude-primary"]
+    - free-qwen: ["free-nemotron-super"]
+    - hermes: ["claude-primary"]
 
 router_settings:
   routing_strategy: simple-shuffle
   allowed_fails: 3              # per model, before it's benched
-  cooldown_time: 30            # seconds a repeatedly-failing model sits out
+  cooldown_time: 30             # seconds a repeatedly-failing model sits out
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY   # clients authenticate with this; must start with sk-
-
-# NOTE: exact placement of fallbacks/num_retries (litellm_settings vs
-# router_settings) has shifted across LiteLLM versions. If a chain seems ignored,
-# check the docs for the version you pinned and move the key accordingly.

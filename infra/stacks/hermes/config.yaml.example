@@ -1,0 +1,51 @@
+# Hermes Agent config — copy to data/config.yaml (next to data/.env).
+# Full reference: the upstream cli-config.yaml.example (NousResearch/hermes-agent).
+# ${VARS} are read from data/.env.
+
+# --- Brain: the LiteLLM router on this box --------------------------------------
+# All model selection, fallbacks and free-vs-paid policy live in ../router/config.yaml;
+# Hermes just asks the router for an alias.
+# Default is `auto` — PAID-ONLY (Claude → Kimi → DeepSeek) because chat messages can
+# contain client details, and free tiers may train on inputs. Switch per-chat with
+# /model <alias> when the task is non-sensitive.
+model:
+  default: "auto"
+  provider: custom
+  base_url: "http://127.0.0.1:4000/v1"
+  api_key: "${ROUTER_API_KEY}"
+
+# /model <name> in any chat switches to these router aliases.
+model_aliases:
+  code:   { model: auto-code,   provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Grok Build → Kimi Code → Claude
+  cheap:  { model: auto-cheap,  provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # DeepSeek → HF Qwen → free (non-sensitive)
+  free:   { model: auto-free,   provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # $0, non-sensitive only
+  hermes: { model: hermes,      provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Nous Hermes 4 405B → HF Hermes 3
+  grok:   { model: grok,        provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }
+  opus:   { model: claude-opus, provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }
+
+# If the router itself is down, go straight to the providers (keys in data/.env).
+# Paid models only, same PII rule as `auto`.
+fallback_providers:
+  - provider: openrouter
+    model: deepseek/deepseek-v4.1-flash
+  - provider: huggingface
+    model: deepseek-ai/DeepSeek-V4.1-Flash
+
+# --- Shell tool ------------------------------------------------------------------
+# "local" = commands run inside the hermes container (no Docker socket, no host access).
+terminal:
+  backend: "local"
+  cwd: "/opt/data/workspace"
+  timeout: 180
+
+# --- Tools over MCP ----------------------------------------------------------------
+mcp_servers:
+  # Composio Connect: one MCP server fronting 1000+ apps (Gmail, Notion, GitHub,
+  # HubSpot, Google Sheets, …). Headless auth via a consumer key — no browser needed.
+  # The first time you ask for an app, Composio replies with a link to authorize that
+  # app's account; open it on your phone/laptop.
+  composio:
+    url: "https://connect.composio.dev/mcp"
+    headers:
+      x-consumer-api-key: "${COMPOSIO_CONSUMER_KEY}"
+    lazy: true          # don't connect until a Composio tool is actually used

@@ -1,0 +1,50 @@
+# Hermes Agent (Nous Research) — one agent, reachable from Telegram, Discord, Slack and
+# WhatsApp, thinking through the LiteLLM router (so model choice + fallbacks live there),
+# with Composio (1000+ app integrations) as an MCP tool server.
+#
+#   mkdir -p data && cp config.yaml.example data/config.yaml && cp .env.example data/.env
+#   $EDITOR data/.env                      # bot tokens + allowlists (see README.md)
+#   docker compose up -d
+#   docker compose logs -f gateway         # watch the platforms connect
+#
+# No ports are published. Every chat platform here connects OUTBOUND (Telegram polling,
+# Discord gateway, Slack Socket Mode, WhatsApp Web bridge), so the box needs no inbound
+# port and no public URL. The dashboard is loopback-only: reach it over Tailscale or
+# `ssh -L 9119:127.0.0.1:9119`.
+#
+# Security: the agent can run shell commands (terminal backend "local" = inside THIS
+# container). It gets no Docker socket, so it can't reach the host's Docker. The real
+# gate is the per-platform allowlist in data/.env — keep GATEWAY_ALLOW_ALL_USERS=false.
+
+services:
+  gateway:
+    image: nousresearch/hermes-agent:${HERMES_TAG:-latest}   # pin a version for production
+    container_name: hermes
+    restart: unless-stopped
+    # Host networking so the agent reaches the router at 127.0.0.1:4000 (and n8n at
+    # 127.0.0.1:5678) without publishing anything.
+    network_mode: host
+    volumes:
+      - ./data:/opt/data            # config.yaml, .env, sessions, memories, skills
+    environment:
+      # Map the container's user to the host owner of ./data (the `aurora` user = 1000).
+      - HERMES_UID=${HERMES_UID:-1000}
+      - HERMES_GID=${HERMES_GID:-1000}
+    command: ["gateway", "run"]
+    mem_limit: 1536m
+
+  dashboard:
+    image: nousresearch/hermes-agent:${HERMES_TAG:-latest}
+    container_name: hermes-dashboard
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      - gateway
+    volumes:
+      - ./data:/opt/data
+    environment:
+      - HERMES_UID=${HERMES_UID:-1000}
+      - HERMES_GID=${HERMES_GID:-1000}
+    # Stores API keys — loopback only. Never pass --insecure --host 0.0.0.0.
+    command: ["dashboard", "--host", "127.0.0.1", "--no-open"]
+    mem_limit: 512m
