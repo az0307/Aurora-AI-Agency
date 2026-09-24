@@ -42,7 +42,8 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
 ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=40
 _plug zsh-autosuggestions zsh-autosuggestions.zsh
 bindkey '^[[F' autosuggest-accept      # End key (extra-keys row) accepts the whole suggestion
-bindkey '^[[C' forward-char            # → accepts it one character at a time
+bindkey '^[[C' forward-char            # → also accepts the whole suggestion (forward-char is an
+                                       #   accept widget); with no suggestion it just moves right
 
 # --- Syntax highlighting (must come before history-substring-search) ---------------------
 _plug zsh-syntax-highlighting zsh-syntax-highlighting.zsh
