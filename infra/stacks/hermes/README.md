@@ -52,6 +52,7 @@ In any chat, `/model <alias>` switches the brain for that conversation:
 | `cheap` | DeepSeek V4.1 Flash → HF Qwen3.8-27B → free | bulk, non-sensitive |
 | `free` | OpenRouter free router → Nemotron-3 Super → Qwen → Gemma | $0, non-sensitive only |
 | `hermes` | Nous Hermes 4 405B → HF Hermes 3 70B | Hermes models |
+| `search` | Perplexity Sonar Pro → Sonar | current facts, with sources |
 | `grok`, `opus` | Grok 4.7, Claude Opus 5.5 | direct |
 
 To change what an alias does, edit `../router/config.yaml`, not this stack.

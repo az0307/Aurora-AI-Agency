@@ -42,8 +42,23 @@ curl -s http://127.0.0.1:4000/health/liveliness   # {"status":"healthy"} when re
 | `auto-cheap` | cheap bulk work, non-sensitive | DeepSeek V4.1 Flash → HF Qwen3.8-27B → free router |
 | `auto-free` | $0, **non-sensitive only** | OpenRouter free router → Nemotron-3 Super → Qwen3.8-27B → Gemma-4-31B |
 | `hermes` | Nous Hermes | Hermes 4 405B → HF Hermes 3 70B → DeepSeek |
+| `auto-search` | live web answers with citations | Perplexity Sonar Pro → Sonar |
 
-Every entry is also callable by name (`grok`, `claude-opus`, `hf-gpt-oss`, `free-coder`, …).
+Every entry is also callable by name:
+
+| Family | Via OpenRouter | Via Hugging Face (`HF_TOKEN`) |
+|---|---|---|
+| Perplexity | `perplexity-sonar`, `perplexity-sonar-pro`, `perplexity-reasoning`, `perplexity-research` | — |
+| DeepSeek | `deepseek-flash`, `deepseek-pro` | `hf-deepseek`, `hf-deepseek-r1` |
+| Kimi (Moonshot) | `kimi-k3`, `kimi-code-or` (+ `kimi-cheap` direct) | `hf-kimi`, `hf-kimi-k3` |
+| GLM (Zhipu) | `glm`, `glm-flash`, `free-glm` | `hf-glm` |
+| MiniMax | `minimax` | `hf-minimax` |
+| Qwen | `qwen-max`, `qwen-flash`, `free-qwen` | `hf-qwen`, `hf-qwen-coder` |
+| Grok / Claude / Hermes | `grok`, `grok-build`, `claude-opus`, `hermes-405b` | `hf-hermes`, `hf-gpt-oss` |
+| Dolphin (**uncensored**) | `dolphin` | — |
+
+`dolphin` is deliberately outside every automatic chain: it only answers when called by
+name, so nothing ever falls through to an uncensored model.
 Hugging Face models go through `router.huggingface.co/v1` with one `HF_TOKEN`.
 
 Retries hit the *same* model first (`num_retries`), then the chain takes over.

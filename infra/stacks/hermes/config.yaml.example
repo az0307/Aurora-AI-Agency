@@ -22,6 +22,7 @@ model_aliases:
   hermes: { model: hermes,      provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Nous Hermes 4 405B → HF Hermes 3
   grok:   { model: grok,        provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }
   opus:   { model: claude-opus, provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }
+  search: { model: auto-search, provider: custom, base_url: "http://127.0.0.1:4000/v1", key_env: ROUTER_API_KEY }  # Perplexity: live web + citations
 
 # If the router itself is down, go straight to the providers (keys in data/.env).
 # Paid models only, same PII rule as `auto`.
