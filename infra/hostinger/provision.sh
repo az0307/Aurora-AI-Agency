@@ -17,14 +17,14 @@
 #
 # Knobs (env or secrets.env):
 #   HOSTINGER_PLAN="KVM 2"      KVM 1 | KVM 2 | KVM 4 | KVM 8
-#   HOSTINGER_TERM=24           months to prepay: 1, 12, 24 or 48 (Hostinger charges it all up front)
+#   HOSTINGER_TERM=1            months per bill: 1 (monthly, default), 12, 24 or 48 (longer = cheaper, paid up front)
 #   HOSTINGER_DC_PREFER="ID MY IN"   country codes, first available wins (no AU/SG VPS locations)
 #   HOSTINGER_DC_ID / HOSTINGER_TEMPLATE_ID / HOSTINGER_VM_ID   pin exact ids
 #   FX_TO_AUD (auto per currency) · TAX_RATE=0.10 (GST) · ALLOW_RENEWAL_OVER_CAP=0
 
 HAPI="${HOSTINGER_API:-https://developers.hostinger.com}"
 HOSTINGER_PLAN="${HOSTINGER_PLAN:-KVM 2}"
-HOSTINGER_TERM="${HOSTINGER_TERM:-24}"
+HOSTINGER_TERM="${HOSTINGER_TERM:-1}"
 HOSTINGER_DC_PREFER="${HOSTINGER_DC_PREFER:-ID MY IN}"
 TAX_RATE="${TAX_RATE:-0.10}"
 ALLOW_RENEWAL_OVER_CAP="${ALLOW_RENEWAL_OVER_CAP:-0}"
@@ -145,7 +145,7 @@ provision_hostinger() {
     [ -n "$pr" ] || { printf '%s' "$item" | jq -r '.prices[] | "  \(.period) \(.period_unit)"'; die "no $HOSTINGER_TERM-month price for $HOSTINGER_PLAN; set HOSTINGER_TERM to one of the terms above (in months)"; }
     price_id="$(printf '%s' "$pr" | jq -r .id)"; cur="$(printf '%s' "$pr" | jq -r .currency)"
     first="$(printf '%s' "$pr" | jq -r '.first_period_price // .price')"; renew="$(printf '%s' "$pr" | jq -r .price)"
-    months="$HOSTINGER_TERM"
+    months="$HOSTINGER_TERM"; local mw="months"; [ "$months" = 1 ] && mw="month"
     case "${FX_TO_AUD:-}:$cur" in
       :AUD) fx=1 ;; :USD) fx=1.60 ;; :EUR) fx=1.75 ;; :GBP) fx=2.05 ;;
       :*) die "prices are in $cur; set FX_TO_AUD (AUD per 1 $cur) and run again" ;;
@@ -155,7 +155,7 @@ provision_hostinger() {
     up_aud="$(awk -v c="$first" -v f="$fx" -v t="$TAX_RATE" 'BEGIN{printf "%.2f", c/100*f*(1+t)}')"
     first_mo="$(awk -v c="$first" -v m="$months" -v f="$fx" -v t="$TAX_RATE" 'BEGIN{printf "%.2f", c/100/m*f*(1+t)}')"
     renew_mo="$(awk -v c="$renew" -v m="$months" -v f="$fx" -v t="$TAX_RATE" 'BEGIN{printf "%.2f", c/100/m*f*(1+t)}')"
-    echo "  $(printf '%s' "$item" | jq -r .name): $cur $(awk -v c="$first" 'BEGIN{printf "%.2f", c/100}') for $months months, then $cur $(awk -v c="$renew" 'BEGIN{printf "%.2f", c/100}') per $months months"
+    echo "  $(printf '%s' "$item" | jq -r .name): $cur $(awk -v c="$first" 'BEGIN{printf "%.2f", c/100}') for $months $mw, then $cur $(awk -v c="$renew" 'BEGIN{printf "%.2f", c/100}') per $months $mw"
     echo "  ≈ AUD \$${first_mo}/mo now, AUD \$${renew_mo}/mo after renewal (at $fx AUD/$cur, +$(awk -v t="$TAX_RATE" 'BEGIN{printf "%d", t*100}')% GST)"
     echo "  Charged UP FRONT today: ≈ AUD \$${up_aud}"
     awk -v a="$first_mo" -v b="$BUDGET_AUD" 'BEGIN{exit !(a<=b)}' \
@@ -165,7 +165,7 @@ provision_hostinger() {
         || die "the renewal price (≈AUD \$${renew_mo}/mo) is over the AUD \$${BUDGET_AUD} cap. Pick a smaller plan, or ALLOW_RENEWAL_OVER_CAP=1 if you'll cancel or downgrade before it renews."
       echo "  ! renewal is over the cap (allowed by ALLOW_RENEWAL_OVER_CAP=1)"
     fi
-    PRICE_LINE="≈AUD \$${first_mo}/mo ($HOSTINGER_PLAN, paid ≈AUD \$${up_aud} up front for $months months)"
+    PRICE_LINE="≈AUD \$${first_mo}/mo ($HOSTINGER_PLAN, billed ≈AUD \$${up_aud} per $months $mw)"
     h_call GET /api/billing/v1/payment-methods; h_ok "reading payment methods"
     printf '%s' "$H_BODY" | jq -e 'any(.[]; .is_default and (.is_expired | not) and (.is_suspended | not))' >/dev/null \
       || die "no usable default payment method on your Hostinger account. Add one: https://hpanel.hostinger.com/billing/payment-methods"

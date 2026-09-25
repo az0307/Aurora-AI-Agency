@@ -19,12 +19,13 @@
 > | | Hostinger KVM 2 (chosen) | Hetzner CPX31 (alternative) |
 > |---|---|---|
 > | CPU / RAM / disk | 2 vCPU / 8 GB / 100 GB NVMe | 4 vCPU / 8 GB / 160 GB |
-> | Price (inc. GST, approx.) | ≈AUD $16/mo on a 24-month prepay (≈AUD $380 up front), ≈AUD $26/mo after renewal | ≈AUD $35/mo, billed monthly |
+> | Price (inc. GST, approx.) | billed monthly (default): exact price shown by the dry run; ≈AUD $16/mo if prepaid 24 months | 8 GB in Singapore ≈AUD $85–90/mo since the June 2026 rise |
 > | Nearest location | Jakarta (no Australia/Singapore VPS) | Singapore |
 > | Automation | full API + official MCP (401 tools, incl. buy/firewall/snapshots/Docker) | full API + MCP |
 >
-> Trade-offs: half the vCPUs (fine for this stack; the heavy work runs on model APIs),
-> the upfront charge, and the renewal price. The "lifecycle-only MCP" note further down
+> Trade-offs: half the vCPUs (fine for this stack; the heavy work runs on model APIs).
+> Monthly billing avoids lock-in; BinaryLane (Brisbane, 4 vCPU/8 GB, AUD $39.20/mo hourly) is the
+> step up if you want Australian hosting. The "lifecycle-only MCP" note further down
 > predates Hostinger's current MCP. Details: [hostinger/README.md](./hostinger/README.md).
 > Everything below is the original July analysis.
 

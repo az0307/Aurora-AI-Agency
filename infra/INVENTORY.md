@@ -7,7 +7,7 @@ job, stop it after (to keep RAM free on the 8 GB box).
 ## The server: `aurora-01`
 
 **Machine:** Hostinger KVM 2 (2 vCPU, 8 GB RAM, 100 GB NVMe) in Jakarta (or Kuala Lumpur), Ubuntu 24.04,
-≈AUD $16/mo on a 24-month prepaid term (≈AUD $380 up front), ≈AUD $26/mo after renewal;
+billed monthly (the dry run shows the exact price; ≈AUD $16/mo if prepaid 24 months);
 `bootstrap.sh` refuses anything over the $39/mo cap. (Hetzner CPX31 in Singapore is the alternative.)
 **Access:** SSH as `aurora` over Tailscale. After lock-down there are zero public ports.
 **Base setup** (`hostinger/post-install.sh`; `hetzner/cloud-init.yaml` on Hetzner): Docker, git, ufw, fail2ban, automatic security updates, zsh/fish,

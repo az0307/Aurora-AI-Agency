@@ -27,11 +27,10 @@ location in Australia or Singapore, so the script picks **Jakarta**, then Kuala 
 then Mumbai (change with `HOSTINGER_DC_PREFER`). Details and every option:
 [hostinger/README.md](./hostinger/README.md).
 
-> 💳 **Hostinger charges the whole term up front.** KVM 2 on a 24-month term is US$8.99/mo,
-> so roughly **AUD $380 today**, then about AUD $26/mo after renewal (including GST, at a
-> safe exchange rate). The dry run shows the exact figures from your account before
-> anything is bought. Want smaller upfront amounts? `HOSTINGER_TERM=12` or `1` costs more
-> per month.
+> 💳 **Billed monthly by default** (`HOSTINGER_TERM=1`): no lock-in, cancel any month. Hostinger
+> doesn't publish the monthly KVM 2 price on its site; expect roughly AUD $25–35/mo incl. GST.
+> The dry run reads the exact price from your account first. Prepaying is cheaper per month
+> but charged up front: `HOSTINGER_TERM=24` ≈ AUD $16/mo (≈AUD $380 today).
 
 - [ ] **Hostinger account** → <https://www.hostinger.com/vps-hosting> (log in or sign up;
       you don't need to buy anything here: the script can do it).

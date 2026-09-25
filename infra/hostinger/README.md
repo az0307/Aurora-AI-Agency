@@ -11,8 +11,10 @@ works from the phone: no hPanel clicking except the token and a payment method.
 
 ## Plans and prices
 
-From hostinger.com on 2026-09-25, in USD per month excluding GST. **The whole term is charged
-up front.** The dry run reads the live prices from your account before anything is bought.
+**Default: billed monthly** (`HOSTINGER_TERM=1`, no lock-in). Hostinger's site only advertises
+prepaid prices (below, USD/mo excl. GST, 2026-09-25); the monthly price comes from your
+account's catalog, and the dry run prints it before anything is bought. Prepaid terms are
+charged up front.
 
 | Plan | vCPU | RAM | NVMe | 24-month term | Renews at | Fits the AUD $39 cap? |
 |---|---|---|---|---|---|---|
@@ -69,7 +71,7 @@ that VPS up. If the order failed, delete the note.
 |---|---|---|
 | `HOSTINGER_API_TOKEN` | — | <https://hpanel.hostinger.com/profile/api> |
 | `HOSTINGER_PLAN` | `KVM 2` | catalog plan name (quote it in `secrets.env`: `"KVM 2"`) |
-| `HOSTINGER_TERM` | `24` | months to prepay: 1, 12, 24 (and 48 if your account offers it) |
+| `HOSTINGER_TERM` | `1` | months per bill: 1 (monthly), 12, 24 (and 48 if offered); longer is cheaper but paid up front |
 | `HOSTINGER_DC_PREFER` | `ID MY IN` | country codes, first available wins |
 | `HOSTINGER_DC_ID` / `HOSTINGER_TEMPLATE_ID` / `HOSTINGER_VM_ID` | auto | pin exact ids |
 | `BUDGET_AUD` | `39` | monthly cap |
