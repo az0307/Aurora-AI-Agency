@@ -6,11 +6,11 @@ job, stop it after (to keep RAM free on the 8 GB box).
 
 ## The server: `aurora-01`
 
-**Machine:** Hostinger KVM 2 (2 vCPU, 8 GB RAM, 100 GB NVMe) in Jakarta (or Kuala Lumpur), Ubuntu 24.04,
-billed monthly (the dry run shows the exact price; ≈AUD $16/mo if prepaid 24 months);
-`bootstrap.sh` refuses anything over the $39/mo cap. (Hetzner CPX31 in Singapore is the alternative.)
+**Machine:** Hetzner Cloud CX33 (4 vCPU, 8 GB RAM, 80 GB disk) in Nuremberg, Ubuntu 24.04,
+≈AUD $16/mo billed hourly (monthly cap); `bootstrap.sh` refuses anything over the $39/mo cap.
+(Hostinger KVM 2 in Jakarta is the alternative: `VPS_PROVIDER=hostinger`.)
 **Access:** SSH as `aurora` over Tailscale. After lock-down there are zero public ports.
-**Base setup** (`hostinger/post-install.sh`; `hetzner/cloud-init.yaml` on Hetzner): Docker, git, ufw, fail2ban, automatic security updates, zsh/fish,
+**Base setup** (`hetzner/cloud-init.yaml`; `hostinger/post-install.sh` on Hostinger): Docker, git, ufw, fail2ban, automatic security updates, zsh/fish,
 fzf, ripgrep, fd, bat, eza, zoxide, tldr, mosh, tmux. The tmux theme and plugins are
 one copy step: [phones/TERMUX.md §8](./phones/TERMUX.md).
 **Files:** everything lives in `/opt/aurora` (this repo's `infra/` folder), owned by

@@ -85,7 +85,7 @@ if command -v ss >/dev/null; then
   if [ -n "$public" ]; then
     bad "Listening on ALL interfaces (bind these to 127.0.0.1): $(echo $public)"
   else ok "Only SSH listens publicly; every service is loopback / Tailscale only"; fi
-  info "The provider firewall (Hostinger / Hetzner, aurora-01-fw) is the second wall: SSH + Tailscale only, or no SSH once Tailscale works"
+  info "The provider firewall (Hetzner / Hostinger, aurora-01-fw) is the second wall: SSH + Tailscale only, or no SSH once Tailscale works"
 else warn "ss not found — can't check listening ports"; fi
 
 # --------------------------------------------------------------------------- router

@@ -1,6 +1,7 @@
 # Hostinger VPS
 
-The agency box runs on a Hostinger KVM VPS. `../bootstrap.sh` drives Hostinger's official
+The alternative provider (`VPS_PROVIDER=hostinger`); the default is Hetzner CX33, see
+[../SETUP.md](../SETUP.md) §1. `../bootstrap.sh` drives Hostinger's official
 API ([developers.hostinger.com](https://developers.hostinger.com), spec v1.54), so it all
 works from the phone: no hPanel clicking except the token and a payment method.
 

@@ -4,9 +4,10 @@
 # Runs on YOUR machine: the Reno 11 in Termux, a laptop, or a Claude session with the
 # provider token set. VPS_PROVIDER in secrets.env picks where the box lives:
 #
-#   hostinger (default)  hostinger/provision.sh: reuses your VPS, sets up one you bought
+#   hetzner (default)    hetzner/provision.sh: creates a Hetzner Cloud CX33 in Nuremberg
+#                        (4 vCPU / 8 GB, ≈AUD $16/mo, hourly billing) or reuses it
+#   hostinger            hostinger/provision.sh: reuses your VPS, sets up one you bought
 #                        in hPanel, or buys one (budget-checked; you type "buy")
-#   hetzner              hetzner/provision.sh: creates a Hetzner Cloud server
 #
 # Either way it puts the box behind the provider's firewall (SSH + Tailscale only),
 # waits for the base setup (cloud-init / post-install script), then ships infra/ and
@@ -50,7 +51,7 @@ SECRET_KEYS=(TZ N8N_DOMAIN OPENROUTER_API_KEY ANTHROPIC_API_KEY GEMINI_API_KEY X
              COMPOSIO_CONSUMER_KEY ZAPIER_MCP_TOKEN GROQ_API_KEY GITHUB_PAT CONTEXT7_API_KEY TS_AUTHKEY
              INTELLIGENCE_API_KEY)
 # (No associative arrays: macOS still ships bash 3.2.)
-LOCAL_KEYS=(VPS_PROVIDER HCLOUD_TOKEN HOSTINGER_API_TOKEN HOSTINGER_PLAN HOSTINGER_TERM HOSTINGER_VM_ID)
+LOCAL_KEYS=(VPS_PROVIDER HCLOUD_TOKEN HETZNER_API_TOKEN HOSTINGER_API_TOKEN HOSTINGER_PLAN HOSTINGER_TERM HOSTINGER_VM_ID)
 # Provider tokens are used here and NEVER shipped to the box.
 for k in "${LOCAL_KEYS[@]}" "${SECRET_KEYS[@]}"; do
   [ -n "${!k:-}" ] && printf -v "ENVSAVE_$k" '%s' "${!k}"
@@ -72,7 +73,7 @@ for k in OPENROUTER_API_KEY ANTHROPIC_API_KEY GEMINI_API_KEY XAI_API_KEY OPENAI_
 done
 [ "$have_key" = 1 ] || say "WARNING: no model API keys set — the box will come up, but the router and CLIs will have nothing to call."
 
-VPS_PROVIDER="${VPS_PROVIDER:-hostinger}"
+VPS_PROVIDER="${VPS_PROVIDER:-hetzner}"
 case "$VPS_PROVIDER" in
   hostinger) . "$DIR/hostinger/provision.sh"; provision_hostinger ;;
   hetzner)   . "$DIR/hetzner/provision.sh";   provision_hetzner ;;
@@ -110,7 +111,7 @@ Done. $NAME is up at $IP: $PRICE_LINE.
 
   ssh $SSH_USER@$IP
 
-Nothing is exposed publicly except SSH (and Tailscale on Hostinger). Open the UIs through an SSH tunnel:
+Nothing is exposed publicly except SSH and Tailscale. Open the UIs through an SSH tunnel:
 
   ssh -N -L 5678:127.0.0.1:5678 -L 4000:127.0.0.1:4000 -L 3001:127.0.0.1:3001 $SSH_USER@$IP
   # n8n → http://localhost:5678   router → http://localhost:4000/ui   uptime → http://localhost:3001

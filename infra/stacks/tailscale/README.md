@@ -42,9 +42,9 @@ ssh aurora@aurora-01          # MagicDNS name, over the tailnet
 ```
 
 Once that works **from a second terminal**, remove the SSH (TCP 22) rule from the
-provider firewall `aurora-01-fw` (Hostinger: hPanel → VPS → Security → Firewall; Hetzner:
-Firewalls). The box then has **zero** public TCP ports. If you lock yourself out, use
-Hostinger's recovery mode or the Hetzner web console.
+provider firewall `aurora-01-fw` (Hetzner: console → Firewalls; Hostinger: hPanel → VPS →
+Security → Firewall). The box then has **zero** public TCP ports. If you lock yourself out,
+use the Hetzner web console or Hostinger's recovery mode.
 
 Don't enable `--ssh` (Tailscale SSH) in this container: it would land you in the
 container's shell, not the host's.

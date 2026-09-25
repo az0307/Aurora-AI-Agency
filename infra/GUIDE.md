@@ -7,8 +7,8 @@ short version is at the end of this page). **What's installed where** is
 ## The big picture
 
 ```
- YOUR PHONES (Reno 11, S10)                THE SERVER (Hostinger, Jakarta)            PROVIDERS
- ─────────────────────────                 ───────────────────────────────            ─────────
+ YOUR PHONES (Reno 11, S10)                THE SERVER (Hetzner CX33, Nuremberg)       PROVIDERS
+ ─────────────────────────                 ────────────────────────────────────       ─────────
  Telegram / WhatsApp / Discord / Slack ──▶ Hermes (the agent, 24/7) ──▶ LiteLLM router ──▶ Claude, GPT,
    typed text, voice notes, photos          · Whisper (voice → text)     picks the model    Gemini, Grok,
                                             · tools: web, files, shell   per job, with      DeepSeek, Kimi,
@@ -245,7 +245,7 @@ aurora-kit bitwarden                 # optional: the Bitwarden CLI
 
 # 2. Keys: from Bitwarden, or edit by hand
 aurora-secrets fill                  # or: cp secrets.env.example secrets.env && nano secrets.env
-                                     # needs at least HOSTINGER_API_TOKEN, OPENROUTER_API_KEY, TELEGRAM_BOT_TOKEN
+                                     # needs at least HCLOUD_TOKEN, OPENROUTER_API_KEY, TELEGRAM_BOT_TOKEN
 
 # 3. Create the server (shows the live price first; refuses anything over AUD $39/mo)
 cd ~/aurora/infra && ./bootstrap.sh --dry-run && ./bootstrap.sh

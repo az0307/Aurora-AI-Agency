@@ -149,15 +149,15 @@ step). Files: `index.html`, `404.html`, `robots.txt`, `sitemap.xml`, `_headers` 
 
 ## infra
 
-Self-hosting decision document plus runnable setup for standing up an agency box (Hostinger or Hetzner +
+Self-hosting decision document plus runnable setup for standing up an agency box (Hetzner or Hostinger +
 Cloudflare) and the Docker stacks that run on it.
 
 - `infra/README.md`, `infra/STACK.md`, `infra/TOOLBOX.md`, `infra/AGENTS.md`, `infra/SERVICES.md` — the strategy, host port map, and agent failover notes.
 - `infra/SETUP.md` (ordered setup), `infra/GUIDE.md` (how voice/text/pictures flow and what goes where), `infra/INVENTORY.md` (what's on the server and phones), `infra/check.sh` (read-only health check run on the server).
 - `infra/phones/` — per-phone guides, Termux configs, setup scripts, and `phones/kit/` (the `a` menu, Needle phone commands, `aurora-ask`/`aurora-gen`, Bitwarden `aurora-secrets`, widget generator).
-- `infra/bootstrap.sh` — provisions the box from the phone; `VPS_PROVIDER=hostinger` (default: `infra/hostinger/provision.sh` + `post-install.sh`, Hostinger KVM 2 via the official API, budget-guarded, typed `buy` confirmation) or `hetzner`.
-- `infra/hostinger/` — Hostinger VPS module + post-install base setup (the Hostinger equivalent of cloud-init).
-- `infra/hetzner/` — `cloud-init.yaml` (base provisioning) + `provision.sh` + `main.tf.example` (Terraform, hcloud provider). The alternative provider.
+- `infra/bootstrap.sh` — provisions the box from the phone or an agent session; `VPS_PROVIDER=hetzner` (default: `infra/hetzner/provision.sh` + `cloud-init.yaml`, Hetzner Cloud CX33 in nbg1, budget-guarded) or `hostinger` (`infra/hostinger/`, KVM 2, typed `buy` confirmation). Provider tokens never ship to the box.
+- `infra/hostinger/` — Hostinger VPS module + post-install base setup (the Hostinger equivalent of cloud-init). The alternative provider.
+- `infra/hetzner/` — `cloud-init.yaml` (base provisioning) + `provision.sh` + `main.tf.example` (Terraform, hcloud provider). The default provider; managed by agents via `@lazyants/hetzner-mcp-server` (operator side only).
 - `infra/runbooks/` — `DAY1.md` (stand-up sequence) and `BACKUP.md`.
 - `infra/stacks/` — Docker Compose stacks:
   - `n8n/` — self-hosted n8n + Postgres (+ optional Caddy). Login gate is n8n's built-in owner account (n8n removed `N8N_BASIC_AUTH_*` in v1.0); keep it behind Cloudflare Access. Includes a staged workflow library under `stacks/n8n/workflows/`.

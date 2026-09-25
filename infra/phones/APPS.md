@@ -42,7 +42,7 @@ releases. **Play** = Google Play, only where no good open-source build exists.
 |---|---|---|---|---|
 | **Tailscale** | [F-Droid](https://f-droid.org/packages/com.tailscale.ipn/) · [Play](https://play.google.com/store/apps/details?id=com.tailscale.ipn) | private network to your server (n8n, router, dashboards, SSH) | ✅ | ✅ |
 | **Bitwarden** | add repo `https://mobileapp.bitwarden.com/fdroid/repo` in F-Droid · [GitHub](https://github.com/bitwarden/android) via Obtainium · [Play](https://play.google.com/store/apps/details?id=com.x8bit.bitwarden) | passwords + API keys (not in main F-Droid) | ✅ | ✅ |
-| **Aegis** | [F-Droid](https://f-droid.org/packages/com.beemdevelopment.aegis/) | 2FA codes (Hostinger, GitHub, Google, Cloudflare…), encrypted backups | ✅ | ✅ |
+| **Aegis** | [F-Droid](https://f-droid.org/packages/com.beemdevelopment.aegis/) | 2FA codes (Hetzner, GitHub, Google, Cloudflare…), encrypted backups | ✅ | ✅ |
 | **KeePassDX** | [F-Droid](https://f-droid.org/packages/com.kunzisoft.keepass.libre/) | offline password vault (only if you want one besides Bitwarden) | ❌ | ❌ |
 
 ## 4. Talk to your agents + get alerts

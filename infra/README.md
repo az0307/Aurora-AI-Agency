@@ -13,20 +13,21 @@
 
 ## TL;DR
 
-> **Decision update (2026-09-25): the agency box runs on a Hostinger KVM 2.** `bootstrap.sh`
-> defaults to Hostinger (`VPS_PROVIDER=hostinger`); Hetzner stays one setting away.
+> **Decision update (2026-09-25): the agency box runs on a Hetzner Cloud CX33 in Nuremberg.**
+> `bootstrap.sh` defaults to Hetzner (`VPS_PROVIDER=hetzner`); Hostinger stays one setting away.
 >
-> | | Hostinger KVM 2 (chosen) | Hetzner CPX31 (alternative) |
+> | | Hetzner CX33 (chosen) | Hostinger KVM 2 (alternative) |
 > |---|---|---|
-> | CPU / RAM / disk | 2 vCPU / 8 GB / 100 GB NVMe | 4 vCPU / 8 GB / 160 GB |
-> | Price (inc. GST, approx.) | billed monthly (default): exact price shown by the dry run; ≈AUD $16/mo if prepaid 24 months | 8 GB in Singapore ≈AUD $85–90/mo since the June 2026 rise |
-> | Nearest location | Jakarta (no Australia/Singapore VPS) | Singapore |
-> | Automation | full API + official MCP (401 tools, incl. buy/firewall/snapshots/Docker) | full API + MCP |
+> | CPU / RAM / disk | 4 vCPU / 8 GB / 80 GB | 2 vCPU / 8 GB / 100 GB NVMe |
+> | Price (approx.) | €8.49 + €0.60 IPv4 ≈ **AUD $16/mo**, hourly billing, no lock-in | monthly price from your account (dry run shows it); ≈AUD $16/mo only if prepaid 24 months |
+> | Location | Nuremberg (~280 ms from AU; Singapore CPX ≈AUD $85+/mo since the June 2026 rise) | Jakarta (no Australia/Singapore VPS) |
+> | Automation | full API; `@lazyants/hetzner-mcp-server` (185 tools); create/delete in seconds, so an agent can run it | full API + official MCP (401 tools); purchases go through billing |
 >
-> Trade-offs: half the vCPUs (fine for this stack; the heavy work runs on model APIs).
-> Monthly billing avoids lock-in; BinaryLane (Brisbane, 4 vCPU/8 GB, AUD $39.20/mo hourly) is the
-> step up if you want Australian hosting. The "lifecycle-only MCP" note further down
-> predates Hostinger's current MCP. Details: [hostinger/README.md](./hostinger/README.md).
+> Why: twice the vCPUs for the same money, hourly billing, and the cleanest API for an agent to
+> drive end to end. Trade-off: EU latency (fine for bots, n8n and SSH/mosh). Client personal
+> information (e.g. Y.M.I Roofing leads) is then stored in Germany: the client privacy policy
+> must disclose overseas storage (APP 8). BinaryLane (Brisbane, AUD $39.20/mo) is the step up
+> for Australian hosting. Details: [SETUP.md](./SETUP.md) §1, [hostinger/README.md](./hostinger/README.md).
 > Everything below is the original July analysis.
 
 - **Hetzner is the hub** (work + clients + n8n + agents). It has the **best MCP for Claude

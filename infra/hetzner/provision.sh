@@ -1,9 +1,11 @@
 # hetzner/provision.sh — the Hetzner Cloud part of ../bootstrap.sh (sourced, not run).
 # Needs HCLOUD_TOKEN. Sets IP, PRICE_LINE and READY_CMD for bootstrap.sh.
-# Knobs: SERVER_TYPE=cpx31 LOCATION=sin IMAGE=ubuntu-24.04 EUR_AUD=1.75 IPV4_EUR=0.60
+# Knobs: SERVER_TYPE=cx33 LOCATION=nbg1 IMAGE=ubuntu-24.04 EUR_AUD=1.75 IPV4_EUR=0.60
+# Default: CX33 (4 vCPU / 8 GB / 80 GB, €8.49/mo before VAT, Sept 2026) in Nuremberg. CX is
+# EU-only; Singapore only offers CPX/CCX, which cost ~5× more since the June 2026 price rise.
 
-SERVER_TYPE="${SERVER_TYPE:-cpx31}"
-LOCATION="${LOCATION:-sin}"
+SERVER_TYPE="${SERVER_TYPE:-cx33}"
+LOCATION="${LOCATION:-nbg1}"
 IMAGE="${IMAGE:-ubuntu-24.04}"
 # Conservative EUR→AUD rate so the budget check errs on the side of refusing.
 EUR_AUD="${EUR_AUD:-1.75}"
@@ -69,22 +71,25 @@ provision_hetzner() {
   say "SSH key"
   keys="$(api GET "/ssh_keys?per_page=50")"; api_ok "$keys"
   key_body="$(awk '{print $1" "$2}' <<<"$PUBKEY")"
-  KEY_ID="$(echo "$keys" | jq -r --arg k "$key_body" \
-    '.ssh_keys[]|select((.public_key|split(" ")[0:2]|join(" "))==$k)|.id' | head -1)"
-  if [ -z "$KEY_ID" ]; then
-    out="$(api POST /ssh_keys "$(jq -n --arg n "$NAME-key" --arg k "$PUBKEY" '{name:$n,public_key:$k}')")"
-    api_ok "$out"; KEY_ID="$(echo "$out" | jq -r '.ssh_key.id')"
-    echo "  uploaded (#$KEY_ID)"
+  # POST /servers wants ssh_keys as strings, so we pass the key's name, not its id.
+  KEY_NAME="$(echo "$keys" | jq -r --arg k "$key_body" \
+    '.ssh_keys[]|select((.public_key|split(" ")[0:2]|join(" "))==$k)|.name' | head -1)"
+  if [ -z "$KEY_NAME" ]; then
+    KEY_NAME="$NAME-key"
+    out="$(api POST /ssh_keys "$(jq -n --arg n "$KEY_NAME" --arg k "$PUBKEY" '{name:$n,public_key:$k}')")"
+    api_ok "$out"
+    echo "  uploaded ($KEY_NAME, #$(echo "$out" | jq -r '.ssh_key.id'))"
   else
-    echo "  reusing (#$KEY_ID)"
+    echo "  reusing ($KEY_NAME)"
   fi
 
-  say "Cloud firewall (inbound SSH only — Docker-published ports can bypass ufw, this can't be bypassed)"
+  say "Cloud firewall (inbound SSH + Tailscale only — Docker-published ports can bypass ufw, this can't be bypassed)"
   fw="$(api GET "/firewalls?name=$NAME-fw")"; api_ok "$fw"
   FW_ID="$(echo "$fw" | jq -r '.firewalls[0].id // empty')"
   if [ -z "$FW_ID" ]; then
     out="$(api POST /firewalls "$(jq -n --arg n "$NAME-fw" '{name:$n, rules:[
       {direction:"in",protocol:"tcp",port:"22",source_ips:["0.0.0.0/0","::/0"],description:"ssh"},
+      {direction:"in",protocol:"udp",port:"41641",source_ips:["0.0.0.0/0","::/0"],description:"tailscale direct"},
       {direction:"in",protocol:"icmp",source_ips:["0.0.0.0/0","::/0"],description:"ping"}]}')")"
     api_ok "$out"; FW_ID="$(echo "$out" | jq -r '.firewall.id')"
     echo "  created (#$FW_ID)"
@@ -95,7 +100,7 @@ provision_hetzner() {
   if [ -z "$SERVER_ID" ]; then
     say "Creating server $NAME"
     body="$(jq -n --arg n "$NAME" --arg t "$SERVER_TYPE" --arg l "$LOCATION" --arg i "$IMAGE" \
-      --arg ud "$USER_DATA" --argjson k "$KEY_ID" --argjson f "$FW_ID" \
+      --arg ud "$USER_DATA" --arg k "$KEY_NAME" --argjson f "$FW_ID" \
       '{name:$n,server_type:$t,location:$l,image:$i,ssh_keys:[$k],user_data:$ud,
         firewalls:[{firewall:$f}],labels:{"managed-by":"aurora-bootstrap"},
         public_net:{enable_ipv4:true,enable_ipv6:true},start_after_create:true}')"

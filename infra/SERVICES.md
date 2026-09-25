@@ -96,7 +96,7 @@ Full list with local vs remote, where each runs, keys, and Desktop Commander saf
 |---|---|---|
 | **n8n** | author + validate workflows against real node schemas | `czlonkowski/n8n-mcp`; pairs with the staged library in [`stacks/n8n/workflows/`](./stacks/n8n/workflows/) — see [RESOURCES.md](./stacks/n8n/RESOURCES.md) |
 | **Docker** | start/stop/inspect containers | the on/off switch for the Tier-2 pool |
-| **Hetzner** | provision/resize/destroy servers, firewalls, snapshots | scope one token per Project; **pin the runner version** |
+| **Hetzner** | provision/resize/destroy servers, firewalls, snapshots (`@lazyants/hetzner-mcp-server`, 185 tools) | scope one token per Project; **pin the runner version**; laptop / Claude session only |
 | **Playwright** | drive a browser | pair with the `browser` profile or run standalone |
 | **Filesystem** | scoped read/write to a workspace dir | never point at `/` |
 | **Postgres** | query n8n / scratch DBs | read-only DSN where possible |
@@ -104,7 +104,7 @@ Full list with local vs remote, where each runs, keys, and Desktop Commander saf
 | **Git** | local repo ops | scoped to the workspace |
 | **Hostinger** | the whole Hostinger API (VPS, firewall, snapshots, Docker projects, DNS, billing) | first-party, 401 tools; can buy and wipe VPSes, so laptop only |
 
-**CLIs to keep installed** (baked by [`hostinger/post-install.sh`](./hostinger/post-install.sh) / [`hetzner/cloud-init.yaml`](./hetzner/cloud-init.yaml), or added day-1):
+**CLIs to keep installed** (baked by [`hetzner/cloud-init.yaml`](./hetzner/cloud-init.yaml) / [`hostinger/post-install.sh`](./hostinger/post-install.sh), or added day-1):
 `docker` + compose, `git`, `rclone`, `restic`, `cloudflared`, `uv`/`uvx`, `node`/`npm`,
 `python3`, `jq`/`yq`, plus the terminal sugar in [`TERMINAL.md`](./TERMINAL.md) and the agent
 CLIs in [`AGENTS.md`](./AGENTS.md) (Claude Code, TARS, Kimi Code, OpenCode/OpenHands, Aider/Goose/Crush).

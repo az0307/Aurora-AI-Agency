@@ -31,19 +31,18 @@ variable "server_name" {
 # Server type MUST be available in the chosen location:
 #   - Singapore (sin) and US (ash/hil): AMD shared = CPX*, dedicated = CCX*.
 #   - EU only (nbg1/fsn1/hel1): Intel shared = CX* AND Ampere ARM = CAX* (cheaper).
-# Default = cpx21 (3 vCPU AMD / 4 GB) because the default location below is sin;
-# CAX (ARM) is NOT offered in Singapore, so cax21+sin would be rejected on apply.
-# For the cheapest ARM value, switch location to an EU one and server_type to cax21.
+# Default = cx33 (4 vCPU / 8 GB, €8.49/mo before VAT, Sept 2026) in nbg1. Since the June 2026
+# price rise the same 8 GB in Singapore (cpx32) costs ~5× more; CX/CAX are EU-only.
 variable "server_type" {
   type    = string
-  default = "cpx21"
+  default = "cx33"
 }
 
-# sin = Singapore (closest to Australia, ~90–100 ms to Sydney).
-# Others: nbg1/fsn1/hel1 (EU — enables the cheaper CX/CAX types), ash/hil (US).
+# nbg1 = Nuremberg (~300 ms to Australia: fine for bots/agents; mosh hides it for SSH).
+# Others: fsn1/hel1 (EU), sin (Singapore, CPX/CCX only, much pricier), ash/hil (US).
 variable "location" {
   type    = string
-  default = "sin"
+  default = "nbg1"
 }
 
 provider "hcloud" {
@@ -55,18 +54,21 @@ resource "hcloud_ssh_key" "default" {
   public_key = var.ssh_public_key
 }
 
-# Firewall: SSH + HTTP/HTTPS only. Tighten further once Cloudflare Tunnel is up.
+# Firewall: SSH + Tailscale only, same as bootstrap.sh. Drop the SSH rule once Tailscale works.
 resource "hcloud_firewall" "web" {
   name = "${var.server_name}-fw"
 
-  dynamic "rule" {
-    for_each = [22, 80, 443]
-    content {
-      direction  = "in"
-      protocol   = "tcp"
-      port       = tostring(rule.value)
-      source_ips = ["0.0.0.0/0", "::/0"]
-    }
+  rule {
+    direction  = "in"
+    protocol   = "tcp"
+    port       = "22"
+    source_ips = ["0.0.0.0/0", "::/0"]
+  }
+  rule {
+    direction  = "in"
+    protocol   = "udp"
+    port       = "41641" # Tailscale direct connections
+    source_ips = ["0.0.0.0/0", "::/0"]
   }
 }
 

@@ -66,7 +66,7 @@ errors, theme renders.
 ## How it all connects
 
 ```
-S10 / Reno 11 ── Tailscale ──► aurora-01 (Hostinger VPS)
+S10 / Reno 11 ── Tailscale ──► aurora-01 (Hetzner CX33)
    │                               ├─ ssh / mosh → tmux "main"
    │                               ├─ n8n, Uptime Kuma, router UI (tailscale serve, HTTPS)
    │                               └─ Hermes bot ◄── Telegram / WhatsApp / Discord / Slack

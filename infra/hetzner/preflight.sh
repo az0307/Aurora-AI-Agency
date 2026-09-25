@@ -5,7 +5,7 @@
 # Hetzner what exists and checks your local tooling. Run it first, every time.
 #
 #   export HCLOUD_TOKEN=...            # a Hetzner Cloud API token (per Project)
-#   ./preflight.sh                     # defaults: cpx21 in sin (Singapore)
+#   ./preflight.sh                     # defaults: cx33 in nbg1 (Nuremberg)
 #   SERVER_TYPE=cax21 LOCATION=fsn1 ./preflight.sh
 #
 # Heads-up on env var names — the SAME token is read under two different names
@@ -19,8 +19,8 @@
 # turns a failed `terraform apply` (or a surprise bill) into a 5-second check.
 set -euo pipefail
 
-SERVER_TYPE="${SERVER_TYPE:-cpx21}"
-LOCATION="${LOCATION:-sin}"
+SERVER_TYPE="${SERVER_TYPE:-cx33}"
+LOCATION="${LOCATION:-nbg1}"
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519.pub}"
 API="${HCLOUD_API:-https://api.hetzner.cloud/v1}"
 

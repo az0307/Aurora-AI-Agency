@@ -5,14 +5,13 @@
   "//per-agent": "This uses Claude Code's ${VAR} expansion. OpenCode wants {env:VAR}, Kimi Code uses env/bearerTokenEnvVar — translate per AGENTS.md, don't symlink one file.",
   "mcpServers": {
     "hetzner": {
-      "//": "Provisioning: create/resize/destroy servers, firewalls, volumes, snapshots. Best surface for Claude.",
-      "//source": "https://github.com/nityeshaga/hetzner-mcp-server — VERIFIED published to npm as 'hetzner-mcp-server' (author nityesh). It is NOT on PyPI (uvx would 404), so this runs via npx, not uvx. Alt implementation: github.com/dkruyt/mcp-hetzner.",
-      "//pin": "Pinned to npm 1.0.0 — the only published version (released 2026-01-06). This is write/provisioning access: review the diff and re-verify the version before bumping.",
-      "//env": "VERIFIED: the server reads HETZNER_API_TOKEN (its own env name), not HCLOUD_TOKEN. Value is expanded from your operator shell var of the same name.",
+      "//": "Hetzner Cloud: servers (create/resize/rebuild/delete), firewalls, networks, volumes, primary IPs, pricing, storage boxes. 185 tools, each marked read-only or destructive so Claude asks before destructive ones. Laptop/operator only: never give this token to the server it manages.",
+      "//source": "https://github.com/lazyants/hetzner-mcp-server, npm '@lazyants/hetzner-mcp-server' (FSL-1.1-MIT). VERIFIED 2026-09-25: v2.5.0 starts and lists 185 tools. Replaces 'hetzner-mcp-server' 1.0.0 (14 tools: no firewalls, snapshots or resize).",
+      "//env": "VERIFIED from its source: reads HETZNER_API_TOKEN (and HETZNER_STORAGE_API_TOKEN for storage boxes). Same value as HCLOUD_TOKEN.",
       "command": "npx",
       "args": [
         "-y",
-        "hetzner-mcp-server@1.0.0"
+        "@lazyants/hetzner-mcp-server@2.5.0"
       ],
       "env": {
         "HETZNER_API_TOKEN": "${HETZNER_API_TOKEN}"
