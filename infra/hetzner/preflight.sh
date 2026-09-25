@@ -22,7 +22,7 @@ set -euo pipefail
 SERVER_TYPE="${SERVER_TYPE:-cpx21}"
 LOCATION="${LOCATION:-sin}"
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519.pub}"
-API="https://api.hetzner.cloud/v1"
+API="${HCLOUD_API:-https://api.hetzner.cloud/v1}"
 
 pass() { printf '  \033[32mOK\033[0m   %s\n' "$1"; }
 warn() { printf '  \033[33mWARN\033[0m %s\n' "$1"; }

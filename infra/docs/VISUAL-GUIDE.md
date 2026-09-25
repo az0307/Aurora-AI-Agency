@@ -42,7 +42,8 @@ diagram is the small `*.json` file next to it. Edit that and re-render; don't ed
 - **Your phones → Tailscale → n8n + dashboards** (red dashes = security path): private access
   to n8n, Uptime Kuma and the router UI. Nothing is public.
 
-The yellow box is the server: **Hetzner cpx31 in Singapore, capped at AUD $39/month**.
+The yellow box is the server, capped at AUD $39/month. The diagram shows the original Hetzner
+cpx31 plan; the box is now a **Hostinger KVM 2 in Jakarta** (same software, same diagram).
 
 ---
 
@@ -58,9 +59,9 @@ Three columns = three phases. Three rows = where each step happens.
 |---|---|---|---|
 | 1 | **F-Droid + Termux** on the Reno 11 | phone | [phones/README.md](../phones/README.md) → Quick start |
 | 2 | **`setup-reno11.sh`**: apps, smart shell, tmux, SSH key (resumable) | phone | same |
-| 3 | **Get keys** into `secrets.env`: Hetzner token, OpenRouter, Telegram bot | accounts | [SETUP.md](../SETUP.md) §1–3 |
+| 3 | **Get keys** into `secrets.env`: Hostinger token, OpenRouter, Telegram bot | accounts | [SETUP.md](../SETUP.md) §1–3 |
 | 4 | **`bootstrap.sh --dry-run`**: shows the live price and refuses anything over AUD $39 | phone | SETUP.md §1 |
-| 5 | **Create aurora-01** (confirm with `y`): cpx31 with an SSH-only firewall | server | SETUP.md §1 |
+| 5 | **Create aurora-01** (confirm with `buy`): Hostinger KVM 2 with an SSH + Tailscale firewall | server | SETUP.md §1 |
 | 6 | **Start the stacks**: router → n8n → Hermes → Tailscale | server | SETUP.md §6 |
 | 7 | **Message the bot**: "hi" on Telegram | chat | SETUP.md §7 |
 | 8 | **Lock down**: close public SSH once Tailscale works | server | SETUP.md §8 |

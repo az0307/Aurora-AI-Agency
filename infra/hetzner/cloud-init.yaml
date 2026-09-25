@@ -1,5 +1,5 @@
 #cloud-config
-# Hardened base image for a Hetzner (or Oracle/Hostinger) box.
+# Hardened base image for a Hetzner (or Oracle) box. Hostinger runs ../hostinger/post-install.sh instead.
 # Provisions: non-root sudo user, key-only SSH, ufw, fail2ban, unattended-upgrades,
 # Docker + compose plugin, terminal "shell sugar", then optionally bootstraps Dokploy.
 #

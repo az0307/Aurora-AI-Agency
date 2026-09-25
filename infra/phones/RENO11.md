@@ -65,7 +65,7 @@ command instead:
 3. **Telegram** → your Hermes bot. Try `/model search` and send a voice note.
 4. **Bitwarden** → sign in, turn on **Settings → Autofill services → Bitwarden** so logins
    fill in the browser and apps.
-5. **Aegis** → move your 2FA codes here (Hetzner, GitHub, Google, Tailscale, Cloudflare),
+5. **Aegis** → move your 2FA codes here (Hostinger, GitHub, Google, Tailscale, Cloudflare),
    and turn on encrypted **automatic backups**.
 
 ## Step 6 — Termux + tmux

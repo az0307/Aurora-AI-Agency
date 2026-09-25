@@ -20,19 +20,45 @@ Tick each box as you go. Skip anything you don't want; blank keys just leave tha
 
 ---
 
-## 1. The server (≈AUD $28–39/mo, capped)
+## 1. The server: Hostinger VPS (capped at AUD $39/mo)
 
-- [ ] **Hetzner account + project** → <https://console.hetzner.com/> → *New project* → name it `aurora`.
-- [ ] **API token** → in the project: *Security → API tokens → Generate API token* → **Read & Write**
-      → paste into `HCLOUD_TOKEN=`.
+The box is a **Hostinger KVM 2**: 2 vCPU, 8 GB RAM, 100 GB NVMe. Hostinger has no VPS
+location in Australia or Singapore, so the script picks **Jakarta**, then Kuala Lumpur,
+then Mumbai (change with `HOSTINGER_DC_PREFER`). Details and every option:
+[hostinger/README.md](./hostinger/README.md).
+
+> 💳 **Hostinger charges the whole term up front.** KVM 2 on a 24-month term is US$8.99/mo,
+> so roughly **AUD $380 today**, then about AUD $26/mo after renewal (including GST, at a
+> safe exchange rate). The dry run shows the exact figures from your account before
+> anything is bought. Want smaller upfront amounts? `HOSTINGER_TERM=12` or `1` costs more
+> per month.
+
+- [ ] **Hostinger account** → <https://www.hostinger.com/vps-hosting> (log in or sign up;
+      you don't need to buy anything here: the script can do it).
+- [ ] **Payment method** saved in hPanel → <https://hpanel.hostinger.com/billing/payment-methods>
+      (needed only if the script is going to buy the VPS).
+- [ ] **API token** → <https://hpanel.hostinger.com/profile/api> → *New token* → paste into
+      `HOSTINGER_API_TOKEN=`. It stays on your phone: `bootstrap.sh` never copies it to the box.
+- [ ] **Already bought a VPS in hPanel?** Fine: leave it un-set-up (or set up with any OS). The
+      script finds it; see "adopt" in [hostinger/README.md](./hostinger/README.md).
 - [ ] **SSH key**: the phone setup script already made one (`~/.ssh/id_ed25519.pub`), and
       `bootstrap.sh` uses it automatically. On a computer instead: `ssh-keygen -t ed25519`.
-- [ ] **Dry run** (creates nothing, shows the real monthly price vs your $39 cap):
+- [ ] **Dry run** (buys and changes nothing; shows the live price, upfront charge, renewal
+      price and location):
       ```sh
       ./bootstrap.sh --dry-run
       ```
-- [ ] **Create it:** `./bootstrap.sh` → type `y` at the price prompt.
-      Then `ssh aurora@<the IP it prints>`.
+- [ ] **Go:** `./bootstrap.sh`. If it's buying, you type **`buy`** to confirm. A fresh
+      install takes 10–20 minutes, then `ssh aurora@<the IP it prints>`.
+
+<details><summary>Prefer Hetzner instead? (4 vCPU / 8 GB in Singapore, billed monthly, ~AUD $35/mo)</summary>
+
+Set `VPS_PROVIDER=hetzner` in `secrets.env`, then:
+- [ ] **Hetzner account + project** → <https://console.hetzner.com/> → *New project* → name it `aurora`.
+- [ ] **API token** → in the project: *Security → API tokens → Generate API token* → **Read & Write**
+      → paste into `HCLOUD_TOKEN=`.
+- [ ] `./bootstrap.sh --dry-run`, then `./bootstrap.sh` → type `y` at the price prompt.
+</details>
 
 ## 2. AI model keys (the router uses whichever you set)
 
@@ -182,10 +208,15 @@ Then from your phone:
 
 ## 8. Lock it down (after it works)
 
-- [ ] SSH in over Tailscale (`ssh aurora@aurora-01`) from a second terminal, then in Hetzner
-      delete the SSH rule from firewall `aurora-01-fw` → zero public ports.
-- [ ] Hetzner → *Billing* → set a **usage alert**.
-- [ ] Revoke the Hetzner token you used for bootstrap if you won't re-run it.
+- [ ] SSH in over Tailscale (`ssh aurora@aurora-01`) from a second terminal, then delete the
+      **TCP 22** rule from firewall `aurora-01-fw`: hPanel → *VPS → Security → Firewall*
+      (on Hetzner: *Firewalls*). The box then has zero public ports. Keep the UDP 41641
+      rule: it lets Tailscale connect directly instead of through a slower relay.
+- [ ] Hostinger: hPanel → *Billing → Subscriptions* → check the VPS **auto-renewal** is what
+      you want. On Hetzner: *Billing* → set a **usage alert**.
+- [ ] Revoke the provider API token you used for bootstrap if you won't re-run it.
+- [ ] Locked out? Hostinger: hPanel → *VPS → Settings → Recovery mode* (or add the SSH rule
+      back). Hetzner: the web console.
 
 ---
 

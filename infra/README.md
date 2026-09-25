@@ -13,6 +13,21 @@
 
 ## TL;DR
 
+> **Decision update (2026-09-25): the agency box runs on a Hostinger KVM 2.** `bootstrap.sh`
+> defaults to Hostinger (`VPS_PROVIDER=hostinger`); Hetzner stays one setting away.
+>
+> | | Hostinger KVM 2 (chosen) | Hetzner CPX31 (alternative) |
+> |---|---|---|
+> | CPU / RAM / disk | 2 vCPU / 8 GB / 100 GB NVMe | 4 vCPU / 8 GB / 160 GB |
+> | Price (inc. GST, approx.) | ≈AUD $16/mo on a 24-month prepay (≈AUD $380 up front), ≈AUD $26/mo after renewal | ≈AUD $35/mo, billed monthly |
+> | Nearest location | Jakarta (no Australia/Singapore VPS) | Singapore |
+> | Automation | full API + official MCP (401 tools, incl. buy/firewall/snapshots/Docker) | full API + MCP |
+>
+> Trade-offs: half the vCPUs (fine for this stack; the heavy work runs on model APIs),
+> the upfront charge, and the renewal price. The "lifecycle-only MCP" note further down
+> predates Hostinger's current MCP. Details: [hostinger/README.md](./hostinger/README.md).
+> Everything below is the original July analysis.
+
 - **Hetzner is the hub** (work + clients + n8n + agents). It has the **best MCP for Claude
   to manage** (full provisioning, ~104 tools), the best 2026 price-performance on its
   **CX/CAX** lines, and a **Singapore** region — the closest of the three to Australia.

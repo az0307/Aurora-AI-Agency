@@ -102,9 +102,9 @@ Full list with local vs remote, where each runs, keys, and Desktop Commander saf
 | **Postgres** | query n8n / scratch DBs | read-only DSN where possible |
 | **Fetch** | HTTP/web content | pair with SearXNG for private search |
 | **Git** | local repo ops | scoped to the workspace |
-| **Hostinger** *(optional)* | lifecycle on a managed box | first-party, lifecycle-only |
+| **Hostinger** | the whole Hostinger API (VPS, firewall, snapshots, Docker projects, DNS, billing) | first-party, 401 tools; can buy and wipe VPSes, so laptop only |
 
-**CLIs to keep installed** (baked by [`hetzner/cloud-init.yaml`](./hetzner/cloud-init.yaml) or added day-1):
+**CLIs to keep installed** (baked by [`hostinger/post-install.sh`](./hostinger/post-install.sh) / [`hetzner/cloud-init.yaml`](./hetzner/cloud-init.yaml), or added day-1):
 `docker` + compose, `git`, `rclone`, `restic`, `cloudflared`, `uv`/`uvx`, `node`/`npm`,
 `python3`, `jq`/`yq`, plus the terminal sugar in [`TERMINAL.md`](./TERMINAL.md) and the agent
 CLIs in [`AGENTS.md`](./AGENTS.md) (Claude Code, TARS, Kimi Code, OpenCode/OpenHands, Aider/Goose/Crush).

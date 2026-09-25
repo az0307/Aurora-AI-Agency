@@ -92,12 +92,12 @@
       ]
     },
     "hostinger": {
-      "//": "OPTIONAL. Official first-party MCP. Lifecycle + metrics only (list/start/stop/restart).",
-      "//source": "https://www.hostinger.com/support/11079316-hostinger-api-mcp-server/ — VERIFIED: npm 'hostinger-api-mcp'. Pinned to 1.25.0 (latest). Reads HOSTINGER_API_TOKEN.",
+      "//": "Official first-party MCP for the Hostinger API: 401 tools (VPS, firewall, snapshots, backups, Docker projects, DNS, domains, billing). It CAN buy and recreate (wipe) VPSes: run it only where you are watching, never on the server itself.",
+      "//source": "https://www.hostinger.com/support/11079316-hostinger-api-mcp-server/ — VERIFIED 2026-09-25: npm 'hostinger-api-mcp' 1.63.3 starts and lists 401 tools. Reads HOSTINGER_API_TOKEN.",
       "command": "npx",
       "args": [
         "-y",
-        "hostinger-api-mcp@1.25.0"
+        "hostinger-api-mcp@1.63.3"
       ],
       "env": {
         "HOSTINGER_API_TOKEN": "${HOSTINGER_API_TOKEN}"
