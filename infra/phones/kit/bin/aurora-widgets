@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# aurora-widgets — install the kit's home-screen buttons, boot scripts and quick bar,
+# or write your own.
+#   aurora-widgets install                     # copy the kit's widgets (safe to re-run)
+#   aurora-widgets new NAME 'COMMAND'          # button that opens a terminal
+#   aurora-widgets new NAME 'COMMAND' --task   # button that runs silently (toast at the end)
+#   aurora-widgets new NAME 'COMMAND' --boot   # runs every time the phone starts
+#   aurora-widgets list | remove NAME
+# Buttons appear in Termux:Widget (long-press home screen → Widgets → Termux:Widget).
+set -uo pipefail
+KIT=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+SC="$HOME/.shortcuts"; TASKS="$SC/tasks"; BOOT="$HOME/.termux/boot"
+SHEBANG="#!/data/data/com.termux/files/usr/bin/bash"
+mkdir -p "$SC" "$TASKS" "$BOOT"
+
+fix() { sed -i "1s|^#!.*|$SHEBANG|" "$1"; chmod 700 "$1"; }
+
+case "${1:-}" in
+  install)
+    n=0
+    for f in "$KIT"/widgets/shortcuts/*.sh; do cp "$f" "$SC/"; fix "$SC/$(basename "$f")"; n=$((n+1)); done
+    for f in "$KIT"/widgets/tasks/*.sh;     do cp "$f" "$TASKS/"; fix "$TASKS/$(basename "$f")"; n=$((n+1)); done
+    for f in "$KIT"/widgets/boot/*.sh;      do cp "$f" "$BOOT/"; fix "$BOOT/$(basename "$f")"; n=$((n+1)); done
+    echo "Installed $n scripts. Add the Termux:Widget widget to your home screen to see the buttons."
+    command -v termux-reload-settings >/dev/null && termux-reload-settings 2>/dev/null
+    ;;
+  new)
+    name=${2:-}; command=${3:-}; where=${4:-}
+    [[ "$name" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "NAME: letters, numbers, . _ - only" >&2; exit 1; }
+    [ -n "$command" ] || { echo "Give the command in quotes" >&2; exit 1; }
+    case "$where" in
+      --task) f="$TASKS/$name.sh"; body="$command"'
+command -v termux-toast >/dev/null && termux-toast "'"$name"' done"' ;;
+      --boot) f="$BOOT/$name.sh"; body="termux-wake-lock
+$command" ;;
+      "")     f="$SC/$name.sh"; body="$command"'
+echo; read -rp "Enter to close" _' ;;
+      *) echo "use --task or --boot (or nothing)" >&2; exit 1 ;;
+    esac
+    printf '%s\n# made by aurora-widgets on %s\nexport PATH="%s/bin:$PATH"\n%s\n' "$SHEBANG" "$(date +%F)" "$KIT" "$body" > "$f"
+    chmod 700 "$f"; echo "Created $f"
+    ;;
+  list)
+    echo "Buttons (open a terminal):"; ls -1 "$SC"/*.sh 2>/dev/null | xargs -rn1 basename | sed 's/^/  /'
+    echo "Silent buttons:";            ls -1 "$TASKS"/*.sh 2>/dev/null | xargs -rn1 basename | sed 's/^/  /'
+    echo "At boot:";                   ls -1 "$BOOT"/*.sh 2>/dev/null | xargs -rn1 basename | sed 's/^/  /'
+    ;;
+  remove)
+    name=${2:-}; [[ "$name" =~ ^[A-Za-z0-9._-]+$ ]] || exit 1
+    rm -v -f "$SC/$name.sh" "$TASKS/$name.sh" "$BOOT/$name.sh"
+    ;;
+  *) sed -n '2,9p' "$0" ;;
+esac

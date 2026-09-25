@@ -224,6 +224,11 @@ s_background() {
   pause "Done? Enter"
 }
 
+s_kit() {
+  # Menu (`a`), Needle voice/phone commands, widgets + quick bar. Bitwarden CLI is separate.
+  bash "$PHONES/kit/bin/aurora-kit" install
+}
+
 doctor() {
   banner "Aurora phone check - $PHONE_LABEL"
   local pass=0 fail=0
@@ -237,13 +242,14 @@ doctor() {
   c "Widgets in ~/.shortcuts"        "ls ~/.shortcuts/*.sh"                    "copy termux/shortcuts/*.sh"
   c "Boot script"                    "[ -x ~/.termux/boot/10-aurora.sh ]"      "copy termux/boot/10-aurora.sh"
   c "$SERVER reachable (Tailscale)"  "ping -c1 -W3 $SERVER"                    "Tailscale app connected? server created?"
+  c "Aurora kit (menu, Needle)"     "command -v fzf && [ -x ~/.local/share/needle/needle ]" "bash ~/aurora/infra/phones/kit/bin/aurora-kit install"
   c "SSH login to $SERVER"           "ssh -o BatchMode=yes -o ConnectTimeout=6 $SERVER true" "add this phone's key on the server (aurora-addkey from another phone)"
   printf '\n  %s%d passed%s, %s%d need attention%s\n' "$C_GREEN" "$pass" "$C_RESET" "$C_YELLOW" "$fail" "$C_RESET"
 }
 
 main() {
   banner "Aurora phone setup - $PHONE_LABEL" "Resumable - log: ~/.aurora-setup/setup.log"
-  STEP_TOTAL=11
+  STEP_TOTAL=12
   step preflight   "Check Termux"                         s_preflight
   step apps        "Apps: Termux add-ons, Tailscale, stores, keyboards" s_apps
   step packages    "Packages (ssh, mosh, tmux, zsh, tools)" s_packages
@@ -255,10 +261,12 @@ main() {
   step tailscale   "Tailscale (private network to the server)" s_tailscale
   step background  "Keep apps alive in the background"    s_background
   step phantom     "Android process-killer fix"           s_phantom
+  step kit         "Aurora kit: menu, Needle, widgets, quick bar" s_kit
   summary
   doctor
   printf '\n%s  Close Termux completely and reopen it to start the new shell + tmux.%s\n' "$C_BOLD" "$C_RESET"
   hint "Then long-press the home screen → Widgets → Termux:Widget for the buttons."
+  hint "Type  a  for the Aurora menu (everything: Hermes, voice, pictures, the server)."
   hint "Next: tailscale check anytime with 'doctor'; create/connect the server via ../../SETUP.md"
 }
 

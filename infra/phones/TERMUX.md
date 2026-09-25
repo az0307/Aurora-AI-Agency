@@ -97,7 +97,7 @@ With the **Tailscale** app connected:
 
 ```sh
 ssh aurora-01          # plain SSH over Tailscale
-aurora                 # mosh + the server's own tmux session "main" (survives network drops)
+server                 # mosh + the server's own tmux session "main" (survives network drops)
 ```
 
 **Home-screen buttons:** long-press the home screen → Widgets → **Termux:Widget** → drag it
@@ -122,7 +122,7 @@ tmux    # then Ctrl-a Shift-i to install plugins
 
 (`bootstrap.sh` copies all of `infra/` to `/opt/aurora`. If that folder isn't there, copy
 the file from the phone instead: `scp ~/aurora/infra/phones/server/tmux.conf aurora-01:.tmux.conf`.) mosh uses UDP 60000–61000. Over Tailscale that just works; nothing to open on the
-Hetzner firewall.
+provider firewall.
 
 ## tmux cheat sheet (both phone and server)
 

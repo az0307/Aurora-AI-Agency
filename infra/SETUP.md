@@ -10,6 +10,8 @@ you can) and pasting them into **one file**: `infra/secrets.env`.
 
 ```sh
 cd infra && cp secrets.env.example secrets.env   # then fill it in as you go below
+# Keys already in Bitwarden? Put them in a folder "Aurora" (item name = variable name,
+# key in the password field), then: aurora-secrets fill   (see phones/kit/README.md)
 ```
 
 Tick each box as you go. Skip anything you don't want; blank keys just leave that part off.
@@ -18,19 +20,51 @@ Tick each box as you go. Skip anything you don't want; blank keys just leave tha
 
 ---
 
-## 1. The server (≈AUD $28–39/mo, capped)
+## 1. The server: Hetzner Cloud CX33 (capped at AUD $39/mo)
 
-- [ ] **Hetzner account + project** → <https://console.hetzner.com/> → *New project* → name it `aurora`.
-- [ ] **API token** → in the project: *Security → API tokens → Generate API token* → **Read & Write**
-      → paste into `HCLOUD_TOKEN=`.
+The box is a **Hetzner CX33** in Nuremberg: 4 vCPU, 8 GB RAM, 80 GB disk, **≈AUD $16/mo**
+(€8.49 + €0.60 IPv4, before VAT), billed by the hour with a monthly cap and no lock-in. It's
+the cheapest 8 GB box with a full API and a 185-tool MCP, so an agent can run all of it.
+Latency from Australia is ~280 ms: fine for SSH, chat bots and n8n, since the heavy work runs
+on model APIs. (Singapore only offers CPX/CCX, ≈AUD $85+/mo since the June 2026 price rise;
+`bootstrap.sh` refuses them under the cap.)
+
+- [ ] **Hetzner account** → <https://accounts.hetzner.com/signUp> (card; may ask for ID and take a
+      few hours the first time).
+- [ ] **Project** → <https://console.hetzner.com/> → *New project* → name it `aurora`.
+- [ ] **API token** → in the project: *Security → API tokens → Generate API token* →
+      **Read & Write** → paste into `HCLOUD_TOKEN=`. It stays on your phone: `bootstrap.sh`
+      never copies it to the box. (Save a copy in Bitwarden too.)
 - [ ] **SSH key**: the phone setup script already made one (`~/.ssh/id_ed25519.pub`), and
       `bootstrap.sh` uses it automatically. On a computer instead: `ssh-keygen -t ed25519`.
-- [ ] **Dry run** (creates nothing, shows the real monthly price vs your $39 cap):
+- [ ] **Dry run** (creates and changes nothing; shows the live price):
       ```sh
       ./bootstrap.sh --dry-run
       ```
-- [ ] **Create it:** `./bootstrap.sh` → type `y` at the price prompt.
-      Then `ssh aurora@<the IP it prints>`.
+- [ ] **Go:** `./bootstrap.sh` → type `y` at the price prompt. It uploads your key, creates
+      firewall `aurora-01-fw` (SSH + Tailscale only) and the server, waits for cloud-init
+      (~5 min), then ships `infra/` and your keys. Then: `ssh aurora@<the IP it prints>`.
+- [ ] Knobs if you want them: `SERVER_TYPE=cx43` (16 GB; the dry run prints its price), `LOCATION=fsn1` or
+      `hel1`, `BUDGET_AUD=39`. Details: [hetzner/](./hetzner/).
+
+**Let an agent do it.** The same token drives the **Hetzner MCP**
+(`@lazyants/hetzner-mcp-server`, 185 tools: servers, firewalls, snapshots, metrics…), set up in
+[mcp/.mcp.json.example](./mcp/.mcp.json.example) as `HETZNER_API_TOKEN`. To have a Claude
+Code session run `bootstrap.sh` for you, add `HCLOUD_TOKEN` (and `HETZNER_API_TOKEN`, same
+value) as secrets in that session's environment settings, then ask it to "run
+./bootstrap.sh". The MCP can create and delete servers, so it lives on your phone or in a
+Claude session, **never on aurora-01 itself**.
+
+<details><summary>Prefer Hostinger instead? (KVM 2 in Jakarta, 2 vCPU / 8 GB, billed monthly)</summary>
+
+Set `VPS_PROVIDER=hostinger` in `secrets.env`, then:
+- [ ] **Hostinger account** → <https://www.hostinger.com/vps-hosting>, and a **payment method**
+      in hPanel → <https://hpanel.hostinger.com/billing/payment-methods> (only if the script buys it).
+- [ ] **API token** → <https://hpanel.hostinger.com/profile/api> → paste into `HOSTINGER_API_TOKEN=`.
+- [ ] `./bootstrap.sh --dry-run`, then `./bootstrap.sh` → type **`buy`** if it's buying.
+      Already bought one in hPanel? The script finds it. Everything else:
+      [hostinger/README.md](./hostinger/README.md).
+</details>
 
 ## 2. AI model keys (the router uses whichever you set)
 
@@ -151,7 +185,7 @@ not an API key. [SUBSCRIPTIONS.md](./SUBSCRIPTIONS.md) has the exact steps and t
 - **ChatGPT in Hermes:** `docker exec -it hermes hermes model` → "ChatGPT or Codex Subscription".
 - **Claude Code / Codex / Gemini CLI / Cursor CLI / Antigravity:** on a computer when you have
   one; until then use the Claude app / claude.ai/code on your phone, or run the CLIs on the
-  server over `aurora` (mosh + tmux) with the headless logins in SUBSCRIPTIONS.md.
+  server over `server` (mosh + tmux) with the headless logins in SUBSCRIPTIONS.md.
 
 ## 6c. Your phones
 
@@ -180,10 +214,15 @@ Then from your phone:
 
 ## 8. Lock it down (after it works)
 
-- [ ] SSH in over Tailscale (`ssh aurora@aurora-01`) from a second terminal, then in Hetzner
-      delete the SSH rule from firewall `aurora-01-fw` → zero public ports.
-- [ ] Hetzner → *Billing* → set a **usage alert**.
-- [ ] Revoke the Hetzner token you used for bootstrap if you won't re-run it.
+- [ ] SSH in over Tailscale (`ssh aurora@aurora-01`) from a second terminal, then delete the
+      **TCP 22** rule from firewall `aurora-01-fw`: Hetzner console → *Firewalls*
+      (Hostinger: hPanel → *VPS → Security → Firewall*). The box then has zero public ports. Keep the UDP 41641
+      rule: it lets Tailscale connect directly instead of through a slower relay.
+- [ ] Hetzner: *Billing* → set a **usage alert** (e.g. €20). Hostinger: hPanel → *Billing →
+      Subscriptions* → check the VPS **auto-renewal** is what you want.
+- [ ] Revoke the provider API token you used for bootstrap if you won't re-run it.
+- [ ] Locked out? Hetzner: the server's web console (or add the SSH rule back). Hostinger:
+      hPanel → *VPS → Settings → Recovery mode*.
 
 ---
 

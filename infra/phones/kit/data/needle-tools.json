@@ -1,0 +1,212 @@
+[
+ {
+  "type": "function",
+  "function": {
+   "name": "battery_status",
+   "description": "Get the phone's battery level, charging state and temperature.",
+   "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "get_location",
+   "description": "Get the phone's current GPS location.",
+   "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "flashlight",
+   "description": "Turn the phone's torch / flashlight on or off.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "on": {
+      "type": "boolean",
+      "description": "true to turn on, false to turn off"
+     }
+    },
+    "required": [
+     "on"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "say_out_loud",
+   "description": "Say something out loud: the phone speaks the words using text-to-speech.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "text": {
+      "type": "string",
+      "description": "The exact words to say out loud"
+     }
+    },
+    "required": [
+     "text"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "show_notification",
+   "description": "Show a notification on the phone.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string"
+     },
+     "content": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "title",
+     "content"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "set_volume",
+   "description": "Set a volume level on the phone.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "stream": {
+      "type": "string",
+      "enum": [
+       "music",
+       "ring",
+       "notification",
+       "alarm",
+       "call"
+      ]
+     },
+     "level": {
+      "type": "integer",
+      "description": "0 to 15"
+     }
+    },
+    "required": [
+     "stream",
+     "level"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "set_brightness",
+   "description": "Set screen brightness.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "level": {
+      "type": "integer",
+      "description": "0 (dark) to 255 (brightest)"
+     }
+    },
+    "required": [
+     "level"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "vibrate",
+   "description": "Vibrate the phone, e.g. to find it.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "duration_ms": {
+      "type": "integer",
+      "description": "milliseconds, default 1000"
+     }
+    },
+    "required": []
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "clipboard_get",
+   "description": "Read the text currently on the phone's clipboard.",
+   "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "clipboard_set",
+   "description": "Copy text to the phone's clipboard.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "text": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "text"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "open_url",
+   "description": "Open a web link on the phone.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "url": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "url"
+    ]
+   }
+  }
+ },
+ {
+  "type": "function",
+  "function": {
+   "name": "wifi_info",
+   "description": "Get the Wi-Fi network the phone is connected to.",
+   "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+   }
+  }
+ }
+]

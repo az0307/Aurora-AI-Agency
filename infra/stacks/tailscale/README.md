@@ -41,9 +41,10 @@ The tailnet IP is on the host, so plain SSH works through it:
 ssh aurora@aurora-01          # MagicDNS name, over the tailnet
 ```
 
-Once that works **from a second terminal**, remove the SSH rule from the Hetzner cloud
-firewall (`aurora-01-fw`). The box then has **zero** public inbound ports. If you lock
-yourself out, the Hetzner web console still works.
+Once that works **from a second terminal**, remove the SSH (TCP 22) rule from the
+provider firewall `aurora-01-fw` (Hetzner: console → Firewalls; Hostinger: hPanel → VPS →
+Security → Firewall). The box then has **zero** public TCP ports. If you lock yourself out,
+use the Hetzner web console or Hostinger's recovery mode.
 
 Don't enable `--ssh` (Tailscale SSH) in this container: it would land you in the
 container's shell, not the host's.

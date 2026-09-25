@@ -1,6 +1,7 @@
 # Aurora Infrastructure — VPS Hosting Strategy
 
 > **Setting this up? Start at [SETUP.md](./SETUP.md)** — every step in order, with exact and pre-filled links.
+> **Using it (voice, text, pictures, what goes where):** [GUIDE.md](./GUIDE.md). **What's installed where:** [INVENTORY.md](./INVENTORY.md).
 > **Prefer pictures?** [docs/VISUAL-GUIDE.md](./docs/VISUAL-GUIDE.md): the whole setup in three diagrams.
 > **Already pay for Claude / ChatGPT / Gemini / SuperGrok / Cursor?** See [SUBSCRIPTIONS.md](./SUBSCRIPTIONS.md).
 > **Is everything working?** On the server: `bash /opt/aurora/check.sh` (add `--live` to test every model chain).
@@ -11,6 +12,23 @@
 > Last reviewed: **2026-07-28**. Prices exclude VAT/GST and move — re-check before buying.
 
 ## TL;DR
+
+> **Decision update (2026-09-25): the agency box runs on a Hetzner Cloud CX33 in Nuremberg.**
+> `bootstrap.sh` defaults to Hetzner (`VPS_PROVIDER=hetzner`); Hostinger stays one setting away.
+>
+> | | Hetzner CX33 (chosen) | Hostinger KVM 2 (alternative) |
+> |---|---|---|
+> | CPU / RAM / disk | 4 vCPU / 8 GB / 80 GB | 2 vCPU / 8 GB / 100 GB NVMe |
+> | Price (approx.) | €8.49 + €0.60 IPv4 ≈ **AUD $16/mo**, hourly billing, no lock-in | monthly price from your account (dry run shows it); ≈AUD $16/mo only if prepaid 24 months |
+> | Location | Nuremberg (~280 ms from AU; Singapore CPX ≈AUD $85+/mo since the June 2026 rise) | Jakarta (no Australia/Singapore VPS) |
+> | Automation | full API; `@lazyants/hetzner-mcp-server` (185 tools); create/delete in seconds, so an agent can run it | full API + official MCP (401 tools); purchases go through billing |
+>
+> Why: twice the vCPUs for the same money, hourly billing, and the cleanest API for an agent to
+> drive end to end. Trade-off: EU latency (fine for bots, n8n and SSH/mosh). Client personal
+> information (e.g. Y.M.I Roofing leads) is then stored in Germany: the client privacy policy
+> must disclose overseas storage (APP 8). BinaryLane (Brisbane, AUD $39.20/mo) is the step up
+> for Australian hosting. Details: [SETUP.md](./SETUP.md) §1, [hostinger/README.md](./hostinger/README.md).
+> Everything below is the original July analysis.
 
 - **Hetzner is the hub** (work + clients + n8n + agents). It has the **best MCP for Claude
   to manage** (full provisioning, ~104 tools), the best 2026 price-performance on its

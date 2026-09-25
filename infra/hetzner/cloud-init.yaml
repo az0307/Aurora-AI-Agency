@@ -1,5 +1,5 @@
 #cloud-config
-# Hardened base image for a Hetzner (or Oracle/Hostinger) box.
+# Hardened base image for a Hetzner (or Oracle) box. Hostinger runs ../hostinger/post-install.sh instead.
 # Provisions: non-root sudo user, key-only SSH, ufw, fail2ban, unattended-upgrades,
 # Docker + compose plugin, terminal "shell sugar", then optionally bootstraps Dokploy.
 #
@@ -42,6 +42,8 @@ packages:
   - eza
   - tealdeer
   - zoxide
+  - mosh      # phones connect with mosh (survives Wi-Fi ↔ 5G switches)
+  - tmux
 
 write_files:
   # --- SSH hardening (belt-and-suspenders on top of ssh_pwauth: false) ---
@@ -97,6 +99,7 @@ runcmd:
   - ufw default deny incoming
   - ufw default allow outgoing
   - ufw allow 22/tcp
+  - ufw allow 41641/udp   # Tailscale direct connections
   - ufw allow 80/tcp
   - ufw allow 443/tcp
   - ufw --force enable

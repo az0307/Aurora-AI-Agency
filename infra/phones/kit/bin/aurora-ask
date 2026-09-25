@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# aurora-ask — ask Hermes (on the server) one question from the phone.
+#   aurora-ask "what's on my calendar tomorrow?"
+#   aurora-ask -m code "why does this script fail: …"   # pick a model chain
+#   aurora-ask -s "…"                                   # also speak the answer
+#   echo "long text" | aurora-ask                       # question from stdin
+# The question travels over SSH (Tailscale) as data, never as shell code.
+set -uo pipefail
+SERVER=${AURORA_SERVER:-aurora-01}
+speak=0; model=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -s) speak=1; shift ;;
+    -m) model=${2:-}; shift 2 ;;
+    -h|--help) sed -n '2,7p' "$0"; exit 0 ;;
+    *) break ;;
+  esac
+done
+q="$*"
+if [ -z "$q" ]; then
+  if [ -t 0 ]; then read -rp "Ask Hermes: " q; else q=$(cat); fi
+fi
+[ -n "$q" ] || { echo "Nothing to ask." >&2; exit 1; }
+[[ "$model" =~ ^[a-z0-9-]*$ ]] || { echo "bad model name: use a job alias like code or general" >&2; exit 1; }
+mflag=""; [ -n "$model" ] && mflag="-m $model"
+ans=$(printf '%s' "$q" | ssh -o ConnectTimeout=10 -o BatchMode=yes "$SERVER" \
+      "docker exec -i hermes hermes chat --query-file - --oneshot -Q $mflag" 2>&1)
+rc=$?
+if [ $rc -ne 0 ]; then
+  echo "Couldn't reach Hermes on $SERVER (Tailscale on? server up?)" >&2
+  printf '%s\n' "$ans" | tail -3 >&2; exit $rc
+fi
+printf '%s\n' "$ans"
+if [ $speak = 1 ] && command -v termux-tts-speak >/dev/null; then
+  printf '%s' "$ans" | head -c 800 | termux-tts-speak
+fi

@@ -21,7 +21,10 @@
 #   images/video   vision        Gemini 3.8 Flash → Claude Sonnet 5 → GPT-5.6 Sol           paid-only
 #   web answers    search        Perplexity Sonar Pro → Sonar                                paid-only
 #   deep research  research      Sonar Deep Research → Sonar Reasoning Pro → Sonar Pro       paid-only
-#   Nous models    hermes        Hermes 4 405B → HF Hermes 3 70B → DeepSeek V4.1            paid-only
+#   Nous models    hermes        Hermes 4 405B → HF Hermes 3 70B → DeepSeek V4.1            paid-only (Hermes 4: no tool calling)
+#   fewer refusals uncensored    Dolphin Venice 24B → Cydonia 24B → Euryale 70B             chat only, never client data
+#                  uncensored-agent  Euryale L3.1 70B (tools) → local Qwen3 abliterated     never client data
+#                  uncensored-free   local Dolphin 3 8B → local Qwen3 abliterated ($0)       needs ../ollama
 #
 # Older names still work and run the same chain as their job alias:
 #   auto = general · auto-free = general-free · auto-code = code · auto-cheap = fast
@@ -30,7 +33,7 @@
 # the target's fallback chain (tested against litellm 1.8x — see README).
 #
 # Every free model in a chain supports tool calling (agents need it). Uncensored
-# models are in no chain: call them by name.
+# models appear ONLY in the three uncensored* chains, which you pick on purpose.
 # Any entry below can also be called directly by its model_name.
 
 model_list:
@@ -164,6 +167,11 @@ model_list:
   - model_name: mythomax            # Gryphe MythoMax 13B — classic, very cheap, 8k context
     litellm_params:
       model: openrouter/gryphe/mythomax-l2-13b
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: euryale-agent       # Sao10K Euryale L3.1 70B — roleplay model that CAN call tools ($0.85/M)
+    litellm_params:
+      model: openrouter/sao10k/l3.1-euryale-70b
       api_key: os.environ/OPENROUTER_API_KEY
 
   - model_name: openrouter-auto     # OpenRouter picks + falls back server-side
@@ -340,6 +348,21 @@ model_list:
       model: openrouter/nousresearch/hermes-4-405b
       api_key: os.environ/OPENROUTER_API_KEY
 
+  # Uncensored chains: pick them ON PURPOSE with /model. Nothing else falls into them,
+  # and they only ever fall back to other uncensored models. Never send client data.
+  - model_name: uncensored    # chat only (no tool calling): Dolphin Venice → Cydonia → Euryale
+    litellm_params:
+      model: openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: uncensored-agent # can use tools (for Hermes): Euryale L3.1 → local Qwen3 abliterated
+    litellm_params:
+      model: openrouter/sao10k/l3.1-euryale-70b
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: uncensored-free  # $0, on this box (needs ../ollama): Dolphin 3 → Qwen3 abliterated
+    litellm_params:
+      model: ollama_chat/dolphin3:8b
+      api_base: http://ollama:11434
+
   # ---- Older names, kept so existing agents / workflows keep working ---------
   - model_name: auto          # = general
     litellm_params:
@@ -382,6 +405,9 @@ litellm_settings:
     - search: ["perplexity-sonar"]
     - research: ["perplexity-reasoning", "perplexity-sonar-pro"]
     - hermes: ["hf-hermes", "deepseek-flash"]
+    - uncensored: ["cydonia", "euryale"]
+    - uncensored-agent: ["local-qwen3-abliterated"]
+    - uncensored-free: ["local-qwen3-abliterated"]
     # older names (same chains)
     - auto: ["gpt", "kimi-cheap", "deepseek-flash"]
     - auto-free: ["free-inkling", "free-qwen", "free-gemma", "free-auto"]

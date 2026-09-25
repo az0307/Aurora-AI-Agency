@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# aurora-kit — install and check the phone kit (menu, Needle, Bitwarden CLI, widgets).
+#   aurora-kit install     # everything below except Bitwarden (safe to re-run)
+#   aurora-kit needle      # download Needle for Android (~37 MB) and test it
+#   aurora-kit bitwarden   # install the Bitwarden CLI (bw)  [AURORA_BW_REGION=eu for EU vaults]
+#   aurora-kit doctor      # check it all
+set -uo pipefail
+KIT=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+NEEDLE_DIR=${AURORA_NEEDLE_DIR:-$HOME/.local/share/needle}
+HF=https://huggingface.co/Cactus-Compute/needle3/resolve/main
+G=$'\e[32m'; R=$'\e[31m'; Y=$'\e[33m'; N=$'\e[0m'
+ok() { printf '  %s✓%s %s\n' "$G" "$N" "$*"; }
+no() { printf '  %s✗%s %s\n' "$R" "$N" "$*"; }
+hm() { printf '  %s!%s %s\n' "$Y" "$N" "$*"; }
+
+needle() {
+  mkdir -p "$NEEDLE_DIR"
+  local arch; arch=$(uname -m)
+  [ "$arch" = aarch64 ] || { no "Needle's Android build needs arm64 (this is $arch)"; return 1; }
+  echo "Downloading Needle (engine ~1 MB + weights ~35 MB)…"
+  curl -fL --retry 3 -o "$NEEDLE_DIR/needle" "$HF/android-arm64/needle" &&
+  curl -fL --retry 3 -o "$NEEDLE_DIR/needle3.cact" "$HF/needle3.cact" || { no "download failed"; return 1; }
+  chmod 755 "$NEEDLE_DIR/needle"
+  DRY_RUN=1 "$KIT/bin/aurora-needle" "turn on the torch" && ok "Needle works (dry run: nothing was switched on)"
+}
+
+bitwarden() {
+  command -v node >/dev/null || pkg install -y nodejs-lts
+  npm install -g @bitwarden/cli && ok "bw $(bw --version)"
+  [ "${AURORA_BW_REGION:-}" = eu ] && bw config server https://vault.bitwarden.eu >/dev/null && ok "EU vault"
+  echo "Next: aurora-secrets check   (logs in the first time)"
+}
+
+install() {
+  echo "Installing the Aurora phone kit…"
+  pkg install -y fzf jq glow python termux-api openssh >/dev/null 2>&1 && ok "packages: fzf jq glow python termux-api" \
+    || hm "some packages failed; run: pkg install fzf jq glow python termux-api"
+  command -v termux-fix-shebang >/dev/null && termux-fix-shebang "$KIT"/bin/* && ok "scripts made runnable"
+  chmod 755 "$KIT"/bin/*
+  for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
+    [ -f "$rc" ] || continue
+    grep -q 'phones/kit/bin' "$rc" || printf '\n# Aurora phone kit\nexport PATH="%s/bin:$PATH"\nalias a=aurora\n' "$KIT" >> "$rc"
+  done
+  ok "'aurora' (or just 'a') on your PATH — reopen Termux"
+  "$KIT/bin/aurora-widgets" install
+  [ -x "$NEEDLE_DIR/needle" ] && ok "Needle already installed" || needle || hm "Needle skipped: run aurora-kit needle later"
+  command -v bw >/dev/null || hm "Bitwarden CLI not installed (optional): aurora-kit bitwarden"
+}
+
+doctor() {
+  echo "Aurora phone kit check"
+  c() { if eval "$2" >/dev/null 2>&1; then ok "$1"; else no "$1 — $3"; fi; }
+  c "menu on PATH (aurora / a)"   "command -v aurora"                          "aurora-kit install, then reopen Termux"
+  c "fzf (menus)"                 "command -v fzf"                             "pkg install fzf"
+  c "Termux:API"                  "timeout 8 termux-battery-status"            "install Termux:API (F-Droid), open it once"
+  c "Needle engine + weights"     "[ -x $NEEDLE_DIR/needle ] && [ -s $NEEDLE_DIR/needle3.cact ]" "aurora-kit needle"
+  c "Needle answers"              "DRY_RUN=1 $KIT/bin/aurora-needle 'turn on the torch' | grep -q termux-torch" "aurora-kit needle"
+  c "home-screen buttons"         "ls $HOME/.shortcuts/aurora-menu.sh"         "aurora-widgets install"
+  c "quick-bar boot script"       "[ -x $HOME/.termux/boot/20-aurora-bar.sh ]" "aurora-widgets install (and open Termux:Boot once)"
+  c "Bitwarden CLI (optional)"    "command -v bw"                              "aurora-kit bitwarden"
+  c "server reachable"            "ssh -o BatchMode=yes -o ConnectTimeout=6 ${AURORA_SERVER:-aurora-01} true" "Tailscale on? server created? key added?"
+  c "Hermes answers"              "ssh -o BatchMode=yes -o ConnectTimeout=6 ${AURORA_SERVER:-aurora-01} docker exec hermes true" "start the hermes stack"
+}
+
+case "${1:-}" in
+  install) install ;; needle) needle ;; bitwarden) bitwarden ;; doctor) doctor ;;
+  *) sed -n '2,6p' "$0" ;;
+esac

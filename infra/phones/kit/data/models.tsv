@@ -1,0 +1,27 @@
+# Prices checked on OpenRouter 2026-09-24; image prices are approximate per 1-megapixel image.
+# name	kind	best at	chain (best → fallback)	cost	data rule	how to use
+general	text	Everyday default: email, plans, summaries, questions, most agent work	Claude Sonnet 5 → GPT-5.6 Sol → Kimi Code → DeepSeek V4.1 Flash	$$ ~$2–10 per 1M tokens	Paid only: OK for client details	/model general (it's the default)
+free	text	Everyday, $0: drafts, brainstorming, anything not private	Nemotron 3 Ultra 550B → Inkling → Qwen3.8-27B → Gemma 4 31B → OpenRouter free	$0 (rate-limited)	NOT for client details (free tiers may train on it)	/model free
+code	text	Writing and fixing code, scripts, n8n workflows	Claude Sonnet 5 → Grok Build → Kimi K2.7 Code → DeepSeek V4 Pro	$$	Paid only	/model code
+code-free	text	Coding for $0	North Mini Code → Laguna S 2.1 → Qwen3.8-27B → Nemotron 3 Ultra	$0	Not private code	/model code-free
+reason	text	Hard problems: strategy, contracts, debugging, reviews	Claude Opus 5.5 → GPT-5.6 Sol → Kimi K3 → DeepSeek V4 Pro	$$$ ~$5/$25 per 1M	Paid only	/model reason
+fast	text	Cheap bulk work: sort, tag, rewrite 100 items	DeepSeek V4.1 Flash → MiniMax M3 → Gemini 3.8 Flash → Qwen3.8 Flash	$ ~$0.15/$0.60 per 1M	Paid only	/model fast
+vision	text	Reading photos, screenshots, receipts, video, audio	Gemini 3.8 Flash → Claude Sonnet 5 → GPT-5.6 Sol	$	Paid only	/model vision, then send a photo
+search	text	Current facts with sources (prices, news, weather)	Perplexity Sonar Pro → Sonar	$$ + per search	Paid only. No tools: answers only	/model search
+research	text	A researched report, several minutes	Sonar Deep Research → Sonar Reasoning Pro → Sonar Pro	$$$	Paid only	/model research
+hermes	text	Chat with Nous Hermes models	Hermes 4 405B → HF Hermes 3 70B → DeepSeek	$$	Paid only. Hermes 4 has NO tool calling: with tools on, DeepSeek answers	/model hermes
+uncensored	text	Fewer refusals: fiction, dark themes, frank answers (chat only)	Dolphin Venice 24B → Cydonia 24B → Euryale 70B	$ ~$0.20/$0.90 per 1M	Never client data. No tool calling	/model uncensored
+uncensored-agent	text	Fewer refusals AND can use tools	Euryale L3.1 70B → local Qwen3 abliterated	$$ ~$0.85 per 1M	Never client data	/model uncensored-agent
+uncensored-free	text	Fewer refusals, $0, private (runs on the server)	local Dolphin 3 8B → local Qwen3 8B abliterated	$0, slow (CPU)	Needs the ollama stack running	/model uncensored-free
+supergrok	text	Grok on your SuperGrok plan	Grok 4.6	Plan (no API cost)	After: hermes auth add xai-oauth	/model supergrok
+image/seedream-4.5	image	Default. Good all-rounder, 2K	ByteDance Seedream 4.5	~4¢ per image	Paid	"make an image of …" (default)
+image/flux.2-klein-4b	image	Cheapest, fast drafts	FLUX.2 Klein 4B	~1–2¢	Paid	"…use flux.2-klein-4b"
+image/gemini-3.1-flash-image	image	Edits your photo, text in images	Gemini 3.1 Flash Image	~8¢	Paid	send a photo + "change the roof to red"
+image/gpt-image-2.5-flare	image	Best at text/logos/posters	GPT Image 2.5 Flare	~3–12¢ (by quality)	Paid	"…use gpt-image-2.5-flare"
+image/recraft-v4-pro-vector	image	Logos and icons as vectors	Recraft V4 Pro Vector	~30¢	Paid	"…a logo, use recraft-v4-pro-vector"
+video/veo-3.1-lite	video	Default. Cheapest with sound	Google Veo 3.1 Lite	3–8¢ per second	Paid	"make a 6 second video of …"
+video/grok-imagine-video	video	Cheap, fast, up to 15 s	Grok Imagine Video	5–7¢ per second	Paid	"…use grok-imagine-video"
+video/kling-v3.0-std	video	Smooth motion, people	Kling 3.0 Std	8–13¢ per second	Paid	"…use kling-v3.0-std"
+video/veo-3.1	video	Best quality with sound	Google Veo 3.1	20–40¢ per second	Paid	"…use veo-3.1"
+video/sora-2-pro	video	Premium, up to 20 s	OpenAI Sora 2 Pro	30–50¢ per second	Paid	"…use sora-2-pro"
+needle	phone	Phone commands on the phone, offline, in ~0.25 s	Cactus Needle 3 (35 MB) → else Hermes	$0	Stays on the phone	🎤 Voice button, or aurora-needle "torch on"

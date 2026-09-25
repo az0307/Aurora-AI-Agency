@@ -71,7 +71,7 @@ command instead:
 ## Step 6 — Termux + tmux
 
 Follow [TERMUX.md](./TERMUX.md) steps 2–7. Reno-specific notes:
-- With 8–12 GB RAM you can keep several tmux windows open: one to the server (`aurora`),
+- With 8–12 GB RAM you can keep several tmux windows open: one to the server (`server`),
   one local, and one for `gh` / git.
 - **Landscape + split screen:** rotate the phone and `Ctrl-a |` gives two panes side by side
   (logs on one side, shell on the other).
@@ -87,7 +87,7 @@ Follow [TERMUX.md](./TERMUX.md) steps 2–7. Reno-specific notes:
 | see model spend / router | Chrome → `https://aurora-01.<tailnet>.ts.net:4000/ui` |
 | check containers / restart the bot | Termux:Widget → `server-status` / `restart-hermes` |
 | read bot logs | Termux:Widget → `hermes-logs` |
-| full shell on the server | Termux → `aurora` (mosh + tmux, survives switching Wi-Fi ↔ 5G) |
+| full shell on the server | Termux → `server` (mosh + tmux, survives switching Wi-Fi ↔ 5G) |
 | review / merge a PR | GitHub app |
 | code with Claude | Claude app, or Claude Code on the web |
 | find a password or API key | Bitwarden |
@@ -100,6 +100,6 @@ Follow [TERMUX.md](./TERMUX.md) steps 2–7. Reno-specific notes:
 
 - [ ] Termux, Tailscale, ntfy, Telegram: background activity + auto launch allowed, Termux locked in Recents
 - [ ] Developer options → **Disable child process restrictions** on (and Developer options left on)
-- [ ] `aurora` opens the server tmux, and survives turning Wi-Fi off and on
+- [ ] `server` opens the server tmux, and survives turning Wi-Fi off and on
 - [ ] Uptime Kuma and n8n open over Tailscale in Chrome
 - [ ] Bitwarden autofill on; Aegis backups on

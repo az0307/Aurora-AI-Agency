@@ -32,8 +32,8 @@ Every package, version and URL here was checked against npm/PyPI and probed with
 | docker | local | start/stop containers | Docker access | **server** |
 | postgres | local | query n8n/scratch DBs (restricted mode) | `POSTGRES_DSN` | server |
 | n8n | local | author + validate n8n workflows | `N8N_API_URL`, `N8N_API_KEY` (optional) | anywhere |
-| hetzner | local | create/resize/destroy servers | `HETZNER_API_TOKEN` | **laptop** (keep the token off the server) |
-| hostinger | local | optional, Hostinger boxes | `HOSTINGER_API_TOKEN` | laptop |
+| **hetzner** | local | the whole Hetzner Cloud API: create/resize/rebuild/delete servers, firewalls, networks, volumes, pricing (185 tools; **can delete servers**) | `HETZNER_API_TOKEN` (= `HCLOUD_TOKEN`) | **laptop / operator only** (never on the server it manages) |
+| **hostinger** | local | the whole Hostinger API: VPS start/stop/snapshots/metrics, firewall, Docker projects, DNS, billing (**can buy and wipe VPSes**) | `HOSTINGER_API_TOKEN` | **laptop only** (never on the server it manages) |
 | **context7** | remote | current library/API docs | optional `CONTEXT7_API_KEY` | anywhere |
 | **github** | remote | repos, PRs, issues, Actions | `GITHUB_PAT` | anywhere |
 | **huggingface** | remote | search/read models, datasets, Spaces | optional `HF_TOKEN` | anywhere |

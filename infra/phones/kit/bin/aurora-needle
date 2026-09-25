@@ -1,0 +1,188 @@
+#!/usr/bin/env python3
+"""aurora-needle — phone commands by text or voice, run ON the phone by Needle.
+
+Needle (Cactus Compute, ~35 MB) turns "turn the torch on" into a Termux:API call in
+about a quarter of a second, offline. Anything that isn't a phone command goes to
+Hermes on the server instead.
+
+  aurora-needle "turn on the torch"
+  aurora-needle --voice          # listen (Android speech-to-text), then act
+  aurora-needle --dry-run "..."  # show what would run, run nothing
+
+Safety rules (Needle is small and confidently wrong on open questions — "write me a
+poem" came back as a clipboard action at 93% confidence in testing):
+  1. Only requests that look like phone commands reach Needle; the rest go to Hermes.
+  2. A Needle call runs only with confidence >= AURORA_NEEDLE_MIN (default 0.85) and
+     every argument grounded in what you said. Otherwise the request goes to Hermes.
+  3. Clipboard / notification / speech text must appear in what you said.
+"""
+import json, os, re, shlex, subprocess, sys
+
+HOME = os.path.expanduser("~")
+NEEDLE_DIR = os.environ.get("AURORA_NEEDLE_DIR", os.path.join(HOME, ".local/share/needle"))
+BIN = os.path.join(NEEDLE_DIR, "needle")
+MODEL = os.path.join(NEEDLE_DIR, "needle3.cact")
+KIT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+TOOLS = os.environ.get("AURORA_NEEDLE_TOOLS", os.path.join(KIT, "data", "needle-tools.json"))
+MIN_CONF = float(os.environ.get("AURORA_NEEDLE_MIN", "0.85"))
+DRY = os.environ.get("DRY_RUN") == "1"
+
+# Words that mark a request as a phone command. Everything else goes to Hermes.
+PHONE_WORDS = re.compile(
+    r"\b(torch|flash ?light|battery|charg\w*|where am i|my location|gps|volume|louder|quieter|"
+    r"mute|brightness|brighter|dimmer|vibrat\w*|buzz|clipboard|copy|paste|notif\w*|remind me now|"
+    r"wi-?fi|open (the )?(url|link|website|page)|say\b|speak|read out)\b", re.I)
+
+def sh(cmd, stdin=None):
+    """Run a Termux:API command (or print it in dry-run)."""
+    if DRY:
+        print("would run:", " ".join(shlex.quote(c) for c in cmd), ("<<< " + stdin) if stdin else "")
+        return ""
+    try:
+        r = subprocess.run(cmd, input=stdin, capture_output=True, text=True, timeout=30)
+        return (r.stdout or r.stderr).strip()
+    except FileNotFoundError:
+        return f"{cmd[0]} not found — install Termux:API (F-Droid) and `pkg install termux-api`"
+    except subprocess.TimeoutExpired:
+        return f"{cmd[0]} timed out (is the Termux:API app installed and allowed?)"
+
+def grounded(text, said):
+    """True when every word of `text` appears in what the user said."""
+    words = re.findall(r"\w+", (text or "").lower())
+    return bool(words) and all(w in said.lower() for w in words)
+
+def act(call, said):
+    """Map one Needle function call to Termux:API. Returns (done, message)."""
+    n, a = call["name"], call.get("arguments") or {}
+    if n == "battery_status":
+        out = sh(["termux-battery-status"])
+        try:
+            b = json.loads(out); return True, f"Battery {b['percentage']}%, {b['status'].lower()}, {b['temperature']:.0f}°C"
+        except Exception: return True, out
+    if n == "get_location":
+        out = sh(["termux-location", "-p", "network", "-r", "once"])
+        try:
+            g = json.loads(out); return True, f"You're at {g['latitude']:.5f}, {g['longitude']:.5f} (±{g['accuracy']:.0f} m)"
+        except Exception: return True, out
+    if n == "flashlight":
+        on = bool(a.get("on")); sh(["termux-torch", "on" if on else "off"]); return True, f"Torch {'on' if on else 'off'}"
+    if n == "say_out_loud":
+        t = a.get("text", "")
+        if not grounded(t, said): return False, ""
+        sh(["termux-tts-speak"], stdin=t); return True, f"Said: {t}"
+    if n == "show_notification":
+        body = a.get("content") or a.get("title") or ""
+        if not grounded(body, said): return False, ""
+        sh(["termux-notification", "--title", a.get("title") or "Aurora", "--content", body]); return True, "Notification shown"
+    if n == "set_volume":
+        s, lvl = a.get("stream", "music"), max(0, min(15, int(a.get("level", 8))))
+        sh(["termux-volume", s, str(lvl)]); return True, f"{s} volume {lvl}/15"
+    if n == "set_brightness":
+        lvl = max(0, min(255, int(a.get("level", 128)))); sh(["termux-brightness", str(lvl)]); return True, f"Brightness {lvl}/255"
+    if n == "vibrate":
+        ms = max(100, min(5000, int(a.get("duration_ms", 1000)))); sh(["termux-vibrate", "-d", str(ms)]); return True, f"Buzzed {ms} ms"
+    if n == "clipboard_get":
+        return True, "Clipboard: " + sh(["termux-clipboard-get"])
+    if n == "clipboard_set":
+        t = a.get("text", "")
+        if not grounded(t, said): return False, ""
+        sh(["termux-clipboard-set"], stdin=t); return True, f"Copied: {t}"
+    if n == "open_url":
+        u = a.get("url", "")
+        if not re.match(r"^https?://", u) and "." in u: u = "https://" + u
+        if not u.startswith(("http://", "https://")): return False, ""
+        sh(["termux-open-url", u]); return True, f"Opening {u}"
+    if n == "wifi_info":
+        out = sh(["termux-wifi-connectioninfo"])
+        try:
+            w = json.loads(out); return True, f"Wi-Fi: {w.get('ssid')} ({w.get('rssi')} dBm, {w.get('ip')})"
+        except Exception: return True, out
+    return False, ""
+
+# Plain-rule answers for things Needle is shaky on (tested): relative levels have no
+# number to ground, and phone-only info must never go to the server.
+RULES = [
+    (re.compile(r"\b(brighter|brightness up|full brightness)\b", re.I), {"name": "set_brightness", "arguments": {"level": 230}}),
+    (re.compile(r"\b(dimmer|darker|brightness down|dim the screen)\b", re.I), {"name": "set_brightness", "arguments": {"level": 40}}),
+    (re.compile(r"\b(louder|volume up|turn it up)\b", re.I), {"name": "set_volume", "arguments": {"stream": "music", "level": 12}}),
+    (re.compile(r"\b(quieter|volume down|turn it down)\b", re.I), {"name": "set_volume", "arguments": {"stream": "music", "level": 4}}),
+    (re.compile(r"\bmute\b", re.I), {"name": "set_volume", "arguments": {"stream": "music", "level": 0}}),
+]
+FALLBACK = [  # used only when Needle is unsure; these take no arguments
+    (re.compile(r"\bwi-?fi\b", re.I), "wifi_info"),
+    (re.compile(r"\bbattery|charg", re.I), "battery_status"),
+    (re.compile(r"\bwhere am i\b|\bmy location\b|\bgps\b", re.I), "get_location"),
+    (re.compile(r"\b(what'?s|read|show)\b.*\bclipboard\b", re.I), "clipboard_get"),
+]
+
+def fix_args(call, said):
+    """Correct numbers Needle got wrong when the user said them explicitly."""
+    a = call.setdefault("arguments", {})
+    m = re.search(r"(\d+(?:\.\d+)?)\s*(ms|milliseconds?|s|secs?|seconds?)\b", said, re.I)
+    if call["name"] == "vibrate" and m:
+        n = float(m.group(1)); a["duration_ms"] = int(n if m.group(2).lower().startswith("m") else n * 1000)
+    return call
+
+def needle(said):
+    if not (os.path.exists(BIN) and os.path.exists(MODEL)):
+        return None, "Needle isn't installed (run: aurora-kit needle)"
+    env = dict(os.environ, NEEDLE_TELEMETRY="0", DO_NOT_TRACK="1")
+    try:
+        r = subprocess.run([BIN, "--model", MODEL, "--tools", TOOLS, "--prompt", said, "--threads", "4"],
+                           capture_output=True, text=True, timeout=60, env=env)
+        line = [l for l in r.stdout.splitlines() if l.startswith("{")][-1]
+        return json.loads(line), ""
+    except Exception as e:
+        return None, f"Needle failed: {e}"
+
+def ask_hermes(said, speak):
+    ask = os.path.join(os.path.dirname(os.path.realpath(__file__)), "aurora-ask")
+    if DRY:
+        print("would ask Hermes:", said); return 0
+    return subprocess.call([ask] + (["-s"] if speak else []) + [said])
+
+def main():
+    args = sys.argv[1:]
+    global DRY
+    if "--dry-run" in args: DRY = True; args.remove("--dry-run")
+    voice = "--voice" in args
+    if voice:
+        args.remove("--voice")
+        said = sh(["termux-speech-to-text"]) if not DRY else " ".join(args)
+    else:
+        said = " ".join(args).strip() or (sys.stdin.read().strip() if not sys.stdin.isatty() else input("Say or type: "))
+    if not said: return 1
+    speak = voice
+    for rx, call in RULES:
+        if rx.search(said):
+            done, msg = act(dict(call), said)
+            print(f"✓ {msg}   (rule)"); return 0
+    if not PHONE_WORDS.search(said):
+        print("→ Hermes (not a phone command)"); return ask_hermes(said, speak)
+    res, why = needle(said)
+    if not res:
+        print(why); print("→ Hermes"); return ask_hermes(said, speak)
+    calls = res.get("function_calls") or []
+    conf = res.get("confidence") or 0
+    ungrounded = (res.get("validation") or {}).get("ungrounded") or []
+    if not calls or conf < MIN_CONF or ungrounded:
+        for rx, name in FALLBACK:
+            if rx.search(said):
+                done, msg = act({"name": name, "arguments": {}}, said)
+                print(f"✓ {msg}   (rule; Needle was unsure)"); return 0
+        print(f"→ Hermes (Needle unsure: confidence {conf:.2f}{', guessed ' + ', '.join(ungrounded) if ungrounded else ''})")
+        return ask_hermes(said, speak)
+    msgs = []
+    for c in calls:
+        done, msg = act(fix_args(c, said), said)
+        if not done:
+            print(f"→ Hermes (Needle's {c['name']} didn't match what you said)"); return ask_hermes(said, speak)
+        msgs.append(msg)
+    out = "; ".join(msgs)
+    print(f"✓ {out}   (on-device, confidence {conf:.2f})")
+    if speak and not DRY: sh(["termux-tts-speak"], stdin=out)
+    if not sys.stdout.isatty() and not DRY: sh(["termux-toast", out])
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# aurora-gen — make a picture or a video with Hermes, and put it in your phone's gallery.
+#   aurora-gen image "a terracotta tile roof at sunset, photo"
+#   aurora-gen video "drone shot rising over a new metal roof" [--seconds 6]
+#   aurora-gen image "…" --model black-forest-labs/flux.2-pro
+# Hermes does the work on the server (image_gen / video_gen via OpenRouter); this
+# script then copies the newest file back. Videos take 1–10 minutes.
+set -uo pipefail
+SERVER=${AURORA_SERVER:-aurora-01}
+HERMES_DATA=${AURORA_HERMES_DATA:-/opt/aurora/stacks/hermes/data}
+kind=${1:-}; shift || true
+case "$kind" in image|video) ;; *) sed -n '2,8p' "$0"; exit 1 ;; esac
+prompt=""; model=""; secs=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --model) model=${2:-}; shift 2 ;;
+    --seconds) secs=${2:-}; shift 2 ;;
+    *) prompt="$prompt${prompt:+ }$1"; shift ;;
+  esac
+done
+[ -n "$prompt" ] || { read -rp "Describe the $kind: " prompt; }
+[ -n "$prompt" ] || exit 1
+here=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
+start=$(ssh -o ConnectTimeout=10 -o BatchMode=yes "$SERVER" date +%s) || { echo "Can't reach $SERVER" >&2; exit 1; }
+ask="Use your $kind generation tool (not a web search) to create this $kind"
+[ -n "$model" ] && ask="$ask with the model $model"
+[ -n "$secs" ] && ask="$ask, $secs seconds long"
+ask="$ask. When it's saved, reply with one short line. The $kind: $prompt"
+echo "Asking Hermes to make the $kind… ($( [ "$kind" = video ] && echo 'videos take 1–10 min' || echo 'about 10–40 s'))"
+"$here/aurora-ask" "$ask" || exit 1
+dir="$HERMES_DATA/cache/${kind}s"
+remote=$(ssh -o BatchMode=yes "$SERVER" \
+  "find '$dir' -type f -newermt @$start -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -1 | cut -d' ' -f2-")
+[ -n "$remote" ] || { echo "Hermes answered but no new $kind file appeared in $dir." >&2; exit 1; }
+if [ -d "$HOME/storage/pictures" ]; then
+  out="$HOME/storage/$( [ "$kind" = video ] && echo movies || echo pictures )/Aurora"
+else out="$HOME/aurora-media"; fi
+mkdir -p "$out"
+scp -q "$SERVER:$remote" "$out/" || exit 1
+file="$out/$(basename "$remote")"
+echo "Saved: $file"
+command -v termux-media-scan >/dev/null && termux-media-scan "$file" >/dev/null 2>&1
+command -v termux-open >/dev/null && [ -z "${AURORA_NO_OPEN:-}" ] && termux-open "$file"
+exit 0
