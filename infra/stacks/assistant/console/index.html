@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aurora Assistant</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#171b22; --panel2:#1e232c; --line:#2a313c;
+    --ink:#e8edf4; --dim:#9aa7b8; --accent:#6ea8fe; --ok:#4ec98a; --bad:#e5687a; --warn:#e3b341;
+    --radius:14px; --gap:14px;
+  }
+  :root:not([data-theme="dark"]){ @media (prefers-color-scheme: light){
+    --bg:#f4f6fa; --panel:#fff; --panel2:#eef1f6; --line:#dde3ec; --ink:#161a20; --dim:#5a6675;
+  }}
+  :root[data-theme="light"]{ --bg:#f4f6fa; --panel:#fff; --panel2:#eef1f6; --line:#dde3ec; --ink:#161a20; --dim:#5a6675; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  header{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)}
+  header h1{font-size:18px;margin:0;font-weight:650;letter-spacing:.2px}
+  header .who{color:var(--dim);font-size:13px}
+  main{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:26px 4px 10px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:var(--gap)}
+  .card{display:flex;flex-direction:column;gap:6px;padding:16px;background:var(--panel);border:1px solid var(--line);
+        border-radius:var(--radius);color:inherit;text-decoration:none;transition:.12s border-color,.12s transform}
+  .card:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .card .t{font-weight:600;display:flex;align-items:center;gap:8px}
+  .card .d{color:var(--dim);font-size:13px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--dim);flex:0 0 auto}
+  .dot.up{background:var(--ok)} .dot.down{background:var(--bad)} .dot.unknown{background:var(--warn)}
+  .ask{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-top:8px}
+  .ask textarea{width:100%;min-height:84px;resize:vertical;background:var(--panel2);color:inherit;border:1px solid var(--line);
+        border-radius:10px;padding:12px;font:inherit}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  select,button{font:inherit;border-radius:10px;border:1px solid var(--line);padding:10px 14px}
+  select{background:var(--panel2);color:inherit}
+  button{background:var(--accent);color:#08101f;border:none;font-weight:650;cursor:pointer}
+  button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  button:disabled{opacity:.5;cursor:default}
+  .note{color:var(--dim);font-size:13px;margin-top:8px}
+  #out{white-space:pre-wrap;margin-top:12px;padding:12px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);display:none}
+  #out.show{display:block}
+  footer{max-width:1100px;margin:0 auto;padding:0 16px 40px;color:var(--dim);font-size:12px}
+  a.link{color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <span class="dot" id="hostdot" title="server reachable"></span>
+  <h1>Aurora Assistant</h1>
+  <span class="who" id="host">aurora-01</span>
+</header>
+<main>
+  <div class="ask">
+    <strong>Tell your assistant to do something</strong>
+    <div class="note">This sends the task to n8n (the <code>assistant-intake</code> workflow), which routes it and replies on Telegram / in the n8n run log. It never leaves your tailnet.</div>
+    <textarea id="task" placeholder="e.g. Draft a follow-up email to the Werribee lead and save it as a Google Doc"></textarea>
+    <div class="row">
+      <select id="lane" title="which part of life">
+        <option value="agency">Agency / client work</option>
+        <option value="admin">Admin / finance</option>
+        <option value="personal">Personal</option>
+        <option value="vps">VPS / infra</option>
+      </select>
+      <button id="send">Send to assistant</button>
+      <button class="ghost" id="openbot">Chat in OpenBot →</button>
+      <span class="note" id="askhint"></span>
+    </div>
+    <div id="out"></div>
+  </div>
+
+  <h2>Talk to it</h2>
+  <div class="grid" id="talk"></div>
+  <h2>Run it</h2>
+  <div class="grid" id="run"></div>
+  <h2>Build &amp; watch</h2>
+  <div class="grid" id="build"></div>
+</main>
+<footer>
+  Everything here is reachable only over Tailscale. Client information goes only to paid model chains — never a <code>-free</code> one.
+  Guide: <a class="link" href="https://github.com/az0307/Aurora-AI-Agency/blob/main/infra/GUIDE-SIMPLE.md">GUIDE-SIMPLE.md</a>.
+</footer>
+<script src="base.js"></script>
+<script>
+// The tailnet base is injected by the server (see nginx default.conf → /base.js). Falls back
+// to the current host so the page still works over an SSH tunnel to 127.0.0.1.
+const TS = (window.AURORA_TS || location.hostname);
+const base = (port, path="") => `https://${TS}${port?":"+port:""}${path}`;
+
+const cards = {
+  talk: [
+    ["OpenBot", "Web AI assistant (OpenBot)", 3020, "/", "openbot"],
+    ["Hermes dashboard", "The always-on agent · chat is on Telegram", 9119, "/", "hermes"],
+  ],
+  run: [
+    ["n8n", "Workflows & automations", 0, "/", "n8n"],
+    ["Models (router)", "Which model, spend", 4000, "/ui", "router"],
+    ["Stacks (Dockge)", "Start/stop, logs, edit", 5001, "/", "dockge"],
+    ["Uptime", "Alerts if something dies", 3001, "/", "kuma"],
+  ],
+  build: [
+    ["Logs (Dozzle)", "Live container logs", 8080, "/", "dozzle"],
+    ["Start page", "All links + status", 3002, "/", "home"],
+  ],
+};
+// health probe id → the health endpoint we can reach same-origin via the nginx /up proxy.
+function render(){
+  for(const [sec, items] of Object.entries(cards)){
+    const el = document.getElementById(sec); el.innerHTML="";
+    for(const [t,d,port,path,id] of items){
+      const a=document.createElement("a"); a.className="card";
+      a.href = port===0 ? base(0,path) : base(port,path); a.target="_blank"; a.rel="noopener";
+      a.innerHTML=`<span class="t"><span class="dot unknown" data-id="${id}"></span>${t}</span><span class="d">${d}</span>`;
+      el.appendChild(a);
+    }
+  }
+}
+render();
+// Ask "is it up?" through nginx's /up proxy (same origin, no keys in the browser).
+fetch("up.json").then(r=>r.json()).then(s=>{
+  document.querySelectorAll(".dot[data-id]").forEach(dot=>{
+    const st = s[dot.dataset.id];
+    dot.className = "dot " + (st===true?"up":st===false?"down":"unknown");
+  });
+}).catch(()=>{ document.querySelectorAll(".dot[data-id]").forEach(d=>d.style.display="none"); });
+document.getElementById("host").textContent = TS;
+document.getElementById("hostdot").classList.add("up");
+document.getElementById("openbot").onclick = ()=>window.open(base(3020,"/"),"_blank","noopener");
+
+const out=document.getElementById("out"), btn=document.getElementById("send");
+btn.onclick = async ()=>{
+  const text=document.getElementById("task").value.trim();
+  if(!text){ document.getElementById("task").focus(); return; }
+  btn.disabled=true; out.className="show"; out.textContent="Sending…";
+  try{
+    const r=await fetch("intake",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({lane:document.getElementById("lane").value,text,source:"assistant-console",ts:new Date().toISOString()})});
+    out.textContent = r.ok ? "Sent. Your assistant is on it — watch Telegram or the n8n run log."
+      : `n8n replied ${r.status}. Is the assistant-intake workflow imported and Active? (n8n → Workflows)`;
+  }catch(e){ out.textContent="Couldn't reach n8n. Is the n8n stack up? (aurora status)"; }
+  btn.disabled=false;
+};
+</script>
+</body>
+</html>

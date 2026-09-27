@@ -14,6 +14,7 @@
 #   bash /opt/aurora/stacks-up.sh openbot      # OpenBot on 127.0.0.1:3020 (+ Tailscale Serve :3020)
 #   bash /opt/aurora/stacks-up.sh dashboard    # Homepage start page, 127.0.0.1:3002 (+ tailnet :3002)
 #   bash /opt/aurora/stacks-up.sh admin        # Dockge stack manager GUI, 127.0.0.1:5001 (+ tailnet :5001)
+#   bash /opt/aurora/stacks-up.sh assistant    # Aurora Assistant control panel, 127.0.0.1:8600 (+ tailnet :8600)
 #   bash /opt/aurora/stacks-up.sh status       # what's running + free RAM
 #
 # Add --env-only to write/refresh the .env without starting anything.
@@ -35,7 +36,7 @@ say()  { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[33mWARN\033[0m %s\n' "$*"; }
 die()  { printf '\033[31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 
-usage() { sed -n '2,27p' "$0"; exit 2; }
+usage() { sed -n '2,28p' "$0"; exit 2; }
 [ -n "$STACK" ] || usage
 
 # --- Load secrets into this process only (bootstrap.sh wrote them with printf %q) ------
@@ -204,6 +205,16 @@ EOF
     up
     wait_http http://127.0.0.1:3020/api/capabilities openbot
     grep -q '^OPENBOT_SINGLE_USER=true' .env && warn "single-user mode: anyone on your tailnet who opens it is you. Fine for a personal tailnet; switch to OAuth before sharing the tailnet."
+    ;;
+  assistant)
+    cd "$ROOT/stacks/assistant"
+    [ -f .env ] || install -m 600 .env.example .env
+    if ts_serve 8600; then setkv .env AURORA_TS_JS "\"$TS_DNS\""
+    else setkv .env AURORA_TS_JS "location.hostname"; warn "no host tailscale: launcher tiles use the current hostname"; fi
+    docker ps --format '{{.Names}}' | grep -q '^n8n-n8n-1$' || warn "n8n isn't up — the 'send a task' box needs it (aurora start n8n) + the assistant-intake workflow imported & Active"
+    up
+    wait_http http://127.0.0.1:8600/ assistant
+    [ -n "$TS_URL" ] && say "open on your phone: $TS_URL"
     ;;
   dashboard)
     cd "$ROOT/stacks/dashboard"

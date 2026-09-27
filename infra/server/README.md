@@ -16,6 +16,7 @@ or in the RDP desktop (XFCE) with icons.
 
 | GUI | Where | What for |
 |---|---|---|
+| **Aurora Assistant** | `https://aurora-01.<tailnet>.ts.net:8600` (desktop icon **Aurora Assistant**) | the go-to panel: a "send a task" box wired to n8n, plus one-tap into OpenBot, Hermes, n8n, OpenCode, router |
 | **Start page (Homepage)** | `https://aurora-01.<tailnet>.ts.net:3002`: bookmark it on both phones | every link in one place, with a green dot per running container, plus CPU/RAM/disk |
 | **Stacks GUI (Dockge)** | `https://aurora-01.<tailnet>.ts.net:5001` | start/stop/restart stacks, live logs, edit compose and `.env`, a shell in a container |
 | **Desktop (XFCE over RDP)** | `100.75.44.47:3389` | the full desktop with the icons above: Firefox, terminal, file manager |

@@ -15,7 +15,9 @@
 set -uo pipefail
 
 ROOT=/opt/aurora
-STACKS=(router n8n hermes openbot computer monitoring dashboard admin tailscale)
+STACKS=(router n8n hermes openbot assistant computer monitoring dashboard admin tailscale)
+# Core set for `aurora up`, in dependency order. Stacks missing a required secret are skipped.
+CORE=(router n8n hermes assistant dashboard monitoring computer)
 REPO_DIR="$HOME/Aurora-AI-Agency"
 REPO_URL="${AURORA_REPO_URL:-https://github.com/az0307/Aurora-AI-Agency.git}"
 BRANCH="${AURORA_BRANCH:-main}"
@@ -38,6 +40,20 @@ stack_dir() { echo "$ROOT/stacks/$1"; }
 act() {
   case "$1" in
     status)   bash "$ROOT/stacks-up.sh" status; echo; df -h / | tail -1 ;;
+    up)       # staged full bring-up: start each core stack; keep going if one can't start yet
+              local s ok=() skip=()
+              for s in "${CORE[@]}"; do
+                echo; printf '\033[1;36m==> up: %s\033[0m\n' "$s"
+                if bash "$ROOT/stacks-up.sh" "$s"; then ok+=("$s"); else skip+=("$s"); fi
+              done
+              echo; echo "Started: ${ok[*]:-none}"; [ ${#skip[@]} -gt 0 ] && echo "Skipped (missing secret or a health check failed): ${skip[*]}"
+              echo "Detail any time: aurora maintain report" ;;
+    kali)     # AUTHORIZED USE ONLY — on-demand Kali toolbox container (see stacks/ondemand)
+              echo "⚠️  Kali is for testing systems you own or are authorised to test."
+              if [ "${2:-}" != --yes ] && [ -t 0 ]; then read -r -p "Continue? [y/N] " a; [[ "$a" =~ ^[Yy]$ ]] || return 0; fi
+              (cd "$ROOT/stacks/ondemand" && docker compose --profile kali up -d) \
+                && echo "Kali up. Shell: docker exec -it ondemand-kali-1 bash   ·   Hermes can drive it via the Docker MCP." \
+                && echo "Stop when done: cd $ROOT/stacks/ondemand && docker compose --profile kali down" ;;
     start)    local s="${2:-$(pick 'Start which stack?' "${STACKS[@]}")}"; [ -n "$s" ] && bash "$ROOT/stacks-up.sh" "$s" ;;
     stop)     local s="${2:-$(pick 'Stop which stack?' "${STACKS[@]}")}"
               [ -n "$s" ] && (cd "$(stack_dir "$s")" && docker compose stop) ;;
@@ -63,7 +79,7 @@ act() {
               && bash "$ROOT/server/setup-tools.sh" --refresh \
               && echo "Updated from $BRANCH. Restart a stack to apply compose changes."
               ;;
-    maintain) local m="${2:-$(pick 'Maintenance' report backup prune upgrade tune)}"
+    maintain) local m="${2:-$(pick 'Maintenance' report backup snapshot prune upgrade tune)}"
               [ -n "$m" ] || return 0
               if [ "$m" = upgrade ]; then
                 local s="${3:-$(pick 'Upgrade which stack (pulls newer images)?' all "${STACKS[@]}")}"
@@ -80,6 +96,6 @@ act() {
 
 while :; do
   choice=$(pick "What do you want to do?" \
-    status start stop restart logs docker top opencode claude hermes check links maintain update shell quit) || exit 0
+    status up start stop restart logs docker top opencode claude hermes kali check links maintain update shell quit) || exit 0
   case "$choice" in quit|"") exit 0 ;; *) clear; act "$choice"; pause ;; esac
 done

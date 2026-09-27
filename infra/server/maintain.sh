@@ -6,6 +6,7 @@
 #   aurora maintain prune         # free disk: old unused images/build cache, capped journals
 #   aurora maintain upgrade STACK # backup, pull newer images, recreate that stack (or: all)
 #   aurora maintain report        # full read-only health + upkeep report (paste it to Claude)
+#   aurora maintain snapshot      # backup + report + a versions/health manifest = "this worked"
 #
 # `tune` sets up (each step is skipped if already done):
 #   - Docker: log rotation (10 MB × 3 per container) + live-restore (containers keep running
@@ -181,7 +182,27 @@ report() {
   ss -Htlnp 2>/dev/null | awk '$4 !~ /^(127\.|\[::1\])/ {print "      " $4}' | sort -u
 }
 
+# --------------------------------------------------------------------------- snapshot
+# A "known-good" marker: a fresh backup + the full report + a manifest of exactly what was
+# running and at which image digests, saved together so you can prove/return to this state.
+snapshot() {
+  local day; day=$(date +%F_%H%M)
+  local dir="$BACKUP_DIR/snapshot-$day"
+  backup
+  as_root install -d -m 700 "$dir"
+  say "Snapshot → $dir"
+  report > /tmp/aurora-report.txt 2>&1 || true; as_root cp /tmp/aurora-report.txt "$dir/report.txt"; rm -f /tmp/aurora-report.txt
+  # Exact images + digests of everything running, so this state is reproducible.
+  docker ps --format '{{.Names}} {{.Image}}' | while read -r n img; do
+    printf '%s\t%s\t%s\n' "$n" "$img" "$(docker inspect -f '{{index .Image}}' "$n" 2>/dev/null)"
+  done | as_root tee "$dir/images.tsv" >/dev/null
+  (cd "$ROOT" && git rev-parse HEAD 2>/dev/null) | as_root tee "$dir/repo-commit.txt" >/dev/null || true
+  as_root sh -c "echo 'snapshot taken '$(date -Is) > '$dir/OK.txt'"
+  say "Snapshot done. If check.sh showed all ✓, this is a confirmed-working point to return to."
+  grep -q '✗' "$dir/report.txt" 2>/dev/null && warn "report.txt still has ✗ lines — not fully green yet" || say "report.txt is clean (no ✗)."
+}
+
 case "${1:-}" in
-  tune) tune ;; backup) backup ;; prune) prune ;; upgrade) upgrade "${2:-}" ;; report) report ;;
-  *) sed -n '2,23p' "$0"; exit 2 ;;
+  tune) tune ;; backup) backup ;; prune) prune ;; upgrade) upgrade "${2:-}" ;; report) report ;; snapshot) snapshot ;;
+  *) sed -n '2,24p' "$0"; exit 2 ;;
 esac

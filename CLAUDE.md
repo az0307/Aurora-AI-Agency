@@ -157,7 +157,7 @@ Cloudflare) and the Docker stacks that run on it.
 - `infra/phones/` — per-phone guides, Termux configs, setup scripts, and `phones/kit/` (the `a` menu, Needle phone commands, `aurora-ask`/`aurora-gen`, Bitwarden `aurora-secrets`, widget generator).
 - `infra/bootstrap.sh` — provisions the box from the phone or an agent session; `VPS_PROVIDER=hetzner` (default: `infra/hetzner/provision.sh` + `cloud-init.yaml`, Hetzner Cloud CX33 in nbg1, budget-guarded) or `hostinger` (`infra/hostinger/`, KVM 2, typed `buy` confirmation). Provider tokens never ship to the box.
 - `infra/stacks-up.sh` — runs on the server: starts ONE stack at a time (router → n8n → hermes → tailscale → monitoring), filling each `.env` from `/opt/aurora/secrets.env` without printing values. `bootstrap.sh --ship-only` re-ships files + secrets to an existing box without touching the provider.
-- `infra/server/` — operator tools installed on the box by `setup-tools.sh`: the `aurora` menu (TUI), `aurora-agent` (runs OpenCode / Claude Code with router + n8n keys in the child env only), OpenCode and Claude Code MCP configs, RDP desktop icons, and `maintain.sh` (tune/backup/prune/upgrade/report + systemd timers). Web GUIs: `stacks/dashboard` (Homepage start page) and `stacks/admin` (Dockge), both loopback + tailnet-only. See `infra/server/README.md`; plain-language guide: `infra/GUIDE-SIMPLE.md`; S10 flashing: `infra/phones/FLASHING.md`.
+- `infra/server/` — operator tools installed on the box by `setup-tools.sh`: the `aurora` menu (TUI), `aurora-agent` (runs OpenCode / Claude Code with router + n8n keys in the child env only), OpenCode and Claude Code MCP configs, RDP desktop icons, and `maintain.sh` (tune/backup/prune/upgrade/report + systemd timers). Web GUIs: `stacks/dashboard` (Homepage start page) and `stacks/admin` (Dockge), both loopback + tailnet-only. See `infra/server/README.md`; plain-language guide: `infra/GUIDE-SIMPLE.md`; standards `infra/server/STANDARDS.md`; add-on catalog `infra/CATALOG.md`; S10 flashing: `infra/phones/FLASHING.md`.
 - `infra/hostinger/` — Hostinger VPS module + post-install base setup (the Hostinger equivalent of cloud-init). The alternative provider.
 - `infra/hetzner/` — `cloud-init.yaml` (base provisioning) + `provision.sh` + `main.tf.example` (Terraform, hcloud provider). The default provider; managed by agents via `@lazyants/hetzner-mcp-server` (operator side only).
 - `infra/runbooks/` — `DAY1.md` (stand-up sequence) and `BACKUP.md`.
@@ -167,6 +167,8 @@ Cloudflare) and the Docker stacks that run on it.
   - `hermes/` — Hermes Agent (chat gateways, MCP, plugins, image/video gen); `FEATURES.md` lists every feature and what's on.
   - `computer/` — Playwright MCP + on-demand computer-use desktop (loopback + Tailscale only).
   - `monitoring/`, `dashboard/`, `agents/` — observability, start page, and sandboxed agent stacks.
+  - `assistant/` — the Aurora Assistant control panel (nginx; loopback + tailnet), with a "send a task" box proxied to the n8n `assistant-intake` workflow.
+  - `ondemand/` — profiled tools incl. an authorized-use Kali toolbox (`aurora kali`; see `stacks/ondemand/KALI.md`). n8n workflows for the four lanes live in `stacks/n8n/workflows/aurora/`.
   - Router chains are curated per job; run `stacks/router/check-chains.py` after editing them. Uncensored models only appear in the `uncensored*` chains.
 
 Never commit real secrets — only `.env.example` templates.

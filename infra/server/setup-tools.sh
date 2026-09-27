@@ -64,6 +64,7 @@ if command -v xfce4-terminal >/dev/null || [ -d "$HOME/Desktop" ]; then
       "$2" "$3" "$4" > "$apps/$1.desktop"
     install -m 755 "$apps/$1.desktop" "$HOME/Desktop/$1.desktop"
   }
+  icon aurora-assistant "Aurora Assistant" "xdg-open http://127.0.0.1:8600" applications-internet
   icon aurora-control "Aurora Control" "$term aurora" utilities-terminal
   icon aurora-opencode "OpenCode" "$term aurora-agent opencode" accessories-text-editor
   icon aurora-claude "Claude Code" "$term aurora-agent claude" accessories-text-editor
