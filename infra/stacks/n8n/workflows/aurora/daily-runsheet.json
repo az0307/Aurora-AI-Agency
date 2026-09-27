@@ -1,0 +1,121 @@
+{
+  "id": "auroradailyrunsh",
+  "name": "daily-runsheet — 06:15 consolidated day plan to Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "15 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "n022",
+      "name": "06:15 daily",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://router-litellm-1:4000/health/liveliness",
+        "options": {}
+      },
+      "id": "n023",
+      "name": "Box ok",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://router-litellm-1:4000/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"model\": \"general\", \"messages\": [{\"role\": \"system\", \"content\": \"You are Aurora, Az's chief of staff. Build a short DAILY RUNSHEET with these sections, each 1-2 bullets: FOCUS (the one thing), AGENCY (client next actions), ADMIN (money/compliance), PERSONAL (health/errand), BOX (infra note). Under 180 words. If a section has nothing, say 'clear'.\"}, {\"role\": \"user\", \"content\": \"={{ 'Date '+$now.toFormat('cccc d LLL')+'. Router health='+($('Box ok').item.json.status||'?')+'. Add calendar/leads/PR data here once wired.' }}\"}]}",
+        "options": {}
+      },
+      "id": "n024",
+      "name": "Compose runsheet",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        320,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{$env.TELEGRAM_ALLOWED_USERS || '<YOUR_CHAT_ID>'}}",
+        "text": "={{ '🗓️ Runsheet '+$now.toFormat('ccc d LLL')+'\\n'+($json.choices?.[0]?.message?.content||'') }}",
+        "additionalFields": {}
+      },
+      "id": "n025",
+      "name": "Notify Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        40
+      ]
+    }
+  ],
+  "connections": {
+    "06:15 daily": {
+      "main": [
+        [
+          {
+            "node": "Box ok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Box ok": {
+      "main": [
+        [
+          {
+            "node": "Compose runsheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose runsheet": {
+      "main": [
+        [
+          {
+            "node": "Notify Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "aurora_note": "The single morning message. It runs on the router now; wire real calendar/leads/PR-status HTTP nodes before 'Compose runsheet' to make each section live. Disable personal-morning-brief if you want only this one."
+  },
+  "tags": []
+}

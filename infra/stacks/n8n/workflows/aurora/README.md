@@ -23,6 +23,7 @@ Then open n8n, and for each one: connect the credentials it names, and toggle **
 | `agency-lead-intake.json` | Webhook `POST /webhook/agency-lead` | Reusable client-lead intake → Google Sheet + alert | Google Sheets cred + sheet id; Telegram |
 | `admin-weekly-digest.json` | Cron Mon 08:05 | Monday admin/finance checklist via the router | Router + Telegram creds |
 | `personal-morning-brief.json` | Cron 06:30 | A short good-morning brief | Router + Telegram creds |
+| `daily-runsheet.json` | Cron 06:15 | **The consolidated day plan** (Focus/Agency/Admin/Personal/Box) in one message | Router + Telegram creds |
 
 **Credentials, not secrets in JSON.** These files carry no keys. n8n stores credentials
 encrypted (that's what `N8N_ENCRYPTION_KEY` protects — back it up). The router is reached at
