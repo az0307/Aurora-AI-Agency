@@ -173,6 +173,8 @@ Cloudflare) and the Docker stacks that run on it.
 
 Never commit real secrets — only `.env.example` templates.
 
+**Cross-agent + spec-driven:** root `AGENTS.md` (rules for any coding agent), `infra/DESIGN.md` (architecture), `infra/tasks.yaml` (machine-readable backlog), `infra/SPECKIT.md` + `.specify/memory/constitution.md` (GitHub Spec Kit flow), and the Claude Code plugin `plugins/aurora-ops/` with marketplace `.claude-plugin/marketplace.json`.
+
 ---
 
 ## evermystic

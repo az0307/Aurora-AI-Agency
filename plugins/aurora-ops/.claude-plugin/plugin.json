@@ -1,0 +1,6 @@
+{
+  "name": "aurora-ops",
+  "description": "Operate the Aurora self-hosted box: provisioning, staged stack bring-up, health checks, and spec-driven changes. Safety rules baked in (secrets never printed, client PII off free chains, money/destruction need a human).",
+  "version": "0.1.0",
+  "author": { "name": "az0307" }
+}
