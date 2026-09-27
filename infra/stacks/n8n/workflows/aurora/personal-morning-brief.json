@@ -13,7 +13,7 @@
           ]
         }
       },
-      "id": "n020",
+      "id": "n018",
       "name": "06:30 daily",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -28,7 +28,7 @@
         "jsonOutput": "={ \"date\": \"={{ $now.toFormat('cccc d LLL') }}\" }",
         "options": {}
       },
-      "id": "n021",
+      "id": "n019",
       "name": "Context",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -48,7 +48,7 @@
         "jsonBody": "{\"model\": \"general\", \"messages\": [{\"role\": \"system\", \"content\": \"You are Aurora, a warm personal assistant. Write a 4-line good-morning brief: date, one focus nudge, one health nudge, one encouraging line. No fluff.\"}, {\"role\": \"user\", \"content\": \"={{ 'Write today\\\\'s brief for '+$json.date }}\"}]}",
         "options": {}
       },
-      "id": "n022",
+      "id": "n020",
       "name": "Write brief",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -65,7 +65,7 @@
         "text": "={{ '☀️ '+($json.choices?.[0]?.message?.content||'') }}",
         "additionalFields": {}
       },
-      "id": "n023",
+      "id": "n021",
       "name": "Notify Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,

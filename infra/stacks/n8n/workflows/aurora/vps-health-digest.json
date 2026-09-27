@@ -13,7 +13,7 @@
           ]
         }
       },
-      "id": "n006",
+      "id": "n005",
       "name": "06:50 daily",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -28,7 +28,7 @@
         "url": "http://router-litellm-1:4000/health/liveliness",
         "options": {}
       },
-      "id": "n007",
+      "id": "n006",
       "name": "Router alive",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -43,7 +43,7 @@
         "url": "http://localhost:5678/healthz",
         "options": {}
       },
-      "id": "n008",
+      "id": "n007",
       "name": "n8n alive",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -58,7 +58,7 @@
         "jsonOutput": "={\n  \"text\": \"🖥️ aurora-01 nightly: router=\" + ($('Router alive').item.json.status||'?') + \", n8n=\" + ($('n8n alive').item.json.status||'?') + \". Full check: run `aurora maintain report`.\"\n}",
         "options": {}
       },
-      "id": "n009",
+      "id": "n008",
       "name": "Digest",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -75,7 +75,7 @@
         "text": "={{ $json.text }}",
         "additionalFields": {}
       },
-      "id": "n010",
+      "id": "n009",
       "name": "Notify Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,

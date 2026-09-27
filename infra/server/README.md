@@ -91,7 +91,7 @@ Not tested here:
 | `maintain.sh` | — | `aurora maintain …`: tune, backup, prune, upgrade, report |
 | `aurora` | `/usr/local/bin/aurora` | the menu |
 | `aurora-agent` | `/usr/local/bin/aurora-agent` | runs an agent with `ROUTER_API_KEY` + `N8N_API_KEY` in **its own env only** (read from `/opt/aurora/secrets.env` via sudo; never written to disk) |
-| `opencode.json` | `~/.config/opencode/opencode.json` | provider `aurora` → `http://127.0.0.1:4000/v1`, default model `aurora/code` |
+| `opencode.json` | `~/.config/opencode/opencode.json` | provider `aurora` → `http://127.0.0.1:4000/v1`, default model `aurora/code`. **v1 schema** (matches opencode.ai/docs). If `opencode --version` is v2, its schema differs (`providers`/`package: "aisdk:…"`/`settings`/`mcp.servers`) — or just run `opencode mcp add …`. Checked via Context7 2026-09-27. |
 | `claude-mcp.json` | `~/work/.mcp.json` | Claude Code's MCP servers when started in `~/work` (which `aurora-agent` does) |
 
 Configs you've edited are never overwritten; a newer version lands next to them as `*.new`.

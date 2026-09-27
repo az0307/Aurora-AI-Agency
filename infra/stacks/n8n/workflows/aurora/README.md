@@ -29,4 +29,4 @@ encrypted (that's what `N8N_ENCRYPTION_KEY` protects — back it up). The router
 `http://router-litellm-1:4000` over the shared Docker network, so the router's host port can
 stay loopback-only.
 
-Tested 2026-09-27 on real Docker: all five import cleanly with `n8n import:workflow` into Postgres-backed n8n, and their node graphs validate. The console → nginx `/intake` → n8n path was confirmed end-to-end (n8n receives the POST; it returns its own 'activate the workflow' notice until you toggle Active).
+Verified against n8n docs (Context7, 2026-09-27): the webhooks use `responseMode: onReceived` (immediate ack — the fire-and-forget shape these want), so there is no separate Respond-to-Webhook node; the production URL registers when the workflow is published/active. Tested 2026-09-27 on real Docker: all five import cleanly with `n8n import:workflow` into Postgres-backed n8n, and their node graphs validate. The console → nginx `/intake` → n8n path was confirmed end-to-end (n8n receives the POST; it returns its own 'activate the workflow' notice until you toggle Active).

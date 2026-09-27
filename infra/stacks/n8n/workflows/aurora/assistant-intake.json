@@ -20,31 +20,16 @@
     },
     {
       "parameters": {
-        "respondWith": "text",
-        "responseBody": "queued",
-        "options": {}
-      },
-      "id": "n002",
-      "name": "Queued 200",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [
-        0,
-        -160
-      ]
-    },
-    {
-      "parameters": {
         "mode": "raw",
         "jsonOutput": "={\n  \"lane\": {{ JSON.stringify($json.body?.lane || \"agency\") }},\n  \"system\": \"You are Aurora, Az's assistant. Lane=\" + ($json.body?.lane||\"agency\") + \". Be concise and action-oriented. Never use a -free model for client data.\",\n  \"text\": {{ JSON.stringify($json.body?.text || \"\") }}\n}",
         "options": {}
       },
-      "id": "n003",
+      "id": "n002",
       "name": "Build prompt",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        320,
+        0,
         -160
       ]
     },
@@ -59,13 +44,13 @@
         "jsonBody": "{\"model\": \"general\", \"messages\": [{\"role\": \"system\", \"content\": \"You are Aurora, a concise assistant.\"}, {\"role\": \"user\", \"content\": \"={{ $json.text }}\"}]}",
         "options": {}
       },
-      "id": "n004",
+      "id": "n003",
       "name": "Ask router",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -320,
-        40
+        320,
+        -160
       ]
     },
     {
@@ -76,12 +61,12 @@
         "text": "={{ '🅰️ ['+$('Build prompt').item.json.lane+'] '+($json.choices?.[0]?.message?.content || 'done') }}",
         "additionalFields": {}
       },
-      "id": "n005",
+      "id": "n004",
       "name": "Notify Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        0,
+        -320,
         40
       ]
     }
@@ -90,11 +75,6 @@
     "Task in": {
       "main": [
         [
-          {
-            "node": "Queued 200",
-            "type": "main",
-            "index": 0
-          },
           {
             "node": "Build prompt",
             "type": "main",

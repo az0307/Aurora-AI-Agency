@@ -13,7 +13,7 @@
           ]
         }
       },
-      "id": "n016",
+      "id": "n014",
       "name": "Mon 08:05",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -28,7 +28,7 @@
         "jsonOutput": "={ \"week\": \"={{ $now.toFormat('yyyy-MM-dd') }}\" }",
         "options": {}
       },
-      "id": "n017",
+      "id": "n015",
       "name": "This week",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -48,7 +48,7 @@
         "jsonBody": "{\"model\": \"general\", \"messages\": [{\"role\": \"system\", \"content\": \"You are Aurora's admin clerk. Write a short Monday checklist for a solo AU business owner: invoices to chase, BAS/GST dates near, subscriptions to review. Bullet points, <120 words.\"}, {\"role\": \"user\", \"content\": \"={{ 'Week '+$json.week+': produce this Monday admin checklist.' }}\"}]}",
         "options": {}
       },
-      "id": "n018",
+      "id": "n016",
       "name": "Draft digest",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -65,7 +65,7 @@
         "text": "={{ '🧾 Weekly admin:\\n'+($json.choices?.[0]?.message?.content||'') }}",
         "additionalFields": {}
       },
-      "id": "n019",
+      "id": "n017",
       "name": "Notify Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,

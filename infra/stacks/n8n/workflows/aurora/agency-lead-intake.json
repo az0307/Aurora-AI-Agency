@@ -9,7 +9,7 @@
         "responseMode": "onReceived",
         "options": {}
       },
-      "id": "n011",
+      "id": "n010",
       "name": "Lead webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -20,31 +20,16 @@
     },
     {
       "parameters": {
-        "respondWith": "text",
-        "responseBody": "ok",
-        "options": {}
-      },
-      "id": "n012",
-      "name": "Thanks 200",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [
-        0,
-        -160
-      ]
-    },
-    {
-      "parameters": {
         "mode": "raw",
         "jsonOutput": "={\n  \"name\": {{ JSON.stringify($json.body?.name || \"\") }},\n  \"phone\": {{ JSON.stringify($json.body?.phone || \"\") }},\n  \"suburb\": {{ JSON.stringify($json.body?.suburb || \"\") }},\n  \"service\": {{ JSON.stringify($json.body?.service || \"\") }},\n  \"received\": \"={{ $now.toISO() }}\"\n}",
         "options": {}
       },
-      "id": "n013",
+      "id": "n011",
       "name": "Shape lead",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        320,
+        0,
         -160
       ]
     },
@@ -67,13 +52,13 @@
         },
         "options": {}
       },
-      "id": "n014",
+      "id": "n012",
       "name": "Append to Sheet",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        -320,
-        40
+        320,
+        -160
       ]
     },
     {
@@ -84,12 +69,12 @@
         "text": "={{ '📥 New lead: '+$('Shape lead').item.json.name+' ('+$('Shape lead').item.json.suburb+') — '+$('Shape lead').item.json.service }}",
         "additionalFields": {}
       },
-      "id": "n015",
+      "id": "n013",
       "name": "Notify Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        0,
+        -320,
         40
       ]
     }
@@ -98,11 +83,6 @@
     "Lead webhook": {
       "main": [
         [
-          {
-            "node": "Thanks 200",
-            "type": "main",
-            "index": 0
-          },
           {
             "node": "Shape lead",
             "type": "main",
