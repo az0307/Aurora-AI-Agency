@@ -12,6 +12,8 @@
 #   bash /opt/aurora/stacks-up.sh monitoring   # Uptime Kuma + Dozzle
 #   bash /opt/aurora/stacks-up.sh computer     # Playwright MCP browser on 127.0.0.1:8931
 #   bash /opt/aurora/stacks-up.sh openbot      # OpenBot on 127.0.0.1:3020 (+ Tailscale Serve :3020)
+#   bash /opt/aurora/stacks-up.sh dashboard    # Homepage start page, 127.0.0.1:3002 (+ tailnet :3002)
+#   bash /opt/aurora/stacks-up.sh admin        # Dockge stack manager GUI, 127.0.0.1:5001 (+ tailnet :5001)
 #   bash /opt/aurora/stacks-up.sh status       # what's running + free RAM
 #
 # Add --env-only to write/refresh the .env without starting anything.
@@ -33,7 +35,7 @@ say()  { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[33mWARN\033[0m %s\n' "$*"; }
 die()  { printf '\033[31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 
-usage() { sed -n '2,25p' "$0"; exit 2; }
+usage() { sed -n '2,27p' "$0"; exit 2; }
 [ -n "$STACK" ] || usage
 
 # --- Load secrets into this process only (bootstrap.sh wrote them with printf %q) ------
@@ -85,6 +87,18 @@ wait_http() {  # wait_http URL NAME — up to ~2 min
   die "$2 didn't answer at $1 — check: docker compose logs --tail 50"
 }
 
+# ts_serve PORT — publish 127.0.0.1:PORT on the tailnet only (HTTPS, never Funnel) and set
+# TS_URL=https://<box>.<tailnet>.ts.net:PORT. Returns 1 (TS_URL empty) without a host tailscale.
+TS_DNS=""; TS_URL=""
+ts_serve() {
+  TS_URL=""
+  command -v tailscale >/dev/null || return 1
+  [ -n "$TS_DNS" ] || TS_DNS=$(tailscale status --json 2>/dev/null | jq -r '.Self.DNSName // empty' | sed 's/\.$//')
+  [ -n "$TS_DNS" ] || return 1
+  TS_URL="https://$TS_DNS:$1"
+  [ "$MODE" = --env-only ] || sudo tailscale serve --bg --https="$1" "http://127.0.0.1:$1" >/dev/null
+}
+
 up() { [ "$MODE" = --env-only ] && { say "env only; not starting"; exit 0; }; ram_check; docker compose up -d "$@"; }
 
 case "$STACK" in
@@ -118,6 +132,10 @@ services:
   n8n:
     ports:
       - "127.0.0.1:5678:5678"
+    environment:
+      # Listen on IPv4: works whether or not the Docker network has IPv6 (n8n's default '::'
+      # crash-loops without it). The published port is IPv4 loopback anyway.
+      N8N_LISTEN_ADDRESS: 0.0.0.0
 EOF
     up postgres n8n
     wait_http http://127.0.0.1:5678/healthz n8n
@@ -146,7 +164,10 @@ EOF
     fill_env .env.example .env
     up            # default services only: the Playwright MCP browser (the desktop is on demand)
     # A bare GET on the MCP endpoint answers 400 by design, so only check the port is open.
-    sleep 3; curl -s -o /dev/null http://127.0.0.1:8931/mcp && say "playwright MCP is listening on 127.0.0.1:8931/mcp"
+    for _ in $(seq 1 20); do
+      [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8931/mcp)" != 000 ] && { say "playwright MCP is listening on 127.0.0.1:8931/mcp"; break; }
+      sleep 2
+    done
     ;;
   openbot)
     cd "$ROOT/stacks/openbot"
@@ -172,11 +193,10 @@ networks:
 EOF
       say "no OPENAI_API_KEY: OpenBot will use the router (model names must exist there, e.g. gpt, general)"
     fi
-    if command -v tailscale >/dev/null && dns=$(tailscale status --json 2>/dev/null | jq -r '.Self.DNSName // empty' | sed 's/\.$//') && [ -n "$dns" ]; then
-      url="https://$dns:3020"
-      setkv .env OPENBOT_PUBLIC_URL "$url"; setkv .env OPENBOT_APP_URL "$url"
-      setkv .env TRUSTED_ORIGINS "http://127.0.0.1:3020,http://localhost:3020,$url"
-      [ "$MODE" = --env-only ] || { sudo tailscale serve --bg --https=3020 http://127.0.0.1:3020 >/dev/null && say "tailnet-only: $url"; }
+    if ts_serve 3020; then
+      setkv .env OPENBOT_PUBLIC_URL "$TS_URL"; setkv .env OPENBOT_APP_URL "$TS_URL"
+      setkv .env TRUSTED_ORIGINS "http://127.0.0.1:3020,http://localhost:3020,$TS_URL"
+      say "tailnet-only: $TS_URL"
     else
       warn "host tailscale CLI not found: OpenBot stays on 127.0.0.1:3020 (SSH tunnel / RDP Firefox)"
     fi
@@ -184,6 +204,26 @@ EOF
     up
     wait_http http://127.0.0.1:3020/api/capabilities openbot
     grep -q '^OPENBOT_SINGLE_USER=true' .env && warn "single-user mode: anyone on your tailnet who opens it is you. Fine for a personal tailnet; switch to OAuth before sharing the tailnet."
+    ;;
+  dashboard)
+    cd "$ROOT/stacks/dashboard"
+    [ -f .env ] || install -m 600 .env.example .env
+    if ts_serve 3002; then
+      setkv .env HOMEPAGE_VAR_TS "$TS_DNS"
+      setkv .env HOMEPAGE_ALLOWED_HOSTS "127.0.0.1:3002,localhost:3002,$TS_DNS:3002"
+    else warn "host tailscale CLI not found: links in the dashboard will point at aurora-01.example.ts.net"; fi
+    have TZ && setkv .env TZ "$TZ"
+    up
+    wait_http http://127.0.0.1:3002 dashboard
+    [ -n "$TS_URL" ] && say "open on your phone: $TS_URL"
+    ;;
+  admin)
+    cd "$ROOT/stacks/admin"
+    mkdir -p data
+    ts_serve 5001 || warn "host tailscale CLI not found: Dockge stays on 127.0.0.1:5001"
+    up
+    wait_http http://127.0.0.1:5001 dockge
+    say "open ${TS_URL:-http://127.0.0.1:5001} NOW and create the admin login (first visitor becomes admin)"
     ;;
   monitoring)
     cd "$ROOT/stacks/monitoring"

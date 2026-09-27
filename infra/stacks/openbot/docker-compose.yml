@@ -16,7 +16,8 @@ services:
     volumes:
       - openbot-data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/api/capabilities"]
+      # curl, not wget: the image ships curl only (wget made this check fail forever).
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:3001/api/capabilities"]
       interval: 30s
       timeout: 5s
       retries: 8

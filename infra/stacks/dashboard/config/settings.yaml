@@ -1,0 +1,11 @@
+title: Aurora
+theme: dark
+color: slate
+headerStyle: clean
+layout:
+  Use it:
+    style: row
+    columns: 3
+  Run it:
+    style: row
+    columns: 4

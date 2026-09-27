@@ -6,14 +6,16 @@
 #
 #   aurora             # the menu
 #   aurora status      # jump straight to one action: status | start <stack> | stop <stack>
-#                      #   | logs | opencode | claude | hermes | check | links | update
+#                      #   | restart <stack> | logs | opencode | claude | hermes | check | links
+#                      #   | update | maintain [tune|backup|prune|upgrade <stack>|report]
+#                      #   | docker (lazydocker) | top (btop)
 #
 # Nothing here prints secrets. Starting stacks goes through stacks-up.sh (staged, health
 # checked); agents go through aurora-agent (keys only in the child process's env).
 set -uo pipefail
 
 ROOT=/opt/aurora
-STACKS=(router n8n hermes openbot tailscale monitoring computer)
+STACKS=(router n8n hermes openbot computer monitoring dashboard admin tailscale)
 REPO_DIR="$HOME/Aurora-AI-Agency"
 REPO_URL="${AURORA_REPO_URL:-https://github.com/az0307/Aurora-AI-Agency.git}"
 BRANCH="${AURORA_BRANCH:-main}"
@@ -61,6 +63,14 @@ act() {
               && bash "$ROOT/server/setup-tools.sh" --refresh \
               && echo "Updated from $BRANCH. Restart a stack to apply compose changes."
               ;;
+    maintain) local m="${2:-$(pick 'Maintenance' report backup prune upgrade tune)}"
+              [ -n "$m" ] || return 0
+              if [ "$m" = upgrade ]; then
+                local s="${3:-$(pick 'Upgrade which stack (pulls newer images)?' all "${STACKS[@]}")}"
+                [ -n "$s" ] && bash "$ROOT/server/maintain.sh" upgrade "$s"
+              else bash "$ROOT/server/maintain.sh" "$m" "${@:3}"; fi ;;
+    docker)   command -v lazydocker >/dev/null && lazydocker || echo "lazydocker isn't installed yet: aurora maintain tune" ;;
+    top)      command -v btop >/dev/null && btop || top ;;
     shell)    ${SHELL:-bash} ;;
     *) echo "unknown action: $1" >&2; return 2 ;;
   esac
@@ -70,6 +80,6 @@ act() {
 
 while :; do
   choice=$(pick "What do you want to do?" \
-    status start stop restart logs opencode claude hermes check links update shell quit) || exit 0
+    status start stop restart logs docker top opencode claude hermes check links maintain update shell quit) || exit 0
   case "$choice" in quit|"") exit 0 ;; *) clear; act "$choice"; pause ;; esac
 done

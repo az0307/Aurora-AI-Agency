@@ -15,8 +15,10 @@ hetzner/main.tf
 .terraform/
 .terraform.lock.hcl
 
-# Local Homepage config with tokens
-stacks/dashboard/config/
+# Homepage: the tracked config holds no tokens (put any in dashboard/.env as HOMEPAGE_VAR_*);
+# its runtime logs stay local. Dockge's login database too.
+stacks/dashboard/config/logs/
+stacks/admin/data/
 
 # Filled-in bootstrap secrets (only secrets.env.example is tracked)
 secrets.env

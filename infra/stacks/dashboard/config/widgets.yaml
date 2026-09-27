@@ -1,0 +1,8 @@
+- resources:
+    cpu: true
+    memory: true
+    disk: /
+- datetime:
+    format:
+      timeStyle: short
+      dateStyle: short

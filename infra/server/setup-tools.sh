@@ -6,7 +6,8 @@
 #                                                      # (what `aurora update` runs)
 #
 # Installs:
-#   - apt: whiptail fzf jq rsync git (menu + helpers), Node.js 22 if missing (NodeSource)
+#   - apt: whiptail fzf jq rsync git (menu + helpers), adb (S10 over the tailnet; see
+#     phones/FLASHING.md), Node.js 22 if missing (NodeSource)
 #   - npm (global): opencode-ai (OpenCode), @anthropic-ai/claude-code (Claude Code)
 #   - /usr/local/bin/aurora        the menu (TUI): status, start/stop, logs, agents, links, update
 #   - /usr/local/bin/aurora-agent  runs an agent with the router + n8n keys in its env only
@@ -32,6 +33,8 @@ if [ "$REFRESH" = 0 ]; then
   say "apt packages"
   sudo apt-get update -qq
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq whiptail fzf jq rsync git curl ca-certificates >/dev/null
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq adb >/dev/null 2>&1 \
+    || sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq android-tools-adb >/dev/null 2>&1 || true
 
   if ! command -v node >/dev/null || [ "$(node -p 'process.versions.node.split(".")[0]')" -lt 20 ]; then
     say "Node.js 22 (NodeSource)"
@@ -78,6 +81,7 @@ cat <<'EOF'
 
 Done. Type `aurora` for the menu (or use the desktop icons in RDP).
 First time only:
+  aurora maintain tune    → swap, Docker log limits, nightly backups, lazydocker/btop
   aurora-agent claude     → /login (opens a link: finish it on your phone), then /plugin to browse
   aurora-agent opencode   → uses the router; /models to switch chains (free tiers: never client data)
 EOF

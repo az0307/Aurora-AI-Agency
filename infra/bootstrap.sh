@@ -109,7 +109,7 @@ say "Shipping infra/ to /opt/aurora"
 tar -C "$DIR" -czf - --exclude='secrets.env' --exclude='.env' --exclude='*.tfstate*' \
   --exclude='.terraform' --exclude='main.tf' --exclude='.mcp.json' . \
   | "${SSH[@]}" "bash -c 'sudo mkdir -p /opt/aurora && sudo tar --no-same-owner -xzf - -C /opt/aurora \
-      && sudo find /opt/aurora \( -path /opt/aurora/stacks/hermes/data -o -path /opt/aurora/stacks/tailscale/state \) -prune \
+      && sudo find /opt/aurora \( -path /opt/aurora/stacks/hermes/data -o -path /opt/aurora/stacks/tailscale/state -o -path /opt/aurora/stacks/admin/data \) -prune \
            -o ! -name secrets.env -exec chown aurora:aurora {} +'"
 # ^ the aurora user edits .env files + runs compose. Container-owned bind mounts (Hermes data,
 #   Tailscale state) are skipped so a re-ship never changes files a running container owns.
