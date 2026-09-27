@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# aurora-agent — run an agent CLI on the box with the keys it needs, without copying them
+# anywhere. Reads ONLY the router key + n8n API key from the root-owned
+# /opt/aurora/secrets.env (via sudo) into this process's environment, then execs the tool.
+#
+#   aurora-agent opencode          # OpenCode, models via the LiteLLM router
+#   aurora-agent claude            # Claude Code (its own login); MCP gets n8n/Playwright
+#   aurora-agent <any command>     # same env for anything else
+#
+# Exported for the child only: ROUTER_API_KEY (= LITELLM_MASTER_KEY), N8N_API_KEY,
+# N8N_API_URL, PLAYWRIGHT_MCP_URL. Nothing is printed or written to disk.
+set -euo pipefail
+[ $# -gt 0 ] || { sed -n '2,11p' "$0"; exit 2; }
+
+secret() {  # secret NAME — value from secrets.env (written by bootstrap.sh with printf %q)
+  sudo bash -c '. /opt/aurora/secrets.env 2>/dev/null; printf %s "${!1:-}"' _ "$1"
+}
+ROUTER_API_KEY="$(secret LITELLM_MASTER_KEY)"
+N8N_API_KEY="$(secret N8N_API_KEY)"
+[ -n "$ROUTER_API_KEY" ] || echo "aurora-agent: LITELLM_MASTER_KEY not in secrets.env — router models won't work" >&2
+export ROUTER_API_KEY N8N_API_KEY
+export N8N_API_URL="http://127.0.0.1:5678"
+export PLAYWRIGHT_MCP_URL="http://127.0.0.1:8931/mcp"
+
+mkdir -p "$HOME/work"
+cd "$HOME/work"          # agents start in the workspace (holds the Claude .mcp.json)
+exec "$@"

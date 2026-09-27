@@ -162,7 +162,11 @@ bash /opt/aurora/stacks-up.sh tailscale    # needs TS_AUTHKEY
 bash /opt/aurora/stacks-up.sh monitoring   # Uptime Kuma + Dozzle
 bash /opt/aurora/stacks-up.sh status       # containers + free RAM
 ```
-Add `--env-only` to write a `.env` without starting anything.
+Add `--env-only` to write a `.env` without starting anything. `computer` (Playwright MCP) and
+`openbot` (127.0.0.1:3020 + tailnet `:3020`) work the same way.
+
+**Day-to-day:** `bash /opt/aurora/server/setup-tools.sh` once, then just type `aurora` (menu for
+stacks, logs, OpenCode, Claude Code, Hermes, links, update). Details: [server/README.md](./server/README.md).
 
 <details><summary>The same by hand (what stacks-up.sh does)</summary>
 

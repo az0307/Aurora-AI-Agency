@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# aurora — one menu for the whole box (installed to /usr/local/bin/aurora by setup-tools.sh).
+#
+# Runs ON THE SERVER. Plain arrow-key menu (whiptail) that works over SSH from Termux,
+# in the RDP desktop's terminal, or from the "Aurora Control" desktop icon.
+#
+#   aurora             # the menu
+#   aurora status      # jump straight to one action: status | start <stack> | stop <stack>
+#                      #   | logs | opencode | claude | hermes | check | links | update
+#
+# Nothing here prints secrets. Starting stacks goes through stacks-up.sh (staged, health
+# checked); agents go through aurora-agent (keys only in the child process's env).
+set -uo pipefail
+
+ROOT=/opt/aurora
+STACKS=(router n8n hermes openbot tailscale monitoring computer)
+REPO_DIR="$HOME/Aurora-AI-Agency"
+REPO_URL="${AURORA_REPO_URL:-https://github.com/az0307/Aurora-AI-Agency.git}"
+BRANCH="${AURORA_BRANCH:-main}"
+
+pause() { echo; read -r -p "Enter to go back… " _; }
+have_tui() { command -v whiptail >/dev/null && [ -t 0 ]; }
+
+pick() {  # pick "Title" item… → prints the chosen item
+  local title="$1"; shift
+  if have_tui; then
+    local args=() i; for i in "$@"; do args+=("$i" ""); done
+    whiptail --title "aurora-01" --menu "$title" 20 60 12 "${args[@]}" 3>&1 1>&2 2>&3
+  else
+    select i in "$@"; do [ -n "$i" ] && { echo "$i"; return; }; done
+  fi
+}
+
+stack_dir() { echo "$ROOT/stacks/$1"; }
+
+act() {
+  case "$1" in
+    status)   bash "$ROOT/stacks-up.sh" status; echo; df -h / | tail -1 ;;
+    start)    local s="${2:-$(pick 'Start which stack?' "${STACKS[@]}")}"; [ -n "$s" ] && bash "$ROOT/stacks-up.sh" "$s" ;;
+    stop)     local s="${2:-$(pick 'Stop which stack?' "${STACKS[@]}")}"
+              [ -n "$s" ] && (cd "$(stack_dir "$s")" && docker compose stop) ;;
+    restart)  local s="${2:-$(pick 'Restart which stack?' "${STACKS[@]}")}"
+              [ -n "$s" ] && (cd "$(stack_dir "$s")" && docker compose restart) ;;
+    logs)     local c; mapfile -t cs < <(docker ps --format '{{.Names}}')
+              c="${2:-$(pick 'Follow which container? (Ctrl-C to stop)' "${cs[@]}")}"
+              [ -n "$c" ] && docker logs -f --tail 100 "$c" ;;
+    opencode) aurora-agent opencode ;;
+    claude)   aurora-agent claude ;;
+    hermes)   docker exec -it hermes hermes ;;
+    check)    bash "$ROOT/check.sh" ;;
+    links)    echo "Tailnet-only links (open on a phone/PC that's on Tailscale):"
+              sudo tailscale serve status 2>/dev/null || echo "  tailscale serve isn't set up on the host"
+              echo; echo "On the box itself (RDP Firefox): n8n http://127.0.0.1:5678 · router http://127.0.0.1:4000/ui"
+              echo "  Hermes http://127.0.0.1:9119 · OpenBot http://127.0.0.1:3020 · Kuma http://127.0.0.1:3001 · Dozzle http://127.0.0.1:8080" ;;
+    update)   # pull the repo and copy infra/ over /opt/aurora, keeping every .env, data dir and secret
+              if [ -d "$REPO_DIR/.git" ]; then git -C "$REPO_DIR" pull --ff-only origin "$BRANCH"
+              else git clone --branch "$BRANCH" "$REPO_URL" "$REPO_DIR"; fi \
+              && sudo rsync -a --chown=aurora:aurora --exclude='.env' --exclude='secrets.env' \
+                   --exclude='data/' --exclude='state/' --exclude='config.yaml' \
+                   --exclude='docker-compose.override.yml' "$REPO_DIR/infra/" "$ROOT/" \
+              && bash "$ROOT/server/setup-tools.sh" --refresh \
+              && echo "Updated from $BRANCH. Restart a stack to apply compose changes."
+              ;;
+    shell)    ${SHELL:-bash} ;;
+    *) echo "unknown action: $1" >&2; return 2 ;;
+  esac
+}
+
+[ $# -gt 0 ] && { act "$@"; exit $?; }
+
+while :; do
+  choice=$(pick "What do you want to do?" \
+    status start stop restart logs opencode claude hermes check links update shell quit) || exit 0
+  case "$choice" in quit|"") exit 0 ;; *) clear; act "$choice"; pause ;; esac
+done

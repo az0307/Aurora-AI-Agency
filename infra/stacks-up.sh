@@ -10,6 +10,8 @@
 #   bash /opt/aurora/stacks-up.sh hermes       # the agent (needs the router + a chat token)
 #   bash /opt/aurora/stacks-up.sh tailscale    # private network (needs TS_AUTHKEY)
 #   bash /opt/aurora/stacks-up.sh monitoring   # Uptime Kuma + Dozzle
+#   bash /opt/aurora/stacks-up.sh computer     # Playwright MCP browser on 127.0.0.1:8931
+#   bash /opt/aurora/stacks-up.sh openbot      # OpenBot on 127.0.0.1:3020 (+ Tailscale Serve :3020)
 #   bash /opt/aurora/stacks-up.sh status       # what's running + free RAM
 #
 # Add --env-only to write/refresh the .env without starting anything.
@@ -31,7 +33,7 @@ say()  { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[33mWARN\033[0m %s\n' "$*"; }
 die()  { printf '\033[31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 
-usage() { sed -n '2,23p' "$0"; exit 2; }
+usage() { sed -n '2,25p' "$0"; exit 2; }
 [ -n "$STACK" ] || usage
 
 # --- Load secrets into this process only (bootstrap.sh wrote them with printf %q) ------
@@ -138,6 +140,50 @@ EOF
     fill_env .env.example .env
     up
     echo "  Next: check the admin console for aurora-01, then SETUP.md §8 (remove public SSH)."
+    ;;
+  computer)
+    cd "$ROOT/stacks/computer"
+    fill_env .env.example .env
+    up            # default services only: the Playwright MCP browser (the desktop is on demand)
+    # A bare GET on the MCP endpoint answers 400 by design, so only check the port is open.
+    sleep 3; curl -s -o /dev/null http://127.0.0.1:8931/mcp && say "playwright MCP is listening on 127.0.0.1:8931/mcp"
+    ;;
+  openbot)
+    cd "$ROOT/stacks/openbot"
+    need INTELLIGENCE_API_KEY
+    fill_env .env.example .env
+    # Encryption key for the credentials OpenBot stores: generated ON the box, once, and kept
+    # only in this .env (back it up with the stack; losing it means re-entering those keys).
+    grep -qE '^KEY_ENCRYPTION_KEY=.+' .env || { setkv .env KEY_ENCRYPTION_KEY "$(openssl rand -base64 32)"; say "generated KEY_ENCRYPTION_KEY"; }
+    if ! have OPENAI_API_KEY && have LITELLM_MASTER_KEY; then
+      # No OpenAI key: send OpenBot's OpenAI-style calls through the router instead, over the
+      # router's private Docker network (the router's host port is loopback-only).
+      setkv .env OPENAI_API_KEY "$LITELLM_MASTER_KEY"
+      setkv .env OPENAI_BASE_URL http://litellm:4000/v1
+      cat > docker-compose.override.yml <<'EOF'
+# Written by stacks-up.sh: reach the LiteLLM router as http://litellm:4000 (no OpenAI key set).
+services:
+  openbot:
+    networks: [default, llm]
+networks:
+  llm:
+    name: aurora-llm
+    external: true
+EOF
+      say "no OPENAI_API_KEY: OpenBot will use the router (model names must exist there, e.g. gpt, general)"
+    fi
+    if command -v tailscale >/dev/null && dns=$(tailscale status --json 2>/dev/null | jq -r '.Self.DNSName // empty' | sed 's/\.$//') && [ -n "$dns" ]; then
+      url="https://$dns:3020"
+      setkv .env OPENBOT_PUBLIC_URL "$url"; setkv .env OPENBOT_APP_URL "$url"
+      setkv .env TRUSTED_ORIGINS "http://127.0.0.1:3020,http://localhost:3020,$url"
+      [ "$MODE" = --env-only ] || { sudo tailscale serve --bg --https=3020 http://127.0.0.1:3020 >/dev/null && say "tailnet-only: $url"; }
+    else
+      warn "host tailscale CLI not found: OpenBot stays on 127.0.0.1:3020 (SSH tunnel / RDP Firefox)"
+    fi
+    for c in ollama desktop; do docker ps --format '{{.Names}}' 2>/dev/null | grep -q "$c" && warn "a container matching '$c' is running — OpenBot + it may not fit in 8 GB"; done
+    up
+    wait_http http://127.0.0.1:3020/api/capabilities openbot
+    grep -q '^OPENBOT_SINGLE_USER=true' .env && warn "single-user mode: anyone on your tailnet who opens it is you. Fine for a personal tailnet; switch to OAuth before sharing the tailnet."
     ;;
   monitoring)
     cd "$ROOT/stacks/monitoring"

@@ -55,7 +55,7 @@ SECRET_KEYS=(TZ N8N_DOMAIN LITELLM_MASTER_KEY POSTGRES_PASSWORD N8N_ENCRYPTION_K
              TELEGRAM_BOT_TOKEN TELEGRAM_ALLOWED_USERS DISCORD_BOT_TOKEN DISCORD_ALLOWED_USERS
              SLACK_BOT_TOKEN SLACK_APP_TOKEN SLACK_ALLOWED_USERS WHATSAPP_ALLOWED_USERS
              COMPOSIO_CONSUMER_KEY ZAPIER_MCP_TOKEN GROQ_API_KEY GITHUB_PAT CONTEXT7_API_KEY TS_AUTHKEY
-             INTELLIGENCE_API_KEY)
+             INTELLIGENCE_API_KEY N8N_API_KEY)
 # (No associative arrays: macOS still ships bash 3.2.)
 LOCAL_KEYS=(VPS_PROVIDER HCLOUD_TOKEN HETZNER_API_TOKEN HOSTINGER_API_TOKEN HOSTINGER_PLAN HOSTINGER_TERM HOSTINGER_VM_ID)
 # Provider tokens are used here and NEVER shipped to the box.
@@ -109,7 +109,10 @@ say "Shipping infra/ to /opt/aurora"
 tar -C "$DIR" -czf - --exclude='secrets.env' --exclude='.env' --exclude='*.tfstate*' \
   --exclude='.terraform' --exclude='main.tf' --exclude='.mcp.json' . \
   | "${SSH[@]}" "bash -c 'sudo mkdir -p /opt/aurora && sudo tar --no-same-owner -xzf - -C /opt/aurora \
-      && sudo chown -R aurora:aurora /opt/aurora'"   # the aurora user edits .env files + runs compose
+      && sudo find /opt/aurora \( -path /opt/aurora/stacks/hermes/data -o -path /opt/aurora/stacks/tailscale/state \) -prune \
+           -o ! -name secrets.env -exec chown aurora:aurora {} +'"
+# ^ the aurora user edits .env files + runs compose. Container-owned bind mounts (Hermes data,
+#   Tailscale state) are skipped so a re-ship never changes files a running container owns.
 
 say "Shipping secrets (mode 600; the provider token stays on this machine)"
 {
