@@ -1,0 +1,46 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "aurora/code",
+  "small_model": "aurora/fast",
+  "provider": {
+    "aurora": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Aurora router (LiteLLM on aurora-01)",
+      "options": {
+        "baseURL": "http://127.0.0.1:4000/v1",
+        "apiKey": "{env:ROUTER_API_KEY}"
+      },
+      "models": {
+        "code": { "name": "code — best coding chain (paid)" },
+        "general": { "name": "general — everyday chain (paid)" },
+        "reason": { "name": "reason — hard problems (paid)" },
+        "fast": { "name": "fast — quick + cheap (paid)" },
+        "auto-code": { "name": "auto-code — router picks a coder" },
+        "kimi-cheap": { "name": "kimi-cheap — Kimi Code, cheap bulk work" },
+        "claude-primary": { "name": "claude-primary — Claude via API key" },
+        "vision": { "name": "vision — images in" },
+        "code-free": { "name": "code-free — FREE tier: never client data" },
+        "general-free": { "name": "general-free — FREE tier: never client data" }
+      }
+    }
+  },
+  "mcp": {
+    "playwright": {
+      "type": "remote",
+      "url": "http://127.0.0.1:8931/mcp",
+      "enabled": true
+    },
+    "n8n": {
+      "type": "local",
+      "command": ["npx", "-y", "n8n-mcp@2.89.0"],
+      "enabled": true,
+      "environment": {
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error",
+        "DISABLE_CONSOLE_OUTPUT": "true",
+        "N8N_API_URL": "{env:N8N_API_URL}",
+        "N8N_API_KEY": "{env:N8N_API_KEY}"
+      }
+    }
+  }
+}

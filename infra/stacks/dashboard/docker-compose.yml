@@ -1,19 +1,17 @@
-# Homepage: a single start-page over every service (with widgets for Docker, n8n,
-# Uptime Kuma, Beszel, etc). Config lives in ./config (mounted). Behind Cloudflare Access.
+# dashboard — Homepage: the start page with every Aurora link + live container status.
 #
-#   docker compose up -d
-# Edit ./config/services.yaml to add tiles; docs: https://gethomepage.dev
-
+#   bash /opt/aurora/stacks-up.sh dashboard  # → 127.0.0.1:3002, tailnet https://aurora-01.<tailnet>.ts.net:3002
+#
+# Links point at the tailnet names, so bookmark it on the phones. Config is in ./config
+# (shipped from the repo; HOMEPAGE_VAR_TS is filled in by stacks-up.sh). The Docker socket
+# is mounted read-only just to show which containers are up.
 services:
   homepage:
-    image: ghcr.io/gethomepage/homepage:latest
+    image: ghcr.io/gethomepage/homepage:v1.4.0
     restart: unless-stopped
-    environment:
-      HOMEPAGE_ALLOWED_HOSTS: ${HOMEPAGE_ALLOWED_HOSTS:-dash.example.com}
+    env_file: .env
     volumes:
       - ./config:/app/config
-      # read-only docker socket enables the Docker widget (container status tiles):
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
-      # Host 3002 (Dokploy already owns 3000); container still listens on 3000.
       - "127.0.0.1:3002:3000"

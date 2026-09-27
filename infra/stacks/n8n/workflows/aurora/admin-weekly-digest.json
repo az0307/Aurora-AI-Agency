@@ -1,0 +1,121 @@
+{
+  "id": "auroraadminweekl",
+  "name": "admin-weekly-digest — Monday finance & admin summary",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "5 8 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "n014",
+      "name": "Mon 08:05",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={ \"week\": \"={{ $now.toFormat('yyyy-MM-dd') }}\" }",
+        "options": {}
+      },
+      "id": "n015",
+      "name": "This week",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://router-litellm-1:4000/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"model\": \"general\", \"messages\": [{\"role\": \"system\", \"content\": \"You are Aurora's admin clerk. Write a short Monday checklist for a solo AU business owner: invoices to chase, BAS/GST dates near, subscriptions to review. Bullet points, <120 words.\"}, {\"role\": \"user\", \"content\": \"={{ 'Week '+$json.week+': produce this Monday admin checklist.' }}\"}]}",
+        "options": {}
+      },
+      "id": "n016",
+      "name": "Draft digest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        320,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{$env.TELEGRAM_ALLOWED_USERS || '<YOUR_CHAT_ID>'}}",
+        "text": "={{ '🧾 Weekly admin:\\n'+($json.choices?.[0]?.message?.content||'') }}",
+        "additionalFields": {}
+      },
+      "id": "n017",
+      "name": "Notify Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        40
+      ]
+    }
+  ],
+  "connections": {
+    "Mon 08:05": {
+      "main": [
+        [
+          {
+            "node": "This week",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "This week": {
+      "main": [
+        [
+          {
+            "node": "Draft digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft digest": {
+      "main": [
+        [
+          {
+            "node": "Notify Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "aurora_note": "A prompt-only starter. Wire real data (invoices sheet, bank) into 'Draft digest' when ready."
+  },
+  "tags": []
+}

@@ -1,0 +1,121 @@
+{
+  "id": "aurorapersonalmo",
+  "name": "personal-morning-brief — 06:30 brief to Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "n018",
+      "name": "06:30 daily",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={ \"date\": \"={{ $now.toFormat('cccc d LLL') }}\" }",
+        "options": {}
+      },
+      "id": "n019",
+      "name": "Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://router-litellm-1:4000/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"model\": \"general\", \"messages\": [{\"role\": \"system\", \"content\": \"You are Aurora, a warm personal assistant. Write a 4-line good-morning brief: date, one focus nudge, one health nudge, one encouraging line. No fluff.\"}, {\"role\": \"user\", \"content\": \"={{ 'Write today\\\\'s brief for '+$json.date }}\"}]}",
+        "options": {}
+      },
+      "id": "n020",
+      "name": "Write brief",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        320,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{$env.TELEGRAM_ALLOWED_USERS || '<YOUR_CHAT_ID>'}}",
+        "text": "={{ '☀️ '+($json.choices?.[0]?.message?.content||'') }}",
+        "additionalFields": {}
+      },
+      "id": "n021",
+      "name": "Notify Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        40
+      ]
+    }
+  ],
+  "connections": {
+    "06:30 daily": {
+      "main": [
+        [
+          {
+            "node": "Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Context": {
+      "main": [
+        [
+          {
+            "node": "Write brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write brief": {
+      "main": [
+        [
+          {
+            "node": "Notify Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "aurora_note": "Add calendar/weather HTTP nodes before 'Write brief' to make it real."
+  },
+  "tags": []
+}

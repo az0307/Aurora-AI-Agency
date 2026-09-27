@@ -145,12 +145,31 @@ Do Telegram first — it's 2 minutes.
 
 ## 6. Ship the keys and start everything
 
-From the Reno's Termux (or a computer); re-running is safe, since it reuses the same server:
+**Server already exists?** Don't re-provision. After adding keys to `secrets.env` on the phone:
 ```sh
-./bootstrap.sh          # copies secrets.env to the box
-ssh aurora@<IP>
+./bootstrap.sh --ship-only                       # re-ships infra/ + secrets; no provider token, no cost
+#   (host defaults to aurora-01 from ~/.ssh/config; or AURORA_HOST=<IP> ./bootstrap.sh --ship-only)
+ssh aurora@aurora-01
 ```
-On the box, start the stacks **in this order** (each folder's README has details):
+Then start **one stack at a time** (the 8 GB box shouldn't start everything at once).
+`stacks-up.sh` fills each stack's `.env` from `/opt/aurora/secrets.env` (values never printed,
+files mode 600), starts it, and waits for its health check:
+```sh
+bash /opt/aurora/stacks-up.sh router       # needs LITELLM_MASTER_KEY + a model key (e.g. OPENROUTER_API_KEY)
+bash /opt/aurora/stacks-up.sh n8n          # needs POSTGRES_PASSWORD + N8N_ENCRYPTION_KEY; loopback :5678
+bash /opt/aurora/stacks-up.sh hermes       # needs the router + a chat token (e.g. TELEGRAM_BOT_TOKEN)
+bash /opt/aurora/stacks-up.sh tailscale    # needs TS_AUTHKEY
+bash /opt/aurora/stacks-up.sh monitoring   # Uptime Kuma + Dozzle
+bash /opt/aurora/stacks-up.sh status       # containers + free RAM
+```
+Add `--env-only` to write a `.env` without starting anything. `computer` (Playwright MCP) and
+`openbot` (127.0.0.1:3020 + tailnet `:3020`) work the same way.
+
+**Day-to-day:** `bash /opt/aurora/server/setup-tools.sh` once, then just type `aurora` (menu for
+stacks, logs, OpenCode, Claude Code, Hermes, links, update). Details: [server/README.md](./server/README.md).
+
+<details><summary>The same by hand (what stacks-up.sh does)</summary>
+
 ```sh
 cd /opt/aurora/stacks
 # a) router (creates the shared network the others use)
@@ -175,6 +194,8 @@ In each `nano`, copy the matching values from `/opt/aurora/secrets.env`
 (`sudo cat /opt/aurora/secrets.env`). For Hermes, `ROUTER_API_KEY` = the router's
 `LITELLM_MASTER_KEY` — make one with:
 `python3 -c "import secrets;print('sk-'+secrets.token_urlsafe(32))"`
+
+</details>
 
 ## 6b. Plug in the subscriptions you already pay for
 

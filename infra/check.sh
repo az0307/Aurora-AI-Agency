@@ -69,9 +69,14 @@ else
   need "LLM router"      "berriai/litellm"            required "cd $DIR/stacks/router && docker compose up -d"
   need "n8n"             "n8nio/n8n"                  required "cd $DIR/stacks/n8n && docker compose up -d"
   need "Hermes agent"    "nousresearch/hermes-agent"  required "cd $DIR/stacks/hermes && docker compose up -d"
-  need "Tailscale"       "tailscale/tailscale"        required "cd $DIR/stacks/tailscale && docker compose up -d"
+  # Tailscale may run on the host (tailscaled) instead of the container; either is fine.
+  if command -v tailscale >/dev/null; then info "Tailscale runs on the host (checked below)"
+  else need "Tailscale" "tailscale/tailscale" required "cd $DIR/stacks/tailscale && docker compose up -d"; fi
   need "Playwright MCP"  "playwright/mcp"             optional "cd $DIR/stacks/computer && docker compose up -d"
   need "Uptime Kuma"     "uptime-kuma"                optional "monitoring stack"
+  need "OpenBot"         "copilotkit/openbot"         optional "stacks-up.sh openbot"
+  need "Dashboard"       "gethomepage/homepage"       optional "stacks-up.sh dashboard"
+  need "Stacks GUI (Dockge)" "louislam/dockge"        optional "stacks-up.sh admin"
   need "Ollama"          "ollama/ollama"              optional "on demand"
   need "Computer desktop" "computer-use-demo"         optional "on demand: --profile desktop"
   crashed=$(printf '%s\n' "$ps_out" | awk -F'|' '$3=="restarting"{print $1}')
@@ -167,7 +172,14 @@ else info "Computer-use desktop off (on demand)"; fi
 
 # ------------------------------------------------------------------------ tailscale
 head_ "Tailscale"
-if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx tailscale; then
+if command -v tailscale >/dev/null; then
+  if tailscale status --self --peers=false >/tmp/aurora-ts.txt 2>&1; then
+    ok "Online (host): $(awk 'NR==1{print $1, $2}' /tmp/aurora-ts.txt)"
+    served=$( (tailscale serve status 2>/dev/null || sudo -n tailscale serve status 2>/dev/null) | grep -Eo 'https://[^ ]+' | sort -u | tr '\n' ' ')
+    [ -n "$served" ] && ok "Private URLs: $served" || info "Nothing shared yet (tailscale serve --bg --https=<port> http://127.0.0.1:<port>)"
+    tailscale funnel status 2>/dev/null | grep -qi 'funnel on' && bad "Tailscale FUNNEL is on — that makes a service public. Turn it off: tailscale funnel reset"
+  else bad "Tailscale (host) isn't logged in / running — sudo tailscale up"; fi
+elif docker ps --format '{{.Names}}' 2>/dev/null | grep -qx tailscale; then
   if docker exec tailscale tailscale status --self --peers=false >/tmp/aurora-ts.txt 2>&1; then
     ok "Online: $(awk 'NR==1{print $1, $2}' /tmp/aurora-ts.txt)"
     served=$(docker exec tailscale tailscale serve status 2>/dev/null | grep -Eo 'https://[^ ]+' | sort -u | tr '\n' ' ')

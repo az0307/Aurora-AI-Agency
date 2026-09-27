@@ -1,0 +1,125 @@
+{
+  "id": "auroraagencylead",
+  "name": "agency-lead-intake — website form to sheet + alert",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agency-lead",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "n010",
+      "name": "Lead webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"name\": {{ JSON.stringify($json.body?.name || \"\") }},\n  \"phone\": {{ JSON.stringify($json.body?.phone || \"\") }},\n  \"suburb\": {{ JSON.stringify($json.body?.suburb || \"\") }},\n  \"service\": {{ JSON.stringify($json.body?.service || \"\") }},\n  \"received\": \"={{ $now.toISO() }}\"\n}",
+        "options": {}
+      },
+      "id": "n011",
+      "name": "Shape lead",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "<YMI_LEADS_SHEET_ID>"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Leads"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "n012",
+      "name": "Append to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        320,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{$env.TELEGRAM_ALLOWED_USERS || '<YOUR_CHAT_ID>'}}",
+        "text": "={{ '📥 New lead: '+$('Shape lead').item.json.name+' ('+$('Shape lead').item.json.suburb+') — '+$('Shape lead').item.json.service }}",
+        "additionalFields": {}
+      },
+      "id": "n013",
+      "name": "Notify Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        40
+      ]
+    }
+  ],
+  "connections": {
+    "Lead webhook": {
+      "main": [
+        [
+          {
+            "node": "Shape lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape lead": {
+      "main": [
+        [
+          {
+            "node": "Append to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append to Sheet": {
+      "main": [
+        [
+          {
+            "node": "Notify Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "aurora_note": "Point the site form at /webhook/agency-lead. Connect a Google Sheets credential and set the sheet id. This is the reusable client-intake shape; YMI uses ymi-roofing-lead separately."
+  },
+  "tags": []
+}

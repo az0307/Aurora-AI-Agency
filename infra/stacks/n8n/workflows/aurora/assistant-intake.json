@@ -1,0 +1,117 @@
+{
+  "id": "auroraassistanti",
+  "name": "assistant-intake — route a task from the Aurora console",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "assistant-intake",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "n001",
+      "name": "Task in",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"lane\": {{ JSON.stringify($json.body?.lane || \"agency\") }},\n  \"system\": \"You are Aurora, Az's assistant. Lane=\" + ($json.body?.lane||\"agency\") + \". Be concise and action-oriented. Never use a -free model for client data.\",\n  \"text\": {{ JSON.stringify($json.body?.text || \"\") }}\n}",
+        "options": {}
+      },
+      "id": "n002",
+      "name": "Build prompt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://router-litellm-1:4000/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"model\": \"general\", \"messages\": [{\"role\": \"system\", \"content\": \"You are Aurora, a concise assistant.\"}, {\"role\": \"user\", \"content\": \"={{ $json.text }}\"}]}",
+        "options": {}
+      },
+      "id": "n003",
+      "name": "Ask router",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        320,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{$env.TELEGRAM_ALLOWED_USERS || '<YOUR_CHAT_ID>'}}",
+        "text": "={{ '🅰️ ['+$('Build prompt').item.json.lane+'] '+($json.choices?.[0]?.message?.content || 'done') }}",
+        "additionalFields": {}
+      },
+      "id": "n004",
+      "name": "Notify Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        40
+      ]
+    }
+  ],
+  "connections": {
+    "Task in": {
+      "main": [
+        [
+          {
+            "node": "Build prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build prompt": {
+      "main": [
+        [
+          {
+            "node": "Ask router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask router": {
+      "main": [
+        [
+          {
+            "node": "Notify Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "aurora_note": "Import, then in n8n create a Header Auth credential 'Aurora Router' (Authorization: Bearer <LITELLM_MASTER_KEY>) and a Telegram credential. Activate. The console posts here."
+  },
+  "tags": []
+}

@@ -17,6 +17,9 @@
 #   cp secrets.env.example secrets.env && $EDITOR secrets.env   (or: aurora-secrets fill)
 #   ./bootstrap.sh --dry-run          # everything except buying/creating/changing anything
 #   ./bootstrap.sh                    # asks before anything that costs money
+#   ./bootstrap.sh --ship-only        # server already exists: re-ship infra/ + secrets only
+#                                     # (no provider token, no API calls; host = AURORA_HOST,
+#                                     #  default aurora-01 from ~/.ssh/config, or the IP)
 #
 # Knobs (env or secrets.env): VPS_PROVIDER NAME=aurora-01 BUDGET_AUD=39
 #   SSH_KEY=~/.ssh/id_ed25519.pub, plus the provider's own (see its provision.sh).
@@ -28,12 +31,13 @@ BUDGET_AUD="${BUDGET_AUD:-39}"
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519.pub}"
 SSH_USER=aurora
 
-DRY_RUN=0; ASSUME_YES=0
+DRY_RUN=0; ASSUME_YES=0; SHIP_ONLY=0
 for a in "$@"; do
   case "$a" in
     --dry-run) DRY_RUN=1 ;;
     --yes|-y)  ASSUME_YES=1 ;;
-    -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
+    --ship-only) SHIP_ONLY=1 ;;
+    -h|--help) sed -n '2,25p' "$0"; exit 0 ;;
     *) echo "unknown flag: $a" >&2; exit 2 ;;
   esac
 done
@@ -44,12 +48,14 @@ die()  { printf '\033[31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 for t in curl jq ssh tar; do command -v "$t" >/dev/null || die "$t is required on this machine"; done
 
 # --- Secrets: file first, then the shell environment overrides it -------------------
-SECRET_KEYS=(TZ N8N_DOMAIN OPENROUTER_API_KEY ANTHROPIC_API_KEY GEMINI_API_KEY XAI_API_KEY
+# Infra secrets the stacks need (router master key, n8n DB password + encryption key) ship
+# too; stacks-up.sh on the box copies them into each stack's .env.
+SECRET_KEYS=(TZ N8N_DOMAIN LITELLM_MASTER_KEY POSTGRES_PASSWORD N8N_ENCRYPTION_KEY OPENROUTER_API_KEY ANTHROPIC_API_KEY GEMINI_API_KEY XAI_API_KEY
              OPENAI_API_KEY KIMI_API_KEY HF_TOKEN CURSOR_API_KEY
              TELEGRAM_BOT_TOKEN TELEGRAM_ALLOWED_USERS DISCORD_BOT_TOKEN DISCORD_ALLOWED_USERS
              SLACK_BOT_TOKEN SLACK_APP_TOKEN SLACK_ALLOWED_USERS WHATSAPP_ALLOWED_USERS
              COMPOSIO_CONSUMER_KEY ZAPIER_MCP_TOKEN GROQ_API_KEY GITHUB_PAT CONTEXT7_API_KEY TS_AUTHKEY
-             INTELLIGENCE_API_KEY)
+             INTELLIGENCE_API_KEY N8N_API_KEY)
 # (No associative arrays: macOS still ships bash 3.2.)
 LOCAL_KEYS=(VPS_PROVIDER HCLOUD_TOKEN HETZNER_API_TOKEN HOSTINGER_API_TOKEN HOSTINGER_PLAN HOSTINGER_TERM HOSTINGER_VM_ID)
 # Provider tokens are used here and NEVER shipped to the box.
@@ -74,11 +80,21 @@ done
 [ "$have_key" = 1 ] || say "WARNING: no model API keys set — the box will come up, but the router and CLIs will have nothing to call."
 
 VPS_PROVIDER="${VPS_PROVIDER:-hetzner}"
+if [ "$SHIP_ONLY" = 1 ]; then
+  # The box already exists: skip the provider (no token needed, nothing billed) and just
+  # re-ship files + secrets. Base setup is long finished, so there's nothing to wait for.
+  IP="${AURORA_HOST:-$NAME}"
+  PRICE_LINE="existing server (ship-only)"
+  READY_CMD='test -d /opt/aurora || sudo mkdir -p /opt/aurora'
+  SSH_WAIT_TRIES=1
+  [ "$DRY_RUN" = 1 ] && { say "Dry run: would re-ship infra/ and secrets to $SSH_USER@$IP"; exit 0; }
+else
 case "$VPS_PROVIDER" in
   hostinger) . "$DIR/hostinger/provision.sh"; provision_hostinger ;;
   hetzner)   . "$DIR/hetzner/provision.sh";   provision_hetzner ;;
   *) die "VPS_PROVIDER must be hostinger or hetzner (got '$VPS_PROVIDER')" ;;
 esac
+fi
 
 # --- Wait for SSH + the base setup, ship files ------------------------------------------
 SSH=(ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=8 "$SSH_USER@$IP")
@@ -93,7 +109,10 @@ say "Shipping infra/ to /opt/aurora"
 tar -C "$DIR" -czf - --exclude='secrets.env' --exclude='.env' --exclude='*.tfstate*' \
   --exclude='.terraform' --exclude='main.tf' --exclude='.mcp.json' . \
   | "${SSH[@]}" "bash -c 'sudo mkdir -p /opt/aurora && sudo tar --no-same-owner -xzf - -C /opt/aurora \
-      && sudo chown -R aurora:aurora /opt/aurora'"   # the aurora user edits .env files + runs compose
+      && sudo find /opt/aurora \( -path /opt/aurora/stacks/hermes/data -o -path /opt/aurora/stacks/tailscale/state -o -path /opt/aurora/stacks/admin/data \) -prune \
+           -o ! -name secrets.env -exec chown aurora:aurora {} +'"
+# ^ the aurora user edits .env files + runs compose. Container-owned bind mounts (Hermes data,
+#   Tailscale state) are skipped so a re-ship never changes files a running container owns.
 
 say "Shipping secrets (mode 600; the provider token stays on this machine)"
 {
@@ -116,5 +135,5 @@ Nothing is exposed publicly except SSH and Tailscale. Open the UIs through an SS
   ssh -N -L 5678:127.0.0.1:5678 -L 4000:127.0.0.1:4000 -L 3001:127.0.0.1:3001 $SSH_USER@$IP
   # n8n → http://localhost:5678   router → http://localhost:4000/ui   uptime → http://localhost:3001
 
-Next: start the stacks from /opt/aurora/stacks: SETUP.md §6. Then: bash /opt/aurora/check.sh
+Next, one stack at a time (SETUP.md §6): ssh $SSH_USER@$IP, then bash /opt/aurora/stacks-up.sh router
 EOF

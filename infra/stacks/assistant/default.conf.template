@@ -1,0 +1,23 @@
+# Aurora Assistant console — static page + a same-origin proxy to n8n so the browser never
+# holds any key. Served on 127.0.0.1:8600 and (via tailscale serve) on the tailnet only.
+server {
+  listen 8600;
+  server_name _;
+  root /usr/share/nginx/html;
+  index index.html;
+
+  # Injects the box's tailnet name so the launcher tiles point at https://<box>:PORT.
+  location = /base.js {
+    default_type application/javascript;
+    return 200 "window.AURORA_TS=${AURORA_TS_JS};";
+  }
+
+  # "Send to assistant" → the n8n assistant-intake webhook (unauthenticated by design, on the
+  # private Docker network). No secret is exposed to the browser.
+  location = /intake {
+    proxy_pass http://n8n:5678/webhook/assistant-intake;
+    proxy_set_header Host $host;
+  }
+
+  location / { try_files $uri $uri/ =404; }
+}

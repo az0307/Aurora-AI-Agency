@@ -1,0 +1,27 @@
+# assistant — the Aurora Assistant control panel (a desktop-friendly launcher that unifies
+# OpenBot, Hermes, n8n, OpenCode and the router, with a "send a task" box wired to n8n).
+#
+#   bash /opt/aurora/stacks-up.sh assistant   # → 127.0.0.1:8600 + tailnet https://<box>:8600
+#
+# Static nginx only (no secrets, no database). It joins the n8n network so the /intake proxy
+# can reach the assistant-intake webhook. Publish it on the tailnet with tailscale serve.
+services:
+  assistant:
+    image: nginx:1.27-alpine
+    container_name: aurora-assistant
+    restart: unless-stopped
+    environment:
+      # base.js is JS, so the value must be a quoted JS string. stacks-up.sh sets AURORA_TS_JS
+      # to '"<box>.<tailnet>.ts.net"' (or 'location.hostname' when there's no tailnet yet).
+      AURORA_TS_JS: ${AURORA_TS_JS:-location.hostname}
+    ports:
+      - "127.0.0.1:8600:8600"
+    volumes:
+      - ./console:/usr/share/nginx/html:ro
+      - ./default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    networks: [default, n8n]
+networks:
+  n8n:
+    # created by the n8n stack (compose default project name → network "n8n_default")
+    name: n8n_default
+    external: true

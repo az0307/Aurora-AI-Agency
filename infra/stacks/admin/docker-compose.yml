@@ -1,0 +1,21 @@
+# admin — Dockge: a web GUI for the Docker Compose stacks in /opt/aurora/stacks
+# (start/stop/restart, live logs, edit compose + .env, open a shell in a container).
+#
+#   bash /opt/aurora/stacks-up.sh admin     # → 127.0.0.1:5001, tailnet https://aurora-01.<tailnet>.ts.net:5001
+#
+# Safety: Dockge holds the Docker socket, which is root on this box. It is bound to loopback
+# and published on the tailnet only (tailscale serve, never Funnel). Create its admin login
+# on first open, straight away, and use a long password from Bitwarden.
+services:
+  dockge:
+    image: louislam/dockge:1.4.1
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5001:5001"
+    environment:
+      # Must be the same path inside and outside the container so compose paths resolve.
+      DOCKGE_STACKS_DIR: /opt/aurora/stacks
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/app/data
+      - /opt/aurora/stacks:/opt/aurora/stacks

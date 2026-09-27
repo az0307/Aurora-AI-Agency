@@ -1,0 +1,45 @@
+# Links open over Tailscale (phones/PC must have Tailscale on). HOMEPAGE_VAR_TS = this box's tailnet name.
+- Use it:
+    - n8n:
+        href: https://{{HOMEPAGE_VAR_TS}}/
+        description: Workflows (Y.M.I leads, automations)
+        icon: n8n.png
+        server: local
+        container: n8n-n8n-1
+    - OpenBot:
+        href: https://{{HOMEPAGE_VAR_TS}}:3020
+        description: CopilotKit OpenBot
+        icon: mdi-robot-happy
+        server: local
+        container: aurora-openbot
+    - Hermes:
+        href: https://{{HOMEPAGE_VAR_TS}}:9119
+        description: The always-on agent (dashboard; chat is on Telegram)
+        icon: mdi-message-flash
+        server: local
+        container: hermes
+- Run it:
+    - Models (router):
+        href: https://{{HOMEPAGE_VAR_TS}}:4000/ui
+        description: LiteLLM — which models, spend
+        icon: mdi-swap-horizontal
+        server: local
+        container: router-litellm-1
+    - Stacks (Dockge):
+        href: https://{{HOMEPAGE_VAR_TS}}:5001
+        description: Start/stop, logs, edit stacks
+        icon: dockge.png
+        server: local
+        container: admin-dockge-1
+    - Uptime:
+        href: https://{{HOMEPAGE_VAR_TS}}:3001
+        description: Uptime Kuma — alerts
+        icon: uptime-kuma.png
+        server: local
+        container: monitoring-uptime-kuma-1
+    - Logs:
+        href: https://{{HOMEPAGE_VAR_TS}}:8080
+        description: Dozzle — live container logs
+        icon: dozzle.png
+        server: local
+        container: monitoring-dozzle-1
