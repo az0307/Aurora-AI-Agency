@@ -119,7 +119,7 @@ ymi-roofing/
 
 **Lead capture (n8n):**
 - Import `lead-capture.json` workflow into n8n
-- Set `WEBHOOK_URL` in `site/index.html` line ~883 to the n8n webhook URL ending in `/webhook/ymi-roofing-lead`
+- Set `WEBHOOK_URL` in `site/index.html` line ~832 to the n8n webhook URL ending in `/webhook/ymi-roofing-lead`
 - Requires: Google Sheets with Leads/Jobs/Monthly Summary tabs, Twilio account
 
 **Review machine (n8n):**

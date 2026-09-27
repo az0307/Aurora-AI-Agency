@@ -58,9 +58,11 @@ setkv() {
   local v="$3"
   case "$v" in *\'*) die "$2 contains a single quote, which .env files can't hold safely — regenerate it";; esac
   [[ "$v" =~ ^[A-Za-z0-9._:/@+=-]*$ ]] || v="'$v'"
+  # umask 077: the temp file holds the secret before the chmod below, so never let it be group/other-readable.
+  ( umask 077
   K="$2" V="$v" awk 'BEGIN{k=ENVIRON["K"]; v=ENVIRON["V"]; done=0}
     index($0, k"=")==1 {print k"="v; done=1; next} {print}
-    END{if(!done) print k"="v}' "$1" > "$1.tmp"
+    END{if(!done) print k"="v}' "$1" > "$1.tmp" )
   mv "$1.tmp" "$1"; chmod 600 "$1"
 }
 

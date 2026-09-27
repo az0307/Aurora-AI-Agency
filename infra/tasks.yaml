@@ -161,3 +161,31 @@ tasks:
     owner: agent
     acceptance: ["login shell no longer errors", "or thefuck removed/replaced"]
     notes: Cosmetic; Ubuntu's packaged thefuck vs newer Python.
+
+  # --- added from the 2026-09-27 parallel audit ---
+  - id: T018
+    title: Export the YMI n8n workflows referenced by the client docs
+    area: client-ymi
+    status: todo
+    owner: human
+    files: [ymi-roofing/]
+    acceptance: ["lead-capture.json + review-machine.json exist in ymi-roofing/", "CLAUDE.md + ops docs + dashboard point at real files", "dashboard no longer marks them done until they exist"]
+    notes: Audit found CLAUDE.md, ops/*.md and dashboard/AuroraYMIDashboard.jsx reference lead-capture.json / review-machine.json but neither is checked in. Export from n8n or correct the docs. Needs the real webhook path + Google Sheets/Twilio wiring.
+
+  - id: T019
+    title: Pin remaining internet-facing / socket-touching container images
+    area: stacks
+    status: todo
+    owner: agent
+    files: [infra/stacks/n8n/docker-compose.yml, infra/stacks/hermes/docker-compose.yml, infra/stacks/router/docker-compose.yml, infra/stacks/monitoring/docker-compose.yml, infra/stacks/agents/docker-compose.yml]
+    acceptance: ["n8n, hermes, router, monitoring (beszel/dozzle), agents pinned to a known version+digest", "no bare :latest on anything internet-facing or holding the docker socket"]
+    notes: Audit HIGH/MED. Do NOT guess versions — read each project's current release first. agents (OpenHands + writable docker.sock) is highest risk; keep it on a separate box. Overlaps T012 (n8n).
+
+  - id: T020
+    title: Harden operator-box low-severity items from the audit
+    area: security
+    status: todo
+    owner: agent
+    files: [infra/hetzner/provision.sh, infra/hostinger/provision.sh, infra/check.sh, infra/hostinger/post-install.sh, infra/stacks/openbot/.env.example]
+    acceptance: ["curl passes Bearer tokens via --config/@fd, not argv (out of /proc/PID/cmdline)", "post-install.done marker not written on partial failure", "openbot .env comment points at http://litellm:4000 on aurora-llm, not 172.17.0.1:4000"]
+    notes: All LOW, operator-box self-exposure only. No secret ever ships or persists world-readable.
