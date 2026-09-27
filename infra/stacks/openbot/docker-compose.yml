@@ -1,0 +1,26 @@
+services:
+  openbot:
+    image: ${OPENBOT_IMAGE:-ghcr.io/copilotkit/openbot:v0.0.15}
+    container_name: aurora-openbot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      EMBEDDED_POSTGRES: "on"
+      PORT: "3001"
+      SERVER_PORT: "3001"
+      OPENBOT_SINGLE_USER: ${OPENBOT_SINGLE_USER:-true}
+      TZ: ${TZ:-Australia/Melbourne}
+    ports:
+      - "127.0.0.1:${OPENBOT_HOST_PORT:-3020}:3001"
+    volumes:
+      - openbot-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/api/capabilities"]
+      interval: 30s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+
+volumes:
+  openbot-data:
