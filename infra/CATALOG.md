@@ -8,7 +8,7 @@ each project is current at install time — this is a shortlist, not a lockfile.
 ## GitHub repos (skills / MCP / agent tooling)
 | Repo | Why | Note |
 |---|---|---|
-| `github/spec-kit` | spec-driven development (`specify`) | see the planned `infra/SPECKIT.md` |
+| `github/spec-kit` | spec-driven development (`specify`) | see `infra/SPECKIT.md` |
 | `anthropics/skills` | Anthropic's open skills | plugin marketplace source |
 | `az0307/autoboros-skills` | your own skills SPV | reference as an external marketplace only |
 | `czlonkowski/n8n-mcp` + `n8n-skills` | the n8n MCP we already pin | deep node knowledge for authoring |

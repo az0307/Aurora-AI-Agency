@@ -66,12 +66,15 @@ fighting over one host port is the easiest mistake to make here.
 | 3002 | Homepage | dashboard |
 | 3003 | OpenHands | agents |
 | 3010–3015 | browser · gotenberg · tika · searxng · libretranslate · whisper | ondemand |
+| 3020 | OpenBot (CopilotKit) | openbot |
 | 3080 | open-webui (`ui` profile) | ollama |
 | 4000 | LiteLLM omni-router (OpenAI `/v1` + Anthropic `/v1/messages` + `/ui`) | router |
+| 5001 | Dockge (stack manager GUI) | admin |
 | 5678 | n8n | n8n |
 | 6080 | computer-use desktop screen (noVNC, `desktop` profile) | computer |
 | 6333 | Qdrant | ondemand |
 | 8080 | Dozzle | monitoring |
+| 8600 | Aurora Assistant (control panel) | assistant |
 | 8081 | Activepieces | activepieces |
 | 8090 | Beszel | monitoring |
 | 8095 | WhatsApp Cloud webhook (only if used; default 8090 would clash with Beszel) | hermes |

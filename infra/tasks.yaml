@@ -1,0 +1,191 @@
+# tasks.yaml — machine-readable backlog for the Aurora box. Agents pick work from here.
+#
+# Schema (per task):
+#   id:         Txxx (stable)
+#   title:      one line
+#   area:       provision|secrets|stacks|router|hermes|n8n|assistant|tailscale|phones|security|docs|client-ymi|backup
+#   status:     done|todo|blocked
+#   owner:      human|agent|either      # who must do it (human = needs a person: a key, a purchase, a UI click)
+#   depends_on: [ids]                   # must be done first
+#   blocked_by: "reason"                # for status: blocked
+#   files:      [paths]                 # what it touches (one owner per file when parallelising)
+#   acceptance: [checkable criteria]
+#   notes:      free text
+#
+# Parallelising: give an agent one task's id + files + acceptance; own branch; one owner per file.
+
+tasks:
+  - id: T001
+    title: Provision aurora-01 (Hetzner CX33, nbg1)
+    area: provision
+    status: done
+    owner: human
+    files: [infra/bootstrap.sh, infra/hetzner/provision.sh, infra/hetzner/cloud-init.yaml]
+    acceptance: ["server reachable over Tailscale", "Docker installed", "firewall SSH+41641 only"]
+    notes: Done; ≈AUD $20/mo reported.
+
+  - id: T002
+    title: Ship infra + secrets to the box
+    area: secrets
+    status: done
+    owner: either
+    depends_on: [T001]
+    files: [infra/bootstrap.sh, infra/secrets.env.example]
+    acceptance: ["./bootstrap.sh --ship-only copies infra/ + secrets.env, no provider call"]
+
+  - id: T003
+    title: Install operator tools (aurora menu, agents, maintain)
+    area: stacks
+    status: done
+    owner: either
+    depends_on: [T002]
+    files: [infra/server/setup-tools.sh, infra/server/aurora, infra/server/aurora-agent, infra/server/maintain.sh]
+    acceptance: ["`aurora` menu runs", "aurora-agent puts keys in child env only", "maintain tune/backup/report work"]
+
+  - id: T004
+    title: Add OPENROUTER_API_KEY and start the router
+    area: router
+    status: todo
+    owner: human
+    depends_on: [T002]
+    blocked_by: "needs the OpenRouter key pasted into secrets.env on the phone"
+    files: [infra/secrets.env.example, infra/stacks/router/.env.example]
+    acceptance: ["aurora start router → healthy", "aurora-agent lists >0 models", "no client data on -free chains"]
+
+  - id: T005
+    title: n8n owner account + API key
+    area: n8n
+    status: todo
+    owner: human
+    depends_on: [T004]
+    blocked_by: "create the owner in the n8n UI, then make an API key"
+    acceptance: ["owner account exists", "N8N_API_KEY in secrets.env", "shipped via --ship-only"]
+
+  - id: T006
+    title: Import + activate the aurora n8n workflows
+    area: n8n
+    status: todo
+    owner: human
+    depends_on: [T005]
+    files: [infra/stacks/n8n/workflows/aurora/]
+    acceptance: ["all 6 imported", "assistant-intake Active", "console 'send a task' returns 200"]
+    notes: CLI import lands inactive; activate with the UI toggle (or the API + N8N_API_KEY).
+
+  - id: T007
+    title: Start Hermes (Telegram) + the assistant console
+    area: hermes
+    status: todo
+    owner: human
+    depends_on: [T004]
+    blocked_by: "needs TELEGRAM_BOT_TOKEN + TELEGRAM_ALLOWED_USERS"
+    acceptance: ["aurora start hermes → healthy", "bot replies on Telegram", "assistant console reachable on tailnet"]
+
+  - id: T008
+    title: Tailscale lock-down (remove public SSH)
+    area: security
+    status: todo
+    owner: human
+    depends_on: [T001]
+    acceptance: ["SSH over Tailscale works", "provider firewall TCP 22 rule removed", "zero public TCP ports"]
+
+  - id: T009
+    title: Off-box encrypted backups (restic + rclone → object storage)
+    area: backup
+    status: todo
+    owner: agent
+    depends_on: [T003]
+    files: [infra/stacks/backup/]
+    acceptance: ["nightly push to remote", "one-command restore documented + tested", "keys via secrets.env, not repo"]
+    notes: The real gap (CATALOG.md). Good first spec-driven feature (SPECKIT.md).
+
+  - id: T010
+    title: Cloudflare Tunnel for the YMI lead webhook
+    area: client-ymi
+    status: todo
+    owner: human
+    depends_on: [T005]
+    acceptance: ["public https URL → n8n webhook", "no inbound port opened", "site form points at it"]
+
+  - id: T011
+    title: Hetzner billing usage alert
+    area: provision
+    status: todo
+    owner: human
+    acceptance: ["alert set (e.g. €20) in the Hetzner console"]
+
+  - id: T012
+    title: Pin N8N_IMAGE_TAG to the running version
+    area: n8n
+    status: todo
+    owner: agent
+    files: [infra/stacks/n8n/.env.example, infra/stacks/n8n/docker-compose.yml]
+    acceptance: ["tag pinned to current `n8n --version`", "upgrade is a deliberate change"]
+
+  - id: T013
+    title: Migrate n8n Postgres 16 -> 17
+    area: n8n
+    status: todo
+    owner: agent
+    depends_on: [T009]
+    acceptance: ["backup taken", "restore into PG17 volume", "n8n healthy on 17"]
+    notes: Dump/restore, not a tag bump (16 data isn't readable by 17). Steps in server/README.md.
+
+  - id: T014
+    title: YMI go-live open items
+    area: client-ymi
+    status: todo
+    owner: human
+    files: [ymi-roofing/site/index.html]
+    acceptance: ["real WEBHOOK_URL", "real social links", "ABN + BPC number", "real photos", "n8n CORS restricted", "APP 8 overseas-storage disclosure in privacy policy"]
+    notes: From CLAUDE.md key open items + EU-storage disclosure.
+
+  - id: T015
+    title: Make the repo private
+    area: security
+    status: todo
+    owner: human
+    acceptance: ["repo visibility = private"]
+
+  - id: T016
+    title: Rotate/revoke the bootstrap provider token after setup
+    area: security
+    status: todo
+    owner: human
+    depends_on: [T008]
+    acceptance: ["Hetzner API token rotated or scoped down once provisioning is stable"]
+
+  - id: T017
+    title: Fix Ubuntu thefuck ModuleNotFoundError on login (low priority)
+    area: phones
+    status: todo
+    owner: agent
+    acceptance: ["login shell no longer errors", "or thefuck removed/replaced"]
+    notes: Cosmetic; Ubuntu's packaged thefuck vs newer Python.
+
+  # --- added from the 2026-09-27 parallel audit ---
+  - id: T018
+    title: Export the YMI n8n workflows referenced by the client docs
+    area: client-ymi
+    status: todo
+    owner: human
+    files: [ymi-roofing/]
+    acceptance: ["lead-capture.json + review-machine.json exist in ymi-roofing/", "CLAUDE.md + ops docs + dashboard point at real files", "dashboard no longer marks them done until they exist"]
+    notes: Audit found CLAUDE.md, ops/*.md and dashboard/AuroraYMIDashboard.jsx reference lead-capture.json / review-machine.json but neither is checked in. Export from n8n or correct the docs. Needs the real webhook path + Google Sheets/Twilio wiring.
+
+  - id: T019
+    title: Pin remaining internet-facing / socket-touching container images
+    area: stacks
+    status: todo
+    owner: agent
+    files: [infra/stacks/n8n/docker-compose.yml, infra/stacks/hermes/docker-compose.yml, infra/stacks/router/docker-compose.yml, infra/stacks/monitoring/docker-compose.yml, infra/stacks/agents/docker-compose.yml]
+    acceptance: ["n8n, hermes, router, monitoring (beszel/dozzle), agents pinned to a known version+digest", "no bare :latest on anything internet-facing or holding the docker socket"]
+    notes: Audit HIGH/MED. Do NOT guess versions — read each project's current release first. agents (OpenHands + writable docker.sock) is highest risk; keep it on a separate box. Overlaps T012 (n8n).
+
+  - id: T020
+    title: Harden operator-box low-severity items from the audit
+    area: security
+    status: todo
+    owner: agent
+    files: [infra/hetzner/provision.sh, infra/hostinger/provision.sh, infra/check.sh, infra/hostinger/post-install.sh, infra/stacks/openbot/.env.example]
+    acceptance: ["curl passes Bearer tokens via --config/@fd, not argv (out of /proc/PID/cmdline)", "post-install.done marker not written on partial failure", "openbot .env comment points at http://litellm:4000 on aurora-llm, not 172.17.0.1:4000"]
+    notes: All LOW, operator-box self-exposure only. No secret ever ships or persists world-readable.

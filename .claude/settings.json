@@ -1,0 +1,6 @@
+{
+  "extraKnownMarketplaces": {
+    "aurora": { "source": { "source": "github", "repo": "az0307/Aurora-AI-Agency" } }
+  },
+  "enabledPlugins": { "aurora-ops@aurora": true }
+}

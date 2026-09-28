@@ -1,0 +1,13 @@
+{
+  "name": "aurora",
+  "owner": { "name": "az0307", "url": "https://github.com/az0307" },
+  "metadata": { "description": "Aurora AI Agency plugins for operating the self-hosted box." },
+  "plugins": [
+    {
+      "name": "aurora-ops",
+      "source": "./plugins/aurora-ops",
+      "description": "Skills for running aurora-01: provision, staged stack startup, health, and the spec-driven workflow.",
+      "version": "0.1.0"
+    }
+  ]
+}

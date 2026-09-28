@@ -54,7 +54,7 @@ tune() {
 
   say "Swap (4 GB, swappiness 10)"
   if [ "$(awk '/SwapTotal/{print $2}' /proc/meminfo)" -eq 0 ]; then
-    as_root fallocate -l 4G /swapfile && as_root chmod 600 /swapfile && as_root mkswap -q /swapfile && as_root swapon /swapfile
+    { as_root fallocate -l 4G /swapfile && as_root chmod 600 /swapfile && as_root mkswap -q /swapfile && as_root swapon /swapfile; } || warn "swap setup failed — check disk space"
     grep -q '^/swapfile ' /etc/fstab || echo '/swapfile none swap sw 0 0' | as_root tee -a /etc/fstab >/dev/null
   else say "  swap already present"; fi
 
@@ -103,8 +103,8 @@ backup() {
   # 1. n8n's Postgres as a proper dump (a raw copy of a running database isn't safe).
   local pg; pg=$(docker ps -q --filter label=com.docker.compose.project=n8n --filter label=com.docker.compose.service=postgres | head -1)
   if [ -n "$pg" ]; then
-    docker exec "$pg" sh -c 'pg_dump -U "${POSTGRES_USER:-n8n}" "${POSTGRES_DB:-n8n}"' | gzip | as_root tee "$dst/n8n-postgres.sql.gz" >/dev/null
-    say "  n8n database dumped"
+    docker exec "$pg" sh -c 'pg_dump -U "${POSTGRES_USER:-n8n}" "${POSTGRES_DB:-n8n}"' | gzip | as_root tee "$dst/n8n-postgres.sql.gz" >/dev/null \
+      && say "  n8n database dumped" || warn "n8n dump failed — continuing so volumes + configs still back up"
   else warn "n8n postgres isn't running — skipped its dump"; fi
 
   # 2. Every other named volume of the stacks, each project briefly paused so files are
@@ -157,14 +157,15 @@ upgrade() {
     svcs=$(cd "$ROOT/stacks/$s" && docker compose ps --services --status running)
     [ -n "$svcs" ] || { warn "$s isn't running — skipped (start it with: aurora start $s)"; continue; }
     say "Upgrading $s: $(echo $svcs)"
-    (cd "$ROOT/stacks/$s" && docker compose pull -q $svcs && docker compose up -d $svcs)
+    (cd "$ROOT/stacks/$s" && docker compose pull -q $svcs && docker compose up -d $svcs) \
+      || warn "$s upgrade failed — continuing with the next stack"
   done
   say "Upgrade done. Check: aurora maintain report"
 }
 
 # ----------------------------------------------------------------------------- report
 report() {
-  set +e   # a report must finish even when one probe fails
+  set +e   # a report must finish even when one probe fails (restored at the end so callers keep -e)
   echo "aurora-01 report — $(date -Is)   (safe to paste: no secret values)"
   bash "$ROOT/check.sh" || true
   echo; echo "Upkeep"
@@ -180,6 +181,7 @@ report() {
   echo "  · Docker disk:"; docker system df 2>/dev/null | sed 's/^/      /'
   echo "  · Listening on non-loopback addresses (should be only ssh/xrdp on tailscale + tailscaled):"
   ss -Htlnp 2>/dev/null | awk '$4 !~ /^(127\.|\[::1\])/ {print "      " $4}' | sort -u
+  set -e   # restore for any caller (snapshot() calls report() mid-function)
 }
 
 # --------------------------------------------------------------------------- snapshot
