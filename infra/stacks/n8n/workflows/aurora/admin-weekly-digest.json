@@ -25,7 +25,7 @@
     {
       "parameters": {
         "mode": "raw",
-        "jsonOutput": "={ \"week\": \"={{ $now.toFormat('yyyy-MM-dd') }}\" }",
+        "jsonOutput": "={{ JSON.stringify({ week: $now.toFormat('yyyy-MM-dd') }) }}",
         "options": {}
       },
       "id": "n015",
@@ -45,7 +45,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\"model\": \"general\", \"messages\": [{\"role\": \"system\", \"content\": \"You are Aurora's admin clerk. Write a short Monday checklist for a solo AU business owner: invoices to chase, BAS/GST dates near, subscriptions to review. Bullet points, <120 words.\"}, {\"role\": \"user\", \"content\": \"={{ 'Week '+$json.week+': produce this Monday admin checklist.' }}\"}]}",
+        "jsonBody": "={{ JSON.stringify({ model: \"general\", messages: [ { role: \"system\", content: \"You are Aurora's admin clerk. Write a short Monday checklist for a solo AU business owner: invoices to chase, BAS/GST dates near, subscriptions to review. Bullet points, <120 words.\" }, { role: \"user\", content: 'Week '+$json.week+': produce this Monday admin checklist.' } ] }) }}",
         "options": {}
       },
       "id": "n016",

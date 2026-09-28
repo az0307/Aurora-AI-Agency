@@ -28,7 +28,7 @@ This is where "autocorrect + suggestive + smart" actually comes from. The
 | **Starship** | fast, informative prompt | `curl -sS https://starship.rs/install.sh \| sh` |
 | **Atuin** | searchable, synced shell history with a TUI | `curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh \| sh` (add `-s -- --non-interactive` for scripts; self-host the sync server too) |
 | **zoxide** | smart `cd` that learns your paths | `apt install zoxide` |
-| **thefuck** *(or `pay-respects`)* | **autocorrect** the previous command | `apt install thefuck` / cargo install pay-respects |
+| **pay-respects** *(not thefuck)* | **autocorrect** the previous command | `cargo install pay-respects` — **don't `apt install thefuck` on Ubuntu 24.04**: it imports `distutils` (gone in Python 3.12) and crashes every login; `aurora maintain tune` removes a broken copy |
 | **Zellij** | multiplexer with status bar, floating panes, plugins = "widgets/buttons" | download binary / `cargo install zellij` |
 | `fzf`, `ripgrep`, `fd`, `bat`, `eza`, `tealdeer` | fuzzy find, fast grep/find, better cat/ls, tldr | `apt install fzf ripgrep fd-find bat eza tealdeer` |
 
@@ -38,7 +38,8 @@ Minimal `~/.bashrc`/`~/.zshrc` wiring (also written by cloud-init):
 eval "$(starship init "$(basename "$SHELL")")"
 eval "$(zoxide init "$(basename "$SHELL")")"
 eval "$(atuin init "$(basename "$SHELL")")"
-eval "$(thefuck --alias)"          # then: type `fuck` after a bad command
+# autocorrect: after `cargo install pay-respects`, add the one init line from its README
+# (github.com/iffse/pay-respects) for your shell — not Ubuntu's apt thefuck (broken on Python 3.12)
 alias ls='eza' cat='bat' cd='z'
 ```
 

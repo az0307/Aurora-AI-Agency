@@ -11,7 +11,7 @@
 
 services:
   tailscale:
-    image: tailscale/tailscale:${TS_TAG:-stable}
+    image: tailscale/tailscale:${TS_TAG:-v1.102.5}   # pinned 2026-09-28 (host network + NET_ADMIN)
     container_name: tailscale
     restart: unless-stopped
     network_mode: host

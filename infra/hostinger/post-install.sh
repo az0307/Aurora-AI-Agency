@@ -76,7 +76,7 @@ if type -q atuin;    atuin init fish   | source; end
 alias cat='batcat'
 alias ls='eza'
 abbr -a cd z
-if type -q thefuck; thefuck --alias fix | source; end
+if type -q thefuck; and thefuck --version >/dev/null 2>&1; thefuck --alias fix | source; end
 EOF
 chown "$U:$U" "/home/$U/.config/fish/config.fish"
 
@@ -101,7 +101,7 @@ fi
 su - "$U" -c 'command -v starship >/dev/null || curl -sS https://starship.rs/install.sh | sh -s -- -y' >/dev/null 2>&1 || true
 su - "$U" -c "command -v atuin >/dev/null || curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --non-interactive" >/dev/null 2>&1 || true
 command -v zellij >/dev/null || (curl -fsSL https://github.com/zellij-org/zellij/releases/latest/download/zellij-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin) || true
-apt-get install -y -q thefuck >/dev/null 2>&1 || true
+# No apt thefuck: Ubuntu 24.04's package imports distutils (gone in Python 3.12) and crashes on login.
 
 # --- 7. Lock SSH down, but only once the aurora key is in place (never lock yourself out) --
 if grep -qE '^(ssh-|ecdsa-|sk-)' "$AK"; then

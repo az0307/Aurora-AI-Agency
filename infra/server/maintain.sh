@@ -7,6 +7,8 @@
 #   aurora maintain upgrade STACK # backup, pull newer images, recreate that stack (or: all)
 #   aurora maintain report        # full read-only health + upkeep report (paste it to Claude)
 #   aurora maintain snapshot      # backup + report + a versions/health manifest = "this worked"
+#   aurora maintain pg-upgrade    # n8n Postgres 16 → 17: backup, dump, restore onto a new volume,
+#                                 #   verify row counts, auto-rollback on failure (asks first)
 #
 # `tune` sets up (each step is skipped if already done):
 #   - Docker: log rotation (10 MB × 3 per container) + live-restore (containers keep running
@@ -16,6 +18,8 @@
 #   - journald capped at 300 MB
 #   - systemd timers: nightly backup 03:30, weekly prune Sun 04:15 (server local time)
 #   - admin tools: btop, ncdu, duf, lazydocker (Docker TUI)
+#   - cleanup: closes ufw 80/443 left by older cloud-init (unless a container really publishes
+#     them), removes Ubuntu's broken apt thefuck (its login traceback)
 #
 # Backups stay ON the box (/var/backups/aurora, root-only, 7 kept). That protects against
 # mistakes, not against losing the server: copy them off-box too (see server/README.md).
@@ -32,6 +36,13 @@ say()  { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[33mWARN\033[0m %s\n' "$*"; }
 die()  { printf '\033[31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 as_root() { if [ "$(id -u)" = 0 ]; then "$@"; else sudo "$@"; fi; }
+
+# Containers this run has paused (backup). Always unpaused on exit — even on Ctrl-C or a
+# systemd stop mid-archive — so an interrupted backup never leaves a stack frozen.
+PAUSED=""
+unpause_paused() { if [ -n "$PAUSED" ]; then docker unpause $PAUSED >/dev/null 2>&1 || true; PAUSED=""; fi; }
+trap unpause_paused EXIT
+trap 'unpause_paused; exit 130' INT TERM
 
 # Compose projects = the stack folder names (compose's default project name).
 stacks_running() { docker ps --format '{{.Label "com.docker.compose.project"}}' | sort -u | grep -v '^$' || true; }
@@ -90,6 +101,24 @@ tune() {
     if curl -fsSL "$url" | as_root tar -xz -C /usr/local/bin lazydocker; then say "  lazydocker $LAZYDOCKER_VERSION"
     else warn "lazydocker download failed ($url)"; fi
   fi
+  # Older cloud-init opened 80/443 in ufw. Nothing on this box serves the public internet
+  # (Tailscale serve; a Cloudflare Tunnel is outbound-only), so close them — unless a container
+  # really publishes 80/443 (a deliberate `--profile public` Caddy), which is left alone.
+  if command -v ufw >/dev/null && as_root ufw status 2>/dev/null | grep -qE '^(80|443)/tcp +ALLOW'; then
+    if docker ps --format '{{.Ports}}' | grep -qE '(0\.0\.0\.0|\[::\]|:::):(80|443)->'; then
+      warn "ufw allows 80/443 and a container publishes them (public Caddy?) — left as is"
+    else
+      as_root ufw delete allow 80/tcp >/dev/null 2>&1 || true
+      as_root ufw delete allow 443/tcp >/dev/null 2>&1 || true
+      say "Closed ufw 80/443 (nothing here is public)"
+    fi
+  fi
+  # Ubuntu 24.04's apt thefuck imports distutils (removed in Python 3.12), so the fish login
+  # alias printed a traceback every time. Older installs have it; remove it only if it's broken.
+  if command -v thefuck >/dev/null && ! thefuck --version >/dev/null 2>&1; then
+    as_root env DEBIAN_FRONTEND=noninteractive apt-get remove -y -qq thefuck >/dev/null \
+      && say "Removed broken thefuck (login traceback gone)" || warn "couldn't remove thefuck"
+  fi
   say "Tuning done."
 }
 
@@ -114,9 +143,9 @@ backup() {
     case "$v" in *pg_data*) continue ;; esac
     proj=$(docker volume inspect -f '{{index .Labels "com.docker.compose.project"}}' "$v")
     local ids; ids=$(docker ps -q --filter "label=com.docker.compose.project=$proj")
-    [ -n "$ids" ] && docker pause $ids >/dev/null 2>&1 || true
+    if [ -n "$ids" ]; then PAUSED="$ids"; docker pause $ids >/dev/null 2>&1 || true; fi
     docker run --rm -v "$v:/v:ro" alpine:3.20 tar -C /v -czf - . | as_root tee "$dst/vol-$v.tgz" >/dev/null || warn "volume $v failed"
-    [ -n "$ids" ] && docker unpause $ids >/dev/null 2>&1 || true
+    unpause_paused
   done
   say "  volumes archived"
 
@@ -204,7 +233,93 @@ snapshot() {
   grep -q '✗' "$dir/report.txt" 2>/dev/null && warn "report.txt still has ✗ lines — not fully green yet" || say "report.txt is clean (no ✗)."
 }
 
+# ------------------------------------------------------------------------- pg-upgrade
+# n8n's Postgres 16 → 17. 17 can't read 16's data files, so this is a dump/restore onto a NEW
+# volume: full backup → stop n8n → dump → start 17 on the new volume → restore → compare every
+# table's row count → start n8n and wait for /healthz. Any failure rolls back to 16 on the old
+# volume, which is never modified or deleted. Values in .env are never printed.
+PG_TARGET_TAG="${PG_TARGET_TAG:-17-alpine}"
+PG_TARGET_VOLUME="${PG_TARGET_VOLUME:-n8n_pg_data17}"
+
+envset() { # envset FILE KEY VALUE — replace or append one line; file stays mode 600
+  local tmp; tmp=$(umask 077; mktemp "$1.XXXXXX")
+  K="$2" V="$3" awk 'BEGIN{k=ENVIRON["K"]; v=ENVIRON["V"]} index($0, k"=")==1 {if(!d) print k"="v; d=1; next} {print} END{if(!d) print k"="v}' "$1" > "$tmp" \
+    && chmod 600 "$tmp" && mv "$tmp" "$1"
+}
+pg_psql() { docker compose exec -T postgres sh -c 'psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -X -q -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" "$@"' psql "$@"; }
+pg_counts() { # "table<TAB>rows" for every table in public, sorted — compared before vs after
+  pg_psql -c "select table_name || E'\t' || (xpath('/row/c/text()', query_to_xml(format('select count(*) as c from public.%I', table_name), false, true, '')))[1]::text
+              from information_schema.tables where table_schema='public' and table_type='BASE TABLE' order by table_name"
+}
+pg_wait() { # until 17 answers over TCP (the init-time temp server is socket-only, so this skips it)
+  local i; for i in $(seq 1 60); do
+    docker compose exec -T postgres sh -c 'pg_isready -q -h 127.0.0.1 -U "$POSTGRES_USER"' 2>/dev/null && return 0; sleep 2
+  done; return 1
+}
+
+pg_upgrade() {
+  local dir="$ROOT/stacks/n8n"
+  [ -f "$dir/.env" ] || die "no stacks/n8n/.env — n8n was never set up here"
+  cd "$dir"
+  local cur_tag cur_vol
+  cur_tag=$(sed -n 's/^POSTGRES_IMAGE_TAG=//p' .env | tail -1); cur_tag=${cur_tag:-16-alpine}
+  cur_vol=$(sed -n 's/^PG_VOLUME_NAME=//p' .env | tail -1);     cur_vol=${cur_vol:-n8n_pg_data}
+  case "$cur_tag" in 16*) ;; *) say "n8n Postgres is on $cur_tag already — nothing to do"; return 0 ;; esac
+  docker compose ps --status running -q postgres | grep -q . || die "n8n's Postgres isn't running — start it first: aurora start n8n"
+  docker volume inspect "$PG_TARGET_VOLUME" >/dev/null 2>&1 \
+    && die "volume $PG_TARGET_VOLUME already exists (an earlier attempt?). Check it, then: docker volume rm $PG_TARGET_VOLUME"
+
+  say "n8n Postgres $cur_tag (volume $cur_vol) → $PG_TARGET_TAG (new volume $PG_TARGET_VOLUME)"
+  echo "   n8n is offline for a few minutes. The old volume is kept, so you can roll back."
+  if [ "$ASSUME_YES" != 1 ]; then
+    read -r -p "Type 'upgrade' to go ahead: " a; [ "$a" = upgrade ] || die "cancelled — nothing changed"
+  fi
+
+  backup
+  local work; work="$BACKUP_DIR/pg-upgrade-$(date +%F_%H%M)"; as_root install -d -m 700 "$work"
+
+  say "Stopping n8n (Postgres stays up for the dump)"
+  docker compose stop n8n >/dev/null
+  local before; before=$(pg_counts) || { docker compose start n8n >/dev/null; die "couldn't read row counts on 16 — n8n restarted, nothing changed"; }
+  say "Dumping $(printf '%s\n' "$before" | grep -c .) tables"
+  docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner --no-privileges' \
+    | gzip | as_root tee "$work/n8n-pg16.sql.gz" >/dev/null \
+    || { docker compose start n8n >/dev/null; die "dump failed — n8n restarted on 16, nothing changed"; }
+
+  rollback() {
+    warn "$1 — rolling back to $cur_tag on $cur_vol"
+    docker compose stop postgres >/dev/null 2>&1 || true
+    envset .env POSTGRES_IMAGE_TAG "$cur_tag"; envset .env PG_VOLUME_NAME "$cur_vol"
+    docker compose up -d postgres n8n >/dev/null 2>&1 || true
+    die "rolled back; n8n is on its old database. The failed $PG_TARGET_VOLUME is kept for inspection (docker volume rm $PG_TARGET_VOLUME to discard). Dump: $work"
+  }
+
+  say "Starting Postgres $PG_TARGET_TAG on $PG_TARGET_VOLUME"
+  docker compose stop postgres >/dev/null
+  envset .env POSTGRES_IMAGE_TAG "$PG_TARGET_TAG"; envset .env PG_VOLUME_NAME "$PG_TARGET_VOLUME"
+  docker compose up -d postgres >/dev/null 2>&1 || rollback "Postgres $PG_TARGET_TAG didn't start"
+  pg_wait || rollback "Postgres $PG_TARGET_TAG never became ready"
+
+  say "Restoring"
+  as_root cat "$work/n8n-pg16.sql.gz" | gunzip | pg_psql >/dev/null || rollback "restore failed"
+  local after; after=$(pg_counts) || rollback "couldn't read row counts on $PG_TARGET_TAG"
+  [ "$before" = "$after" ] || rollback "row counts differ after restore ($(diff <(echo "$before") <(echo "$after") | grep -c '^[<>]') lines)"
+  say "Row counts match on all $(printf '%s\n' "$after" | grep -c .) tables"
+
+  say "Starting n8n on $PG_TARGET_TAG"
+  docker compose up -d n8n >/dev/null 2>&1 || rollback "n8n didn't start"
+  local i ok=0; for i in $(seq 1 60); do curl -fsS -m 5 -o /dev/null http://127.0.0.1:5678/healthz 2>/dev/null && { ok=1; break; }; sleep 3; done
+  [ "$ok" = 1 ] || rollback "n8n didn't answer /healthz on $PG_TARGET_TAG"
+
+  say "Done: n8n runs on Postgres $PG_TARGET_TAG (volume $PG_TARGET_VOLUME). Dump kept in $work."
+  echo "   The old volume $cur_vol is untouched. Once you're happy (say a week), free it:"
+  echo "     docker volume rm $cur_vol"
+  echo "   Roll back before then (loses anything n8n saved since): set POSTGRES_IMAGE_TAG=$cur_tag and"
+  echo "   PG_VOLUME_NAME=$cur_vol in stacks/n8n/.env, then: aurora start n8n"
+}
+
 case "${1:-}" in
   tune) tune ;; backup) backup ;; prune) prune ;; upgrade) upgrade "${2:-}" ;; report) report ;; snapshot) snapshot ;;
-  *) sed -n '2,24p' "$0"; exit 2 ;;
+  pg-upgrade) pg_upgrade ;;
+  *) sed -n '2,26p' "$0"; exit 2 ;;
 esac

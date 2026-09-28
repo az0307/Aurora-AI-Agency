@@ -66,12 +66,12 @@ else
       *)                   [ "$3" = required ] && bad "$1 ($name): $state — $4" || info "$1 ($name): $state" ;;
     esac
   }
-  need "LLM router"      "berriai/litellm"            required "cd $DIR/stacks/router && docker compose up -d"
-  need "n8n"             "n8nio/n8n"                  required "cd $DIR/stacks/n8n && docker compose up -d"
-  need "Hermes agent"    "nousresearch/hermes-agent"  required "cd $DIR/stacks/hermes && docker compose up -d"
+  need "LLM router"      "berriai/litellm"            required "bash $DIR/stacks-up.sh router"
+  need "n8n"             "n8nio/n8n"                  required "bash $DIR/stacks-up.sh n8n"
+  need "Hermes agent"    "nousresearch/hermes-agent"  required "bash $DIR/stacks-up.sh hermes"
   # Tailscale may run on the host (tailscaled) instead of the container; either is fine.
   if command -v tailscale >/dev/null; then info "Tailscale runs on the host (checked below)"
-  else need "Tailscale" "tailscale/tailscale" required "cd $DIR/stacks/tailscale && docker compose up -d"; fi
+  else need "Tailscale" "tailscale/tailscale" required "bash $DIR/stacks-up.sh tailscale"; fi
   need "Playwright MCP"  "playwright/mcp"             optional "cd $DIR/stacks/computer && docker compose up -d"
   need "Uptime Kuma"     "uptime-kuma"                optional "monitoring stack"
   need "OpenBot"         "copilotkit/openbot"         optional "stacks-up.sh openbot"
@@ -190,6 +190,30 @@ elif docker ps --format '{{.Names}}' 2>/dev/null | grep -qx tailscale; then
     [ -n "$served" ] && ok "Private URLs: $served" || info "Nothing shared yet (tailscale serve --bg --https=<port> http://127.0.0.1:<port>)"
   else bad "Tailscale not logged in — set TS_AUTHKEY in stacks/tailscale/.env and restart"; fi
 fi
+
+# ---------------------------------------------------------------------- image pins
+# Only tag/image keys are read and printed — never any other .env value.
+head_ "Image pins (upgrades should be a choice, not a surprise)"
+unpinned=0
+for envf in "$DIR"/stacks/*/.env; do
+  [ -f "$envf" ] || continue
+  st=$(basename "$(dirname "$envf")")
+  while IFS= read -r k; do
+    v=$(envval "$envf" "$k")
+    case "$v" in latest|*:latest)
+      unpinned=$((unpinned+1))
+      warn "stacks/$st/.env: $k=$v"
+      if [ "$k" = N8N_IMAGE_TAG ] && docker ps --format '{{.Names}}' | grep -qx n8n-n8n-1; then
+        run=$(docker exec n8n-n8n-1 n8n --version 2>/dev/null | tail -1)
+        [ -n "$run" ] && info "  pin it to what's running: set N8N_IMAGE_TAG=$run in stacks/n8n/.env (a MAJOR bump is a DB migration, not a tag change)"
+      fi ;;
+    esac
+  done < <(grep -oE '^[A-Z0-9_]*(_TAG|_IMAGE)=' "$envf" | tr -d =)
+done
+while IFS= read -r line; do
+  unpinned=$((unpinned+1)); warn "running on :latest → $line"
+done < <(docker ps --format '{{.Names}} ({{.Image}})' 2>/dev/null | grep -E '(:latest\)|\([^:]*\))$')
+[ "$unpinned" -eq 0 ] && ok "No stack .env or running container tracks :latest"
 
 # -------------------------------------------------------------------------- summary
 printf '\n'

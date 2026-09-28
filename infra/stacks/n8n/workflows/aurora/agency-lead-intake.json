@@ -16,12 +16,13 @@
       "position": [
         -320,
         -160
-      ]
+      ],
+      "webhookId": "2a57746b-f183-5117-8524-afad1156c326"
     },
     {
       "parameters": {
         "mode": "raw",
-        "jsonOutput": "={\n  \"name\": {{ JSON.stringify($json.body?.name || \"\") }},\n  \"phone\": {{ JSON.stringify($json.body?.phone || \"\") }},\n  \"suburb\": {{ JSON.stringify($json.body?.suburb || \"\") }},\n  \"service\": {{ JSON.stringify($json.body?.service || \"\") }},\n  \"received\": \"={{ $now.toISO() }}\"\n}",
+        "jsonOutput": "={{ JSON.stringify({ name: $json.body?.name || \"\", phone: $json.body?.phone || \"\", suburb: $json.body?.suburb || \"\", service: $json.body?.service || \"\", received: $now.toISO() }) }}",
         "options": {}
       },
       "id": "n011",

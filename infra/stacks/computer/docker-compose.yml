@@ -19,11 +19,11 @@
 #   then open https://aurora-01.<tailnet>.ts.net:8501 and
 #   https://aurora-01.<tailnet>.ts.net:6080/vnc.html?autoconnect=1&resize=scale
 # Never publish these ports: whoever reaches them controls a logged-in browser.
-# Pin image digests for production (see ../../STACK.md) — these tags move.
+# Images are pinned (2026-09-28); bump deliberately with `aurora maintain upgrade computer`.
 
 services:
   playwright:
-    image: mcr.microsoft.com/playwright/mcp:latest
+    image: mcr.microsoft.com/playwright/mcp:v0.0.82   # pinned 2026-09-28 = the version staging-tested here
     container_name: playwright-mcp
     restart: unless-stopped
     init: true
@@ -46,7 +46,7 @@ services:
     mem_limit: 1g
 
   desktop:
-    image: ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-latest
+    image: ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-5264b72   # pinned 2026-09-28 (= computer-use-demo-latest by digest)
     container_name: computer-desktop
     profiles: ["desktop"]
     restart: "no"

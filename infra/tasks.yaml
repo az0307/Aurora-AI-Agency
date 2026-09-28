@@ -122,19 +122,32 @@ tasks:
   - id: T012
     title: Pin N8N_IMAGE_TAG to the running version
     area: n8n
-    status: todo
+    status: done
     owner: agent
     files: [infra/stacks/n8n/.env.example, infra/stacks/n8n/docker-compose.yml]
     acceptance: ["tag pinned to current `n8n --version`", "upgrade is a deliberate change"]
+    notes: >
+      Done 2026-09-28. Compose default is 2.41.3 (T019). The live box keeps its own .env, so check.sh
+      now has an "Image pins" section: it warns on any stack .env tag = latest (and any container running
+      :latest), and for N8N_IMAGE_TAG prints the exact line to pin to what's running. Tested with a
+      stand-in container; no other .env value is ever printed. On-box follow-up: T031.
 
   - id: T013
     title: Migrate n8n Postgres 16 -> 17
     area: n8n
-    status: todo
+    status: done
     owner: agent
     depends_on: [T009]
     acceptance: ["backup taken", "restore into PG17 volume", "n8n healthy on 17"]
-    notes: Dump/restore, not a tag bump (16 data isn't readable by 17). Steps in server/README.md.
+    notes: >
+      Tooling done 2026-09-28: `aurora maintain pg-upgrade`. Compose now takes POSTGRES_IMAGE_TAG +
+      PG_VOLUME_NAME (defaults = 16 on n8n_pg_data, so existing boxes are untouched; fresh installs get 17
+      on n8n_pg_data17 via .env.example). The command asks (type 'upgrade'), takes a full backup, dumps,
+      starts 17 on a NEW volume, restores, compares every table's row count, starts n8n and waits for
+      /healthz; any failure rolls back to 16 automatically. Staging-tested on real Docker (old compose →
+      new files → upgrade): 143 tables / 270 n8n migrations preserved, 0 migrations re-run, n8n healthy on
+      17.11; manual rollback and forced-failure auto-rollback both return to 16 with data intact.
+      Running it on aurora-01 is T031.
 
   - id: T014
     title: YMI go-live open items
@@ -163,10 +176,15 @@ tasks:
   - id: T017
     title: Fix Ubuntu thefuck ModuleNotFoundError on login (low priority)
     area: phones
-    status: todo
+    status: done
     owner: agent
     acceptance: ["login shell no longer errors", "or thefuck removed/replaced"]
-    notes: Cosmetic; Ubuntu's packaged thefuck vs newer Python.
+    notes: >
+      Done 2026-09-28. Reproduced in ubuntu:24.04: apt thefuck 3.29 imports distutils (gone in
+      Python 3.12) → traceback on every fish login. cloud-init / hostinger post-install no longer install
+      it and guard the alias (`thefuck --version` must succeed); `aurora maintain tune` removes a broken
+      copy (tested: removed, idempotent). Docs point to pay-respects instead (init line: its README —
+      not verifiable from here).
 
   # --- added from the 2026-09-27 parallel audit ---
   - id: T018
@@ -211,3 +229,120 @@ tasks:
       the essentials (aurora user, SSH key, docker); on a partial run it writes .failed and exits
       1 instead. openbot .env.example comment corrected to http://litellm:4000/v1 on aurora-llm.
       No secret ever ships or persists world-readable.
+
+  # --- Found by the 2026-09-28 audit (read-only subagent) + the n8n end-to-end test ------------
+  - id: T021
+    title: n8n can't reach the router — join it to aurora-llm
+    area: n8n
+    status: done
+    owner: agent
+    files: [infra/stacks-up.sh]
+    acceptance: ["docker exec n8n-n8n-1 wget -qO- http://router-litellm-1:4000/health/liveliness → 200"]
+    notes: >
+      stacks-up.sh's n8n override now joins aurora-llm (and is rewritten on boxes that have the old
+      one). New ensure_llm_net pre-creates the network with the router's compose labels when the
+      router hasn't run yet — a plain `docker network create` makes the router refuse it (tested
+      both). Verified from inside n8n.
+  - id: T022
+    title: Aurora n8n workflows never worked — fix webhooks, JSON, and prompt bodies
+    area: n8n
+    status: done
+    owner: agent
+    files: [infra/stacks/n8n/workflows/]
+    acceptance: ["console task reaches the router with the user's text", "health digest still sends when the router is down"]
+    notes: >
+      End-to-end test in real n8n found four blockers: no webhookId on webhook nodes (n8n registered
+      <wf-id>/<node>/<path>, so /webhook/assistant-intake 404'd — all 7 webhook workflows in the
+      library fixed); raw-JSON Set nodes concatenating outside {{ }} (invalid JSON, confirmed by n8n);
+      router jsonBody not an expression (model got the literal "={{ $json.text }}"); stray "=" in
+      date strings. Also: assistant-intake now uses its lane-aware system prompt; health digest and
+      runsheet report up/DOWN from the status code and keep going when a check fails. Verified: text
+      with quotes arrives intact on the paid general chain; digest shows router=DOWN with the router
+      stopped; lead record is clean.
+  - id: T023
+    title: Remove Tailscale Funnel instructions from docs
+    area: docs
+    status: done
+    owner: agent
+    acceptance: ["every 'funnel' mention under infra/ is a prohibition"]
+    notes: tailscale + hermes README/.env.example now point public webhooks at a Cloudflare Tunnel (T010).
+  - id: T024
+    title: Caddy published 0.0.0.0:80/443 by default; ufw opened 80/443
+    area: security
+    status: done
+    owner: agent
+    files: [infra/stacks/n8n/docker-compose.yml, infra/check.sh, infra/hetzner/cloud-init.yaml, infra/server/maintain.sh]
+    acceptance: ["docker compose config --services in stacks/n8n lists no caddy", "fresh cloud-init opens no 80/443"]
+    notes: >
+      Caddy is opt-in (`--profile public`) and pinned 2.11.4-alpine; check.sh start hints use
+      stacks-up.sh; cloud-init no longer opens 80/443; `aurora maintain tune` closes them on existing
+      boxes unless a container really publishes them (tested in a privileged Ubuntu container).
+  - id: T025
+    title: beszel-agent listened on 0.0.0.0:45876 with the Docker socket
+    area: security
+    status: done
+    owner: agent
+    files: [infra/stacks/monitoring/]
+    acceptance: ["no TCP 45876 listener", "Beszel only starts with --profile beszel"]
+    notes: >
+      Agent now listens on a Unix socket in a volume shared with the hub (Beszel's documented
+      same-box setup; LISTEN replaces the old PORT). Both Beszel services are opt-in. Runtime-tested:
+      socket created, no TCP listener, hub 200 on loopback.
+  - id: T026
+    title: stacks-up.sh exited 1 after a successful start (aurora up said "Skipped")
+    area: stacks
+    status: done
+    owner: agent
+    acceptance: ["stacks-up.sh dashboard; echo $? → 0 with no host tailscale"]
+    notes: Three branches ended in a bare `test && cmd`. Reproduced (exit 1 while healthy), fixed (exit 0).
+  - id: T027
+    title: Pin the last internet-facing / privileged images
+    area: stacks
+    status: done
+    owner: agent
+    notes: >
+      tailscale v1.102.5, activepieces 0.92.0, playwright/mcp v0.0.82 (the tested version),
+      computer-use-demo-5264b72 (= -latest by digest). Versions read from Docker Hub / MCR / ghcr.
+      ondemand + ollama stay rolling (throwaway, on-demand) per STANDARDS.md.
+  - id: T028
+    title: An interrupted backup left stacks paused
+    area: backup
+    status: done
+    owner: agent
+    acceptance: ["SIGTERM mid-backup leaves nothing paused"]
+    notes: maintain.sh traps EXIT/INT/TERM and unpauses. Reproduced before (still paused), fixed after.
+  - id: T029
+    title: Small correctness/doc fixes from the audit
+    area: docs
+    status: done
+    owner: agent
+    notes: >
+      check-chains.py runs as documented (defaults to config.yaml.example; static checks need only
+      pyyaml; full sim 18/18 PASS with litellm). SERVICES.md tier 1 + paths match the box. Kuma and
+      Dozzle published on the tailnet by stacks-up (the start page linked :8080 that nothing served).
+      Phone "Restart Hermes" (menu, widget, aliases) refreshes data/.env from secrets.env first, so a
+      rotated key actually lands. n8n WEBHOOK_URL → N8N_WEBHOOK_URL (2.x rename; .env key unchanged).
+      DAY1/cloud-init/preflight pointers → SETUP.md. AGENTS.md typo.
+  - id: T030
+    title: Decide on the orphan autoboros lockfiles
+    area: docs
+    status: todo
+    owner: human
+    acceptance: ["git ls-files 'autoboros*' is empty, or you've decided to keep them"]
+    notes: >
+      autoboros/cockpit/package-lock.json and autoboros-cockpit/package-lock.json came back in your
+      PR #41 after the slim-down (#40); no package.json or code beside them, and CLAUDE.md says that
+      code lives in its own repo. Left for you since you merged them. To drop:
+      git rm autoboros/cockpit/package-lock.json autoboros-cockpit/package-lock.json
+  - id: T031
+    title: Apply this round on aurora-01
+    area: provision
+    status: todo
+    owner: human
+    depends_on: [T013, T021, T024]
+    acceptance: ["check.sh shows no ✗ and no :latest warnings", "n8n on Postgres 17"]
+    notes: >
+      After merging: `aurora update`, then `aurora maintain tune` (closes ufw 80/443, removes broken
+      thefuck), `aurora start n8n` (joins aurora-llm), set N8N_IMAGE_TAG to what check.sh prints,
+      `aurora maintain pg-upgrade` (type 'upgrade'), `aurora start monitoring`, then
+      `bash /opt/aurora/check.sh`. Re-import the six aurora workflows (T006) — the old copies can't work.

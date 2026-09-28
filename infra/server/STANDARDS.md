@@ -24,7 +24,7 @@ What aurora-01 assumes, and the tools/versions we hold to. Versions move — tre
 | **Claude Code** | `@anthropic-ai/claude-code` (npm, latest) | your Claude login; MCP via `~/work/.mcp.json` |
 | **OpenCode** | `opencode-ai` (npm) | models via the router; config in `~/.config/opencode` |
 | **n8n MCP** | `n8n-mcp@2.89.0` | authors/validates workflows; reviewed-version pin |
-| **Playwright MCP** | `@playwright/mcp@0.0.78` | shared browser at `127.0.0.1:8931/mcp` |
+| **Playwright MCP** | container `mcr.microsoft.com/playwright/mcp:v0.0.82` (the shared browser at `127.0.0.1:8931/mcp`); `npx @playwright/mcp@0.0.78` in `mcp/.mcp.json.example` for an operator-side stdio fallback | bump each deliberately |
 | **uv / uvx** | latest | runs Python MCP servers (e.g. docker-mcp) |
 
 MCP config schemas differ per client (see `AGENTS.md`): Claude Code uses `.mcp.json`
@@ -42,6 +42,11 @@ MCP config schemas differ per client (see `AGENTS.md`): Claude Code uses `.mcp.j
 | admin (Dockge) | `louislam/dockge:1.4.1` | pinned; holds the Docker socket — review before bumping |
 | assistant | `nginx:1.27-alpine` | static only |
 | monitoring | `louislam/uptime-kuma:1`, `amir20/dozzle:v11.1.2`, `henrygd/beszel:0.20.0` (+agent), `binwiederhier/ntfy:v2.28.0` | all pinned; Kuma major-pinned |
+| tailscale | `tailscale/tailscale:${TS_TAG:-v1.102.5}` | pinned; host network + `NET_ADMIN` |
+| computer | `playwright/mcp:v0.0.82`, `anthropic-quickstarts:computer-use-demo-5264b72` | pinned (SHA tag = `-latest` by digest on 2026-09-28) |
+| n8n proxy (opt-in) | `caddy:2.11.4-alpine` | pinned; only under `--profile public` |
+| activepieces (opt-in) | `activepieces/activepieces:0.92.0` | pinned |
+| ondemand / ollama | `:latest` / rolling | throwaway, on-demand profiles — acceptable per the rule above |
 | agents (OpenHands) | `…/openhands:${OPENHANDS_TAG:-latest}` (+ runtime) | opt-in, **separate disposable box** — holds writable `docker.sock`; pin `OPENHANDS_TAG` on that box (release unverifiable from here) |
 
 Bump with `aurora maintain upgrade <stack>` (it backs up first and recreates only what's running).

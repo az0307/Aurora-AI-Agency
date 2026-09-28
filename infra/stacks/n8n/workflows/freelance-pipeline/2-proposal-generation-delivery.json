@@ -12,7 +12,8 @@
       "position": [
         250,
         300
-      ]
+      ],
+      "webhookId": "6a4bbecb-f65e-55d2-aa4a-637d1ece2005"
     },
     {
       "id": "get_lead",

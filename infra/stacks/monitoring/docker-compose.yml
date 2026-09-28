@@ -1,29 +1,41 @@
 # Monitoring + alerting stack: Beszel (metrics) + Uptime Kuma (uptime/status page)
 # + Dozzle (live container logs) + ntfy (push to your phone).
-# Keep all UIs behind Cloudflare Access — do not publish these ports publicly.
+# Every UI binds 127.0.0.1 only; reach them over Tailscale.
 #
-#   docker compose up -d
-# Then in Uptime Kuma/Beszel, add an ntfy notification pointing at the ntfy topic.
+#   bash /opt/aurora/stacks-up.sh monitoring           # Uptime Kuma + Dozzle (the default pair)
+#   docker compose --profile beszel up -d              # opt-in: Beszel metrics hub + agent
+# Beszel pairing: open the hub (127.0.0.1:8090) → Add system → Host/IP = /beszel_socket/beszel.sock,
+# then put the shown key (and token) in this folder's .env as BESZEL_AGENT_KEY / BESZEL_AGENT_TOKEN
+# and re-run the profile command. Then in Uptime Kuma/Beszel, add an ntfy notification.
 
 services:
   # --- Beszel hub: lightweight metrics dashboard (pair with beszel-agent per host) ---
   beszel:
+    profiles: ["beszel"]
     image: henrygd/beszel:0.20.0        # pinned 2026-09-28
     restart: unless-stopped
     volumes:
       - beszel_data:/beszel_data
+      - beszel_socket:/beszel_socket    # the agent's Unix socket (no TCP between them)
     ports:
       - "127.0.0.1:8090:8090"
 
-  # Agent reports this host's stats to the hub. Deploy one per monitored box.
+  # Agent reports this host's stats to the hub. It holds the Docker socket, so it must NOT listen
+  # on a TCP port (with host networking that would be 0.0.0.0): it listens on a Unix socket in a
+  # volume shared with the hub — Beszel's recommended setup for hub + agent on one box.
   beszel-agent:
+    profiles: ["beszel"]
     image: henrygd/beszel-agent:0.20.0  # pinned 2026-09-28
     restart: unless-stopped
     network_mode: host
     environment:
-      PORT: ${BESZEL_AGENT_PORT:-45876}
-      KEY: ${BESZEL_AGENT_KEY:-paste-hub-public-key}
+      LISTEN: /beszel_socket/beszel.sock
+      HUB_URL: http://localhost:8090    # the hub's loopback port (this container is on the host network)
+      KEY: ${BESZEL_AGENT_KEY:-}
+      TOKEN: ${BESZEL_AGENT_TOKEN:-}
     volumes:
+      - beszel_socket:/beszel_socket
+      - beszel_agent_data:/var/lib/beszel-agent
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
   # --- Uptime Kuma: uptime checks + public status page ---
@@ -62,6 +74,8 @@ services:
 
 volumes:
   beszel_data:
+  beszel_socket:
+  beszel_agent_data:
   kuma_data:
   ntfy_cache:
   ntfy_etc:

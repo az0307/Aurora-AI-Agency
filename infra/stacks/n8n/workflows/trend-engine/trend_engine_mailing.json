@@ -36,7 +36,8 @@
         40
       ],
       "id": "webhook-6396gn2o",
-      "name": "New Subscriber Webhook"
+      "name": "New Subscriber Webhook",
+      "webhookId": "2a6793fc-81e5-57a6-b7dd-e4775176728d"
     },
     {
       "parameters": {

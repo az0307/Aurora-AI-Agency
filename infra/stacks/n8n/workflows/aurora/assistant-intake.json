@@ -16,12 +16,13 @@
       "position": [
         -320,
         -160
-      ]
+      ],
+      "webhookId": "affac93e-bb87-5b26-9753-ec92e463da17"
     },
     {
       "parameters": {
         "mode": "raw",
-        "jsonOutput": "={\n  \"lane\": {{ JSON.stringify($json.body?.lane || \"agency\") }},\n  \"system\": \"You are Aurora, Az's assistant. Lane=\" + ($json.body?.lane||\"agency\") + \". Be concise and action-oriented. Never use a -free model for client data.\",\n  \"text\": {{ JSON.stringify($json.body?.text || \"\") }}\n}",
+        "jsonOutput": "={{ JSON.stringify({ lane: $json.body?.lane || \"agency\", system: \"You are Aurora, Az's assistant. Lane=\" + ($json.body?.lane || \"agency\") + \". Be concise and action-oriented. Never use a -free model for client data.\", text: $json.body?.text || \"\" }) }}",
         "options": {}
       },
       "id": "n002",
@@ -41,7 +42,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\"model\": \"general\", \"messages\": [{\"role\": \"system\", \"content\": \"You are Aurora, a concise assistant.\"}, {\"role\": \"user\", \"content\": \"={{ $json.text }}\"}]}",
+        "jsonBody": "={{ JSON.stringify({ model: \"general\", messages: [ { role: \"system\", content: $json.system }, { role: \"user\", content: $json.text } ] }) }}",
         "options": {}
       },
       "id": "n003",

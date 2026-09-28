@@ -48,7 +48,7 @@ See [`TOOLBOX.md`](./TOOLBOX.md) for the one-page index of every app/CLI/MCP/ski
 [`STACK.md`](./STACK.md) for the full software catalog, [`SERVICES.md`](./SERVICES.md)
 for server-side services + MCPs + the on-demand (rotate-on/off) pool, [`TERMINAL.md`](./TERMINAL.md)
 for the smart-terminal cockpit, [`AGENTS.md`](./AGENTS.md) for the AI-agent CLIs, and
-[`runbooks/DAY1.md`](./runbooks/DAY1.md) to stand a box up.
+[`SETUP.md`](./SETUP.md) to stand a box up ([`runbooks/DAY1.md`](./runbooks/DAY1.md) only for a client box that needs a public hostname).
 
 ---
 

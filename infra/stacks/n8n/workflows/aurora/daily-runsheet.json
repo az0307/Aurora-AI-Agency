@@ -26,7 +26,14 @@
       "parameters": {
         "method": "GET",
         "url": "http://router-litellm-1:4000/health/liveliness",
-        "options": {}
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
       },
       "id": "n023",
       "name": "Box ok",
@@ -35,7 +42,8 @@
       "position": [
         0,
         -160
-      ]
+      ],
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -45,7 +53,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\"model\": \"general\", \"messages\": [{\"role\": \"system\", \"content\": \"You are Aurora, Az's chief of staff. Build a short DAILY RUNSHEET with these sections, each 1-2 bullets: FOCUS (the one thing), AGENCY (client next actions), ADMIN (money/compliance), PERSONAL (health/errand), BOX (infra note). Under 180 words. If a section has nothing, say 'clear'.\"}, {\"role\": \"user\", \"content\": \"={{ 'Date '+$now.toFormat('cccc d LLL')+'. Router health='+($('Box ok').item.json.status||'?')+'. Add calendar/leads/PR data here once wired.' }}\"}]}",
+        "jsonBody": "={{ JSON.stringify({ model: \"general\", messages: [ { role: \"system\", content: \"You are Aurora, Az's chief of staff. Build a short DAILY RUNSHEET with these sections, each 1-2 bullets: FOCUS (the one thing), AGENCY (client next actions), ADMIN (money/compliance), PERSONAL (health/errand), BOX (infra note). Under 180 words. If a section has nothing, say 'clear'.\" }, { role: \"user\", content: 'Date '+$now.toFormat('cccc d LLL')+'. Router health='+($('Box ok').item.json.statusCode === 200 ? 'up' : 'DOWN')+'. Add calendar/leads/PR data here once wired.' } ] }) }}",
         "options": {}
       },
       "id": "n024",

@@ -9,7 +9,7 @@ fi
 alias server='mosh aurora-01 -- tmux new -A -s main || ssh -t aurora-01 tmux new -A -s main'
 alias ah='ssh -t aurora-01 "cd /opt/aurora/stacks/hermes && docker compose logs -f --tail 100 gateway"'   # Hermes logs
 alias aps='ssh aurora-01 docker ps --format "table {{.Names}}\t{{.Status}}"'                              # what's running
-alias arestart-hermes='ssh aurora-01 "cd /opt/aurora/stacks/hermes && docker compose restart gateway"'
+alias arestart-hermes='ssh aurora-01 "bash /opt/aurora/stacks-up.sh hermes --env-only && cd /opt/aurora/stacks/hermes && docker compose restart gateway"'   # refresh keys from secrets.env, then restart
 alias ll='ls -alh'
 alias update='pkg update && pkg upgrade -y'
 export EDITOR=nano

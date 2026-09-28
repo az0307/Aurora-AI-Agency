@@ -139,4 +139,4 @@ if [ "$FAILED" = "1" ]; then
   echo "Preflight FAILED — fix the above before provisioning. Nothing was created."
   exit 1
 fi
-echo "Preflight PASSED. Safe to provision (see runbooks/DAY1.md). This spends money."
+echo "Preflight PASSED. Safe to provision (see SETUP.md). This spends money."

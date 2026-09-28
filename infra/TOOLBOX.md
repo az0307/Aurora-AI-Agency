@@ -36,7 +36,7 @@ package names at install time — they move.
 | **node / npm** | nodesource / nvm | runs the npm MCP servers + agent CLIs |
 | **docker + compose** | `get.docker.com` | the whole stack + the on-demand pool |
 | **jq / yq** | `apt install jq;` yq via binary | JSON/YAML wrangling in scripts (preflight uses jq) |
-| shell sugar | see [`TERMINAL.md`](./TERMINAL.md) | fish/zsh, Starship, Atuin, zoxide, Zellij, eza/bat/fzf/ripgrep, thefuck |
+| shell sugar | see [`TERMINAL.md`](./TERMINAL.md) | fish/zsh, Starship, Atuin, zoxide, Zellij, eza/bat/fzf/ripgrep, pay-respects |
 
 ### Bitwarden as the secrets source
 `bw`/`rbw` pairs with **Infisical** (self-hosted, in [`STACK.md`](./STACK.md)): Infisical for

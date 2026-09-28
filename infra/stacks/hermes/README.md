@@ -37,9 +37,9 @@ who finds it can use your API credits and your tools.
 | **Discord** | [Developer Portal](https://discord.com/developers/applications) → New App → Bot → token; turn on **Message Content Intent**; invite with the OAuth2 URL (`bot` + `applications.commands`) | Developer Mode → right-click yourself → Copy ID | `DISCORD_REQUIRE_MENTION=true` so it only answers when @mentioned in servers. |
 | **Slack** | `docker exec -it hermes hermes gateway setup` → pick Slack → it prints an **app manifest**; create the app from it, install, copy `xoxb-` bot token and `xapp-` app token | profile → ⋮ → Copy member ID | Socket Mode: no public URL. |
 | **WhatsApp (quick)** | set `WHATSAPP_ENABLED=true`, then `docker exec -it hermes hermes whatsapp` and scan the QR in WhatsApp → **Linked devices** | your number, digits only (`61412345678`) | Unofficial WhatsApp Web bridge → small risk of the number being restricted. **Use a spare number, never a client's.** |
-| **WhatsApp (official)** | WhatsApp Business **Cloud API** via a Meta app | — | Stable and allowed, but needs a **public webhook URL** → expose only that path with Tailscale Funnel or a Cloudflare Tunnel. Use this for anything client-facing. |
+| **WhatsApp (official)** | WhatsApp Business **Cloud API** via a Meta app | — | Stable and allowed, but needs a **public webhook URL** → expose only that path with a Cloudflare Tunnel (never Tailscale Funnel — banned here). Use this for anything client-facing. |
 
-After editing `data/.env`: `docker compose restart gateway`.
+After editing `data/.env` by hand: `docker compose restart gateway` (Hermes re-reads it on start). After adding/rotating a key in `secrets.env` (Bitwarden → `--ship-only`): `aurora start hermes`, or the phone's 🔁 Restart Hermes — both refresh `data/.env` first.
 
 ## Models
 

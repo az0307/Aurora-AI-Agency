@@ -48,6 +48,7 @@ Termux + Tailscale does everything an SSH app does, plus the scripts in `phones/
 | `backup` | n8n Postgres dump (restore-tested) + every stack volume (each stack paused for a few seconds) + all `.env` files, `secrets.env`, Hermes data and Tailscale state → `/var/backups/aurora/<date>`, root-only, 7 kept |
 | `prune` | removes images and build cache unused for 7+ days. **Never volumes.** |
 | `upgrade <stack>` / `upgrade all` | backup, then pull + recreate **only the services that are running** (so n8n's Caddy or the on-demand desktop don't start by surprise) |
+| `pg-upgrade` | n8n Postgres 16 → 17 (asks first; backup, new volume, row-count check, auto-rollback) |
 | `report` | `check.sh` + upkeep status (Docker tuning, swap, timers, last backup, tool versions, disk, anything listening off loopback). Safe to paste to Claude: no secret values |
 
 Backups stay **on the box**, which protects against mistakes, not against losing the server.
@@ -78,8 +79,8 @@ Not tested here:
 
 ## Known issues / to do
 
-- **n8n on Postgres 16:** current n8n logs "Postgres 16 … compatibility support only. Upgrade to 17". That's a major-version change, so do it deliberately: `aurora maintain backup`, stop n8n, start a Postgres 17 container on a new volume, restore `n8n-postgres.sql.gz`, then switch. Don't just change the image tag, because 17 can't read 16's data files.
-- **`N8N_IMAGE_TAG=latest`:** pin it to the version you're running (`docker exec n8n-n8n-1 n8n --version`) so an upgrade is a choice, not a surprise.
+- **n8n on Postgres 16:** current n8n logs "Postgres 16 … compatibility support only. Upgrade to 17". Run `aurora maintain pg-upgrade`: it backs up, dumps, restores onto a **new** Postgres 17 volume, checks every table's row count, starts n8n, and rolls back to 16 by itself if anything fails. The old volume is kept until you delete it. (Never just change the image tag: 17 can't read 16's data files.)
+- **`N8N_IMAGE_TAG=latest`** on older installs: `check.sh` flags it under "Image pins" and prints the exact version to pin to (what's running), so an upgrade is a choice, not a surprise.
 - **Hermes logs `Authorization … whitespace` warnings** for Zapier, Hugging Face and GitHub. The token is simply empty, and those MCP servers are `lazy`, so this is harmless until you add the keys.
 - **During the 03:30 backup** a healthcheck can fail once while a stack is paused (Kuma may show a blip).
 
@@ -88,7 +89,7 @@ Not tested here:
 | File | Installed to | |
 |---|---|---|
 | `setup-tools.sh` | — | one-time install (apt, adb, Node 22, OpenCode, Claude Code) + everything below |
-| `maintain.sh` | — | `aurora maintain …`: tune, backup, prune, upgrade, report |
+| `maintain.sh` | — | `aurora maintain …`: tune, backup, prune, upgrade, report, snapshot, pg-upgrade |
 | `aurora` | `/usr/local/bin/aurora` | the menu |
 | `aurora-agent` | `/usr/local/bin/aurora-agent` | runs an agent with `ROUTER_API_KEY` + `N8N_API_KEY` in **its own env only** (read from `/opt/aurora/secrets.env` via sudo; never written to disk) |
 | `opencode.json` | `~/.config/opencode/opencode.json` | provider `aurora` → `http://127.0.0.1:4000/v1`, default model `aurora/code`. **v1 schema** (matches opencode.ai/docs). If `opencode --version` is v2, its schema differs (`providers`/`package: "aisdk:…"`/`settings`/`mcp.servers`) — or just run `opencode mcp add …`. Checked via Context7 2026-09-27. |
