@@ -127,5 +127,21 @@ fi
 svc enable --now fail2ban || true
 
 install -d /var/lib/aurora
+# Only mark "done" if the essentials actually succeeded. Most steps above are `|| log`/`|| true`
+# so the script reaches here even after failures — but a box with no aurora user, no SSH key, or
+# no Docker is NOT provisioned, and bootstrap.sh keys off this marker. Write a .failed marker and
+# exit non-zero instead, so a partial run isn't mistaken for a good one.
+FAILMARK=/var/lib/aurora/post-install.failed
+problems=""
+id "$U" >/dev/null 2>&1                  || problems="$problems no-user($U)"
+grep -qE '^(ssh-|ecdsa-|sk-)' "$AK" 2>/dev/null || problems="$problems no-ssh-key"
+command -v docker >/dev/null 2>&1        || problems="$problems no-docker"
+if [ -n "$problems" ]; then
+  rm -f "$MARK"
+  { echo "$(date -Is) FAILED:$problems"; } > "$FAILMARK"
+  log "INCOMPLETE — not writing done marker. Problems:$problems (see /post_install.log)"
+  exit 1
+fi
+rm -f "$FAILMARK"
 date -Is > "$MARK"
 log "done"

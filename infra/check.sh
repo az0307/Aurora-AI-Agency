@@ -96,11 +96,15 @@ else warn "ss not found — can't check listening ports"; fi
 # --------------------------------------------------------------------------- router
 head_ "LLM router"
 KEY=$(envval "$DIR/stacks/router/.env" LITELLM_MASTER_KEY)
+# Feed the router key through --config on a pipe (an fd), never on argv: a Bearer header on
+# the curl command line is world-readable via /proc/<pid>/cmdline while the call runs.
+# printf is a bash builtin, so the key isn't exposed as a child process's args either.
+router_curl() { curl --config <(printf 'header = "Authorization: Bearer %s"\n' "$KEY") "$@"; }
 if curl -fsS -m 5 "$ROUTER/health/liveliness" >/dev/null 2>&1; then
   ok "Router answers on $ROUTER"
   if [ -z "$KEY" ]; then warn "No LITELLM_MASTER_KEY in stacks/router/.env — can't list models"
   else
-    models=$(curl -fsS -m 10 -H "Authorization: Bearer $KEY" "$ROUTER/v1/models" 2>/dev/null | tr ',' '\n' | sed -n 's/.*"id": *"\([^"]*\)".*/\1/p')
+    models=$(router_curl -fsS -m 10 "$ROUTER/v1/models" 2>/dev/null | tr ',' '\n' | sed -n 's/.*"id": *"\([^"]*\)".*/\1/p')
     missing=""
     for a in general general-free code code-free reason fast vision search research hermes auto auto-free; do
       printf '%s\n' "$models" | grep -qx "$a" || missing="$missing $a"
@@ -125,7 +129,7 @@ if [ "$LIVE" = 1 ] && [ -n "$KEY" ]; then
   head_ "Live test: each job alias answers (who answered = first healthy model in its chain)"
   timeouts=0
   for a in general general-free code code-free reason fast vision search hermes; do
-    out=$(curl -sS -m 60 -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+    out=$(router_curl -sS -m 60 -H 'Content-Type: application/json' \
       "$ROUTER/v1/chat/completions" \
       -d "{\"model\":\"$a\",\"max_tokens\":8,\"messages\":[{\"role\":\"user\",\"content\":\"Reply with just: OK\"}]}" 2>&1)
     who=$(printf '%s' "$out" | sed -n 's/.*"model": *"\([^"]*\)".*/\1/p' | head -1)

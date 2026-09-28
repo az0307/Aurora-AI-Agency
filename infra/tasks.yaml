@@ -192,8 +192,16 @@ tasks:
   - id: T020
     title: Harden operator-box low-severity items from the audit
     area: security
-    status: todo
+    status: done
     owner: agent
-    files: [infra/hetzner/provision.sh, infra/hostinger/provision.sh, infra/check.sh, infra/hostinger/post-install.sh, infra/stacks/openbot/.env.example]
+    files: [infra/hetzner/provision.sh, infra/hetzner/preflight.sh, infra/hostinger/provision.sh, infra/check.sh, infra/hostinger/post-install.sh, infra/stacks/openbot/.env.example]
     acceptance: ["curl passes Bearer tokens via --config/@fd, not argv (out of /proc/PID/cmdline)", "post-install.done marker not written on partial failure", "openbot .env comment points at http://litellm:4000 on aurora-llm, not 172.17.0.1:4000"]
-    notes: All LOW, operator-box self-exposure only. No secret ever ships or persists world-readable.
+    notes: >
+      Done 2026-09-28. All LOW, operator-box self-exposure only. Bearer tokens (HCLOUD/HETZNER
+      in hetzner/provision.sh + preflight.sh, HOSTINGER in hostinger/provision.sh, LITELLM router
+      key in check.sh) now go through `curl --config <(printf ...)` on a pipe — printf is a bash
+      builtin so the token is never a child process's argv and never touches /proc/PID/cmdline or
+      disk. Verified with a local echo server. post-install.sh now gates the .done marker behind
+      the essentials (aurora user, SSH key, docker); on a partial run it writes .failed and exits
+      1 instead. openbot .env.example comment corrected to http://litellm:4000/v1 on aurora-llm.
+      No secret ever ships or persists world-readable.
