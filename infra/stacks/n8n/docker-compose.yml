@@ -2,12 +2,17 @@
 # Use this on a box WITHOUT Dokploy. With Dokploy, deploy n8n through Dokploy (it
 # provides Traefik + TLS) and drop the caddy service.
 #
-# Setup:  cp .env.example .env  &&  edit  &&  docker compose up -d
-# Reach n8n via Cloudflare Tunnel + Access, or the Caddy-served domain below.
+# Start it with `bash /opt/aurora/stacks-up.sh n8n` (fills .env from secrets.env, publishes n8n on
+# 127.0.0.1:5678 only and joins it to the router's network). Reach it over Tailscale / a
+# Cloudflare Tunnel. Caddy below is OPT-IN (`--profile public`): it publishes 80/443 on every
+# interface and is only for a box with a public DNS name — never on the tailnet-only setup.
 
 services:
   postgres:
-    image: postgres:16-alpine
+    # Major version and data volume move TOGETHER — 17 can't read 16's data files. Boxes set
+    # up before 17 keep 16 on `n8n_pg_data` (these defaults) until `aurora maintain pg-upgrade`
+    # moves them; fresh installs get 17 on its own volume from .env.example.
+    image: postgres:${POSTGRES_IMAGE_TAG:-16-alpine}
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-n8n}
@@ -35,7 +40,9 @@ services:
       DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       N8N_HOST: ${N8N_HOST:-localhost}
       N8N_PROTOCOL: ${N8N_PROTOCOL:-https}
-      WEBHOOK_URL: ${WEBHOOK_URL:-https://localhost/}
+      # n8n 2.x renamed WEBHOOK_URL → N8N_WEBHOOK_URL (base for test + production webhooks). The
+      # .env key keeps its old name so existing boxes and stacks-up.sh work unchanged.
+      N8N_WEBHOOK_URL: ${WEBHOOK_URL:-https://localhost/}
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-Australia/Melbourne}
       # LOGIN GATE: n8n's built-in owner account (set on first run in the UI).
       # n8n REMOVED N8N_BASIC_AUTH_* in v1.0 — those vars are ignored on current
@@ -58,7 +65,10 @@ services:
     #   - "127.0.0.1:5678:5678"
 
   caddy:
-    image: caddy:2-alpine
+    # Opt-in only: `docker compose --profile public up -d`. A plain `docker compose up -d` (Dockge,
+    # an old runbook, a hint) must never open 80/443 to the internet on the tailnet-only box.
+    profiles: ["public"]
+    image: caddy:2.11.4-alpine   # pinned 2026-09-28 (internet-facing TLS proxy)
     restart: unless-stopped
     depends_on:
       - n8n
@@ -74,6 +84,7 @@ services:
 
 volumes:
   pg_data:
+    name: ${PG_VOLUME_NAME:-n8n_pg_data}
   n8n_data:
   caddy_data:
   caddy_config:

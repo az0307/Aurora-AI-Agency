@@ -27,7 +27,7 @@ hermes|🤖 Hermes terminal UI|The full Hermes TUI on the server (all slash comm
 check|✅ Check the server|Read-only health check: containers, exposure, models, Hermes, MCP, Tailscale, RAM/disk.
 live|🧪 Check + test every model|Same, plus one tiny message to every model chain (a few cents).
 logs|📜 Hermes logs|Follow the bot's logs (Ctrl-c to stop).
-restart|🔁 Restart Hermes|After changing its settings.
+restart|🔁 Restart Hermes|Reloads its keys from secrets.env and restarts it — use after adding or rotating a key (ship it first: bootstrap.sh --ship-only).
 desk_on|🖱  Computer desktop: start|Starts the computer-use desktop on the server (then open the two Tailscale links).
 desk_off|⏹  Computer desktop: stop|Gives the ~1–2 GB RAM back.
 cron|⏰ Scheduled jobs|What Hermes runs on a timer (cron). Add one in chat: /cron add "0 21 * * *" "…"
@@ -75,7 +75,9 @@ run() {
     check)    remote bash /opt/aurora/check.sh; pause ;;
     live)     remote bash /opt/aurora/check.sh --live; pause ;;
     logs)     remote 'cd /opt/aurora/stacks/hermes && docker compose logs -f --tail 80 gateway' ;;
-    restart)  remote 'cd /opt/aurora/stacks/hermes && docker compose restart gateway'; pause ;;
+    # Refresh Hermes' data/.env from secrets.env, then restart (Hermes re-reads that file on start;
+    # a restart alone would keep whatever key data/.env still had).
+    restart)  remote 'bash /opt/aurora/stacks-up.sh hermes --env-only && cd /opt/aurora/stacks/hermes && docker compose restart gateway'; pause ;;
     desk_on)  remote 'cd /opt/aurora/stacks/computer && docker compose --profile desktop up -d desktop'; pause ;;
     desk_off) remote 'cd /opt/aurora/stacks/computer && docker compose --profile desktop stop desktop'; pause ;;
     cron)     remote docker exec hermes hermes cron list; pause ;;

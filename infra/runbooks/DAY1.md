@@ -34,7 +34,7 @@ ssh aurora@<server_ipv4>       # key-only; root login is disabled
 sudo ufw status                # 22/80/443 allowed, default deny incoming
 docker version                 # engine up, user in docker group
 ```
-Shell sugar (fish + starship + zoxide + atuin + zellij + thefuck) is already installed.
+Shell sugar (fish + starship + zoxide + atuin + zellij) is already installed. (Autocorrect: `cargo install pay-respects` — not Ubuntu's broken apt `thefuck`.)
 
 ## 3. Install the control plane (Dokploy)
 If you didn't set `INSTALL_DOKPLOY=true` in cloud-init:
@@ -57,8 +57,9 @@ Dokploy UI is on :3000 — **do not** open it on ufw. Reach it via the tunnel (n
    > Note: n8n only `expose`s 5678 *inside* Docker by default; a host-installed `cloudflared`
    > can't reach `localhost:5678` until n8n is published on the host (loopback) or you route to Caddy.
 3. In **Access** → add an application policy (email allowlist / OTP) for each hostname.
-4. Once the tunnel works, tighten ufw: `sudo ufw deny 80 && sudo ufw deny 443` if *all*
-   ingress goes through the tunnel.
+4. ufw has no 80/443 by default (cloud-init opens only SSH + Tailscale). A tunnel needs no
+   inbound port. Only if this box serves a public hostname directly (no tunnel):
+   `sudo ufw allow 80/tcp && sudo ufw allow 443/tcp`.
 
 ## 5. Deploy the stacks
 Either through Dokploy (recommended — it adds TLS + Git deploys) or directly:
@@ -67,6 +68,7 @@ Either through Dokploy (recommended — it adds TLS + Git deploys) or directly:
 cd infra/stacks/monitoring && docker compose up -d
 # n8n (self-hosted Zapier)
 cd ../n8n && cp .env.example .env && $EDITOR .env && docker compose up -d
+#   (+ Caddy for a public DNS name with no Dokploy/tunnel: docker compose --profile public up -d)
 # start-page
 cd ../dashboard && docker compose up -d
 # agents (optional, sandboxed)

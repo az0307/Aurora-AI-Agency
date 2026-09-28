@@ -26,7 +26,14 @@
       "parameters": {
         "method": "GET",
         "url": "http://router-litellm-1:4000/health/liveliness",
-        "options": {}
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
       },
       "id": "n006",
       "name": "Router alive",
@@ -35,13 +42,21 @@
       "position": [
         0,
         -160
-      ]
+      ],
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
         "method": "GET",
         "url": "http://localhost:5678/healthz",
-        "options": {}
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
       },
       "id": "n007",
       "name": "n8n alive",
@@ -50,12 +65,13 @@
       "position": [
         320,
         -160
-      ]
+      ],
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
         "mode": "raw",
-        "jsonOutput": "={\n  \"text\": \"🖥️ aurora-01 nightly: router=\" + ($('Router alive').item.json.status||'?') + \", n8n=\" + ($('n8n alive').item.json.status||'?') + \". Full check: run `aurora maintain report`.\"\n}",
+        "jsonOutput": "={{ JSON.stringify({ text: \"🖥️ aurora-01 nightly: router=\" + ($('Router alive').item.json.statusCode === 200 ? 'up' : 'DOWN') + \", n8n=\" + ($('n8n alive').item.json.statusCode === 200 ? 'up' : 'DOWN') + \". Full check: run `aurora maintain report`.\" }) }}",
         "options": {}
       },
       "id": "n008",

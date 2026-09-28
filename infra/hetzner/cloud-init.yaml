@@ -85,8 +85,9 @@ write_files:
       alias cat='bat'
       alias ls='eza'
       abbr -a cd z
-      # `thefuck` autocorrect: run `fix` after a mistyped command
-      if type -q thefuck; thefuck --alias fix | source; end
+      # `thefuck` autocorrect (`fix` after a mistyped command) — only if it actually runs:
+      # Ubuntu 24.04's apt thefuck imports distutils, gone in Python 3.12, and crashes every login.
+      if type -q thefuck; and thefuck --version >/dev/null 2>&1; thefuck --alias fix | source; end
 
 runcmd:
   # --- Docker Engine + compose plugin (official convenience script) ---
@@ -100,15 +101,14 @@ runcmd:
   - ufw default allow outgoing
   - ufw allow 22/tcp
   - ufw allow 41641/udp   # Tailscale direct connections
-  - ufw allow 80/tcp
-  - ufw allow 443/tcp
+  # No 80/443: nothing here is public (Tailscale serve; a Cloudflare Tunnel needs no inbound port).
   - ufw --force enable
 
-  # --- Terminal extras not in apt: Starship, Atuin, Zellij, thefuck ---
+  # --- Terminal extras not in apt: Starship, Atuin, Zellij ---
+  # (No apt thefuck: Ubuntu 24.04's package is broken on Python 3.12 — see TERMINAL.md for pay-respects.)
   - su - aurora -c 'curl -sS https://starship.rs/install.sh | sh -s -- -y' || true
   - su - aurora -c "curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --non-interactive" || true
   - (curl -fsSL https://github.com/zellij-org/zellij/releases/latest/download/zellij-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin) || true
-  - DEBIAN_FRONTEND=noninteractive apt-get install -y thefuck || true
 
   # --- Restart SSH so hardening takes effect ---
   - systemctl restart ssh || systemctl restart sshd || true
@@ -120,4 +120,4 @@ runcmd:
   - export INSTALL_DOKPLOY=false
   - if [ "$INSTALL_DOKPLOY" = "true" ]; then curl -sSL https://dokploy.com/install.sh | sh; fi
 
-final_message: "Base image ready. Next: connect Cloudflare Tunnel, then deploy stacks/ (see runbooks/DAY1.md)."
+final_message: "Base image ready. Next: Tailscale, then start the stacks one at a time with stacks-up.sh (see SETUP.md)."

@@ -1,11 +1,15 @@
 # Offline check of config.yaml(.example): every fallback target exists, no paid chain
 # reaches a free or uncensored model, and each job chain really walks in order.
 # No API keys or network needed: every hop but the last is forced to fail.
+#   python3 infra/stacks/router/check-chains.py [config.yaml]   # static checks (needs only pyyaml);
+#                                                               # defaults to config.yaml.example here
+# + the chain-walk simulation, when litellm is installed:
 #   python3 -m venv /tmp/ll && /tmp/ll/bin/pip install litellm pyyaml
 #   /tmp/ll/bin/python check-chains.py config.yaml 2>/dev/null
-import yaml, sys, copy, litellm
-from litellm import Router
-cfg=yaml.safe_load(open(sys.argv[1]))
+import yaml, sys, copy, os
+path=sys.argv[1] if len(sys.argv)>1 else os.path.join(os.path.dirname(os.path.abspath(__file__)),'config.yaml.example')
+print("checking", path)
+cfg=yaml.safe_load(open(path))
 ml=cfg['model_list']; ls=cfg['litellm_settings']
 names=[m['model_name'] for m in ml]
 dups={n for n in names if names.count(n)>1}; assert not dups, dups
@@ -25,6 +29,11 @@ for k,v in fbs.items():
         if 'free' not in k and (':free' in model_of[t] or model_of[t].endswith('openrouter/free')):
             errors.append(f"{k}: PAID chain reaches free model {t}")
 print("static checks:", "OK" if not errors else errors)
+try:
+    from litellm import Router
+except ImportError:
+    print("chain-walk simulation skipped: litellm isn't installed (see the header for the venv one-liner)")
+    sys.exit(1 if errors else 0)
 # Simulate: every model fails except the LAST in each chain -> must end there, in order.
 jobs=['general','general-free','code','code-free','reason','fast','vision','search','research','hermes','uncensored','uncensored-agent','uncensored-free','auto','auto-free','auto-code','auto-cheap','auto-search']
 ok=True

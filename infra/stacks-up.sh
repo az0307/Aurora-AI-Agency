@@ -102,6 +102,15 @@ ts_serve() {
   [ "$MODE" = --env-only ] || sudo tailscale serve --bg --https="$1" "http://127.0.0.1:$1" >/dev/null
 }
 
+# The router's compose creates aurora-llm. A stack that joins it as `external` before the router
+# has ever run would fail, and a plain `docker network create` makes the router refuse the
+# network later ("incorrect label"). So pre-create it with the router's own compose labels.
+ensure_llm_net() {
+  docker network inspect aurora-llm >/dev/null 2>&1 && return 0
+  docker network create --label com.docker.compose.project=router \
+    --label com.docker.compose.network=llm aurora-llm >/dev/null \
+    && warn "created the aurora-llm network; LLM calls fail until the router runs (stacks-up.sh router)"
+}
 up() { [ "$MODE" = --env-only ] && { say "env only; not starting"; exit 0; }; ram_check; docker compose up -d "$@"; }
 
 case "$STACK" in
@@ -127,10 +136,15 @@ case "$STACK" in
       setkv .env N8N_HOST localhost; setkv .env N8N_PROTOCOL http
       setkv .env WEBHOOK_URL http://localhost:5678/; setkv .env N8N_DOMAIN ""
     fi
-    # Publish n8n on loopback only (the base compose file only `expose`s it). The override is
-    # picked up automatically because we don't pass -f.
-    [ -f docker-compose.override.yml ] || cat > docker-compose.override.yml <<'EOF'
-# Written by stacks-up.sh: n8n on loopback only (SSH tunnel / `tailscale serve`), no Caddy.
+    # Publish n8n on loopback only (the base compose file only `expose`s it), and put it on the
+    # router's aurora-llm network so the Aurora workflows reach http://router-litellm-1:4000.
+    # The override is picked up automatically because we don't pass -f. Rewritten when it's our
+    # own older version (no aurora-llm) so existing boxes get the network too.
+    if [ ! -f docker-compose.override.yml ] || { grep -q '^# Written by stacks-up.sh' docker-compose.override.yml \
+         && ! grep -q aurora-llm docker-compose.override.yml; }; then
+      cat > docker-compose.override.yml <<'EOF'
+# Written by stacks-up.sh: n8n on loopback only (SSH tunnel / `tailscale serve`), no Caddy,
+# and on the router's aurora-llm network (the Aurora workflows call http://router-litellm-1:4000).
 services:
   n8n:
     ports:
@@ -139,7 +153,15 @@ services:
       # Listen on IPv4: works whether or not the Docker network has IPv6 (n8n's default '::'
       # crash-loops without it). The published port is IPv4 loopback anyway.
       N8N_LISTEN_ADDRESS: 0.0.0.0
+    networks: [default, llm]
+networks:
+  llm:
+    name: aurora-llm
+    external: true
 EOF
+      say "wrote docker-compose.override.yml (loopback port + aurora-llm network)"
+    fi
+    ensure_llm_net
     up postgres n8n
     wait_http http://127.0.0.1:5678/healthz n8n
     ;;
@@ -204,9 +226,10 @@ EOF
       warn "host tailscale CLI not found: OpenBot stays on 127.0.0.1:3020 (SSH tunnel / RDP Firefox)"
     fi
     for c in ollama desktop; do docker ps --format '{{.Names}}' 2>/dev/null | grep -q "$c" && warn "a container matching '$c' is running — OpenBot + it may not fit in 8 GB"; done
+    grep -q aurora-llm docker-compose.override.yml 2>/dev/null && ensure_llm_net
     up
     wait_http http://127.0.0.1:3020/api/capabilities openbot
-    grep -q '^OPENBOT_SINGLE_USER=true' .env && warn "single-user mode: anyone on your tailnet who opens it is you. Fine for a personal tailnet; switch to OAuth before sharing the tailnet."
+    if grep -q '^OPENBOT_SINGLE_USER=true' .env; then warn "single-user mode: anyone on your tailnet who opens it is you. Fine for a personal tailnet; switch to OAuth before sharing the tailnet."; fi
     ;;
   assistant)
     cd "$ROOT/stacks/assistant"
@@ -216,7 +239,7 @@ EOF
     docker ps --format '{{.Names}}' | grep -q '^n8n-n8n-1$' || warn "n8n isn't up — the 'send a task' box needs it (aurora start n8n) + the assistant-intake workflow imported & Active"
     up
     wait_http http://127.0.0.1:8600/ assistant
-    [ -n "$TS_URL" ] && say "open on your phone: $TS_URL"
+    if [ -n "$TS_URL" ]; then say "open on your phone: $TS_URL"; fi
     ;;
   dashboard)
     cd "$ROOT/stacks/dashboard"
@@ -228,7 +251,7 @@ EOF
     have TZ && setkv .env TZ "$TZ"
     up
     wait_http http://127.0.0.1:3002 dashboard
-    [ -n "$TS_URL" ] && say "open on your phone: $TS_URL"
+    if [ -n "$TS_URL" ]; then say "open on your phone: $TS_URL"; fi
     ;;
   admin)
     cd "$ROOT/stacks/admin"
@@ -242,6 +265,9 @@ EOF
     cd "$ROOT/stacks/monitoring"
     up uptime-kuma dozzle
     wait_http http://127.0.0.1:3001 "uptime-kuma"
+    # Publish both on the tailnet (the start page links Kuma :3001 and Dozzle :8080). Never Funnel.
+    if ts_serve 3001 && ts_serve 8080; then say "open on your phone: https://$TS_DNS:3001 (Kuma) · :8080 (Dozzle logs)"
+    else warn "host tailscale CLI not found: Kuma/Dozzle stay on 127.0.0.1:3001 / :8080"; fi
     ;;
   status)
     docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'

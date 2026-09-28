@@ -22,7 +22,7 @@ stacks + operator tools), `evermystic/`, `_empire/`.
 - **ACL / Privacy Act** compliance in `ymi-roofing` site copy must stay intact.
 
 ## Where things are
-- Hosting + stacks + operator tools: `infra/` (see `infra/CLAUDE.md` isn't separate — read root `CLAUDE.md`).
+- Hosting + stacks + operator tools: `infra/` (there's no separate `infra/CLAUDE.md` — the root `CLAUDE.md` covers it).
 - Design & architecture: `infra/DESIGN.md`. Backlog: `infra/tasks.yaml`. Standards/pins: `infra/server/STANDARDS.md`.
 - Spec-driven workflow: `infra/SPECKIT.md`. Add-on catalog: `infra/CATALOG.md`.
 - Plugin/skills for Claude Code: `plugins/aurora-ops/` + marketplace `.claude-plugin/marketplace.json`.

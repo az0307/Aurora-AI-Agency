@@ -12,7 +12,8 @@
       "position": [
         250,
         300
-      ]
+      ],
+      "webhookId": "9702f57e-2d43-5e68-b2e3-e76ef703330f"
     },
     {
       "id": "get_project",

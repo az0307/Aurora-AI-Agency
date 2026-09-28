@@ -5,9 +5,12 @@ What lives *on* the VPS so an agent can actually do work — split into three ti
 Claude (or any driver — OpenCode, TARS, Kimi) reach all of it.
 
 ## Tier 1 — always-on (the base stacks)
-Runs continuously; see [`stacks/`](./stacks/) and [`STACK.md`](./STACK.md):
-Dokploy (control plane) · n8n · monitoring (Beszel/Uptime Kuma/Dozzle/ntfy) · Homepage ·
-cloudflared (tunnel). These are the box's standing capabilities.
+Runs continuously, each started with `stacks-up.sh <stack>` (or `aurora up`), all on
+`127.0.0.1` and reached over Tailscale (host `tailscaled` + `tailscale serve`):
+LLM router · n8n · Hermes · monitoring (Uptime Kuma + Dozzle; Beszel/ntfy opt-in) · Homepage
+start page · Dockge · Aurora Assistant — plus OpenBot when you want it (RAM permitting).
+(Dokploy and cloudflared belong to the older public-hostname route in `runbooks/DAY1.md`,
+not this box; a Cloudflare Tunnel comes back only for the YMI webhook, task T010.)
 
 ## Tier 2 — on-demand pool (rotate on/off per job)
 Heavy or occasional services that would waste RAM if always-on. They live in
@@ -113,7 +116,7 @@ Full list with local vs remote, where each runs, keys, and Desktop Commander saf
 CLIs in [`AGENTS.md`](./AGENTS.md) (Claude Code, TARS, Kimi Code, OpenCode/OpenHands, Aider/Goose/Crush).
 
 **Skills & docs to keep on the box:** mirror your Claude skills to `/opt/aurora/skills/`, keep
-this `infra/` tree checked out at `/opt/aurora/infra`, and store per-client `.mcp.json` +
+this `infra/` tree at `/opt/aurora` (where `bootstrap.sh --ship-only` / `aurora update` put it), and store per-client `.mcp.json` +
 `.env` in the secrets manager (Infisical) — so any agent that lands on the box has the
 playbooks, service catalog, and (scoped) credentials it needs to act.
 

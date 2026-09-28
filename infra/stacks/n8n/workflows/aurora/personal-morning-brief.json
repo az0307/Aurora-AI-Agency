@@ -25,7 +25,7 @@
     {
       "parameters": {
         "mode": "raw",
-        "jsonOutput": "={ \"date\": \"={{ $now.toFormat('cccc d LLL') }}\" }",
+        "jsonOutput": "={{ JSON.stringify({ date: $now.toFormat('cccc d LLL') }) }}",
         "options": {}
       },
       "id": "n019",
@@ -45,7 +45,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\"model\": \"general\", \"messages\": [{\"role\": \"system\", \"content\": \"You are Aurora, a warm personal assistant. Write a 4-line good-morning brief: date, one focus nudge, one health nudge, one encouraging line. No fluff.\"}, {\"role\": \"user\", \"content\": \"={{ 'Write today\\\\'s brief for '+$json.date }}\"}]}",
+        "jsonBody": "={{ JSON.stringify({ model: \"general\", messages: [ { role: \"system\", content: \"You are Aurora, a warm personal assistant. Write a 4-line good-morning brief: date, one focus nudge, one health nudge, one encouraging line. No fluff.\" }, { role: \"user\", content: 'Write today\\'s brief for '+$json.date } ] }) }}",
         "options": {}
       },
       "id": "n020",
