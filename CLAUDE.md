@@ -153,7 +153,7 @@ Self-hosting decision document plus runnable setup for standing up an agency box
 Cloudflare) and the Docker stacks that run on it.
 
 - `infra/README.md`, `infra/STACK.md`, `infra/TOOLBOX.md`, `infra/AGENTS.md`, `infra/SERVICES.md` — the strategy, host port map, and agent failover notes.
-- `infra/SETUP.md` (ordered setup), `infra/GUIDE.md` (how voice/text/pictures flow and what goes where), `infra/INVENTORY.md` (what's on the server and phones), `infra/check.sh` (read-only health check run on the server).
+- `infra/SETUP.md` (ordered setup), `infra/GUIDE.md` (how voice/text/pictures flow and what goes where), `infra/INVENTORY.md` (what's on the server and phones), `infra/KEYS.md` (every key + config file: source, required-ness, destination — names only, never values), `infra/check.sh` (read-only health check run on the server).
 - `infra/phones/` — per-phone guides, Termux configs, setup scripts, and `phones/kit/` (the `a` menu, Needle phone commands, `aurora-ask`/`aurora-gen`, Bitwarden `aurora-secrets`, widget generator).
 - `infra/bootstrap.sh` — provisions the box from the phone or an agent session; `VPS_PROVIDER=hetzner` (default: `infra/hetzner/provision.sh` + `cloud-init.yaml`, Hetzner Cloud CX33 in nbg1, budget-guarded) or `hostinger` (`infra/hostinger/`, KVM 2, typed `buy` confirmation). Provider tokens never ship to the box.
 - `infra/stacks-up.sh` — runs on the server: starts ONE stack at a time (router → n8n → hermes → tailscale → monitoring), filling each `.env` from `/opt/aurora/secrets.env` without printing values. `bootstrap.sh --ship-only` re-ships files + secrets to an existing box without touching the provider.

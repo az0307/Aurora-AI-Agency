@@ -121,8 +121,8 @@ Public SSH is closed, so every step goes over Tailscale (`aurora-01`, or `100.75
 
    Then on the box:
    ```sh
-   aurora restart hermes          # or: bash /opt/aurora/stacks-up.sh hermes  (re-writes its .env)
-   aurora start openbot
+   aurora start hermes            # = stacks-up.sh hermes: re-writes its .env and recreates it
+   aurora start openbot           # (not `aurora restart` — a plain restart keeps the old .env)
    ```
 6. **Claude Code:** run `aurora-agent claude`.
    - Type `/login` and finish the link on your phone.

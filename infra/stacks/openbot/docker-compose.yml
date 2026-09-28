@@ -11,6 +11,9 @@ services:
       SERVER_PORT: "3001"
       OPENBOT_SINGLE_USER: ${OPENBOT_SINGLE_USER:-true}
       TZ: ${TZ:-Australia/Melbourne}
+      # CopilotKit phones home usage telemetry by default; off here (private box). Set
+      # COPILOTKIT_TELEMETRY_DISABLED=false in .env to opt back in.
+      COPILOTKIT_TELEMETRY_DISABLED: ${COPILOTKIT_TELEMETRY_DISABLED:-true}
     ports:
       - "127.0.0.1:${OPENBOT_HOST_PORT:-3020}:3001"
     volumes:
