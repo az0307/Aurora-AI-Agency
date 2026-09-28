@@ -79,6 +79,12 @@ tasks:
     depends_on: [T004]
     blocked_by: "needs TELEGRAM_BOT_TOKEN + TELEGRAM_ALLOWED_USERS"
     acceptance: ["aurora start hermes → healthy", "bot replies on Telegram", "assistant console reachable on tailnet"]
+    notes: >
+      2026-09-28 staging boot test (dummy keys, Docker 29.3): `stacks-up.sh hermes` and
+      `stacks-up.sh openbot` both come up clean behind the router — Hermes 0 restarts, dashboard
+      200 on 127.0.0.1:9119, router reachable with ROUTER_API_KEY; OpenBot healthy, 200 on
+      127.0.0.1:3020, router reachable over aurora-llm. No repo bugs. Only the real keys and
+      the on-box run remain — steps in KEYS.md §9. OpenBot telemetry now off by default.
 
   - id: T008
     title: Tailscale lock-down (remove public SSH)
