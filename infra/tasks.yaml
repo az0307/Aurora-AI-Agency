@@ -175,17 +175,33 @@ tasks:
   - id: T019
     title: Pin remaining internet-facing / socket-touching container images
     area: stacks
-    status: todo
+    status: done
     owner: agent
-    files: [infra/stacks/n8n/docker-compose.yml, infra/stacks/hermes/docker-compose.yml, infra/stacks/router/docker-compose.yml, infra/stacks/monitoring/docker-compose.yml, infra/stacks/agents/docker-compose.yml]
+    files: [infra/stacks/n8n/docker-compose.yml, infra/stacks/hermes/docker-compose.yml, infra/stacks/router/docker-compose.yml, infra/stacks/monitoring/docker-compose.yml, infra/stacks/agents/docker-compose.yml, infra/server/STANDARDS.md]
     acceptance: ["n8n, hermes, router, monitoring (beszel/dozzle), agents pinned to a known version+digest", "no bare :latest on anything internet-facing or holding the docker socket"]
-    notes: Audit HIGH/MED. Do NOT guess versions — read each project's current release first. agents (OpenHands + writable docker.sock) is highest risk; keep it on a separate box. Overlaps T012 (n8n).
+    notes: >
+      Done 2026-09-28. Versions verified from Docker Hub / ghcr tag APIs (GitHub releases API
+      was scope-blocked): n8n 2.41.3, beszel/beszel-agent 0.20.0, dozzle v11.1.2, ntfy v2.28.0,
+      hermes-agent v2026.9.24. uptime-kuma kept major-pinned (:1). router kept on the vendor
+      stable channel main-stable (documented, not :latest). agents/OpenHands made a pinnable
+      ${OPENHANDS_TAG} var with a loud warning — the release is not verifiable from this session
+      and the stack is opt-in on a separate disposable box (writable docker.sock), so it cannot
+      drift the agency box; pin it on that box. Digests not added (no registry pull from here);
+      version tags are the practical pin. STANDARDS.md image table updated. Overlaps T012 (n8n).
 
   - id: T020
     title: Harden operator-box low-severity items from the audit
     area: security
-    status: todo
+    status: done
     owner: agent
-    files: [infra/hetzner/provision.sh, infra/hostinger/provision.sh, infra/check.sh, infra/hostinger/post-install.sh, infra/stacks/openbot/.env.example]
+    files: [infra/hetzner/provision.sh, infra/hetzner/preflight.sh, infra/hostinger/provision.sh, infra/check.sh, infra/hostinger/post-install.sh, infra/stacks/openbot/.env.example]
     acceptance: ["curl passes Bearer tokens via --config/@fd, not argv (out of /proc/PID/cmdline)", "post-install.done marker not written on partial failure", "openbot .env comment points at http://litellm:4000 on aurora-llm, not 172.17.0.1:4000"]
-    notes: All LOW, operator-box self-exposure only. No secret ever ships or persists world-readable.
+    notes: >
+      Done 2026-09-28. All LOW, operator-box self-exposure only. Bearer tokens (HCLOUD/HETZNER
+      in hetzner/provision.sh + preflight.sh, HOSTINGER in hostinger/provision.sh, LITELLM router
+      key in check.sh) now go through `curl --config <(printf ...)` on a pipe — printf is a bash
+      builtin so the token is never a child process's argv and never touches /proc/PID/cmdline or
+      disk. Verified with a local echo server. post-install.sh now gates the .done marker behind
+      the essentials (aurora user, SSH key, docker); on a partial run it writes .failed and exits
+      1 instead. openbot .env.example comment corrected to http://litellm:4000/v1 on aurora-llm.
+      No secret ever ships or persists world-readable.

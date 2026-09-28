@@ -23,11 +23,16 @@ provision_hetzner() {
 
   api() { # api METHOD PATH [JSON]
     local m="$1" p="$2" body="${3:-}"
+    # Pass the token through --config on a pipe (an fd), never on argv: a Bearer header on
+    # the curl command line is world-readable via /proc/<pid>/cmdline while the call runs.
+    # printf is a bash builtin, so the token is not exposed as a child process's args either,
+    # and the pipe never touches disk.
     if [ -n "$body" ]; then
-      curl -sS -X "$m" -H "Authorization: Bearer $HCLOUD_TOKEN" -H 'Content-Type: application/json' \
-        --data "$body" "$API$p"
+      curl -sS -X "$m" -H 'Content-Type: application/json' --data "$body" "$API$p" \
+        --config <(printf 'header = "Authorization: Bearer %s"\n' "$HCLOUD_TOKEN")
     else
-      curl -sS -X "$m" -H "Authorization: Bearer $HCLOUD_TOKEN" "$API$p"
+      curl -sS -X "$m" "$API$p" \
+        --config <(printf 'header = "Authorization: Bearer %s"\n' "$HCLOUD_TOKEN")
     fi
   }
   api_ok() { # fail loudly on a Hetzner error object

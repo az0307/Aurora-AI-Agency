@@ -8,7 +8,7 @@
 services:
   # --- Beszel hub: lightweight metrics dashboard (pair with beszel-agent per host) ---
   beszel:
-    image: henrygd/beszel:latest
+    image: henrygd/beszel:0.20.0        # pinned 2026-09-28
     restart: unless-stopped
     volumes:
       - beszel_data:/beszel_data
@@ -17,7 +17,7 @@ services:
 
   # Agent reports this host's stats to the hub. Deploy one per monitored box.
   beszel-agent:
-    image: henrygd/beszel-agent:latest
+    image: henrygd/beszel-agent:0.20.0  # pinned 2026-09-28
     restart: unless-stopped
     network_mode: host
     environment:
@@ -37,7 +37,7 @@ services:
 
   # --- Dozzle: real-time container logs in the browser ---
   dozzle:
-    image: amir20/dozzle:latest
+    image: amir20/dozzle:v11.1.2        # pinned 2026-09-28 (holds the docker socket RO)
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -48,7 +48,7 @@ services:
 
   # --- ntfy: self-hosted push notifications to your phone ---
   ntfy:
-    image: binwiederhier/ntfy:latest
+    image: binwiederhier/ntfy:v2.28.0   # pinned 2026-09-28
     restart: unless-stopped
     command: serve
     environment:

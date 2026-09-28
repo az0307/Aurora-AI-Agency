@@ -34,15 +34,20 @@ PI_NAME="${PI_NAME:-aurora-post-install}"
 PENDING="${HOSTINGER_PENDING_FILE:-$HOME/.aurora-hostinger-order-pending}"
 
 # h_call METHOD PATH [JSON] → sets H_CODE and H_BODY (no subshell, so both survive).
+# The token goes through --config on a pipe (an fd), never on argv: a Bearer header on the
+# curl command line is world-readable via /proc/<pid>/cmdline for the life of the call.
+# printf is a bash builtin, so the token isn't exposed as a child process's args either.
 h_call() {
   local m="$1" p="$2" body="${3:-}" tmp try
   tmp="$(mktemp)"
   for try in 1 2 3 4 5; do
     if [ -n "$body" ]; then
-      H_CODE="$(curl -sS -o "$tmp" -w '%{http_code}' -X "$m" -H "Authorization: Bearer $HOSTINGER_API_TOKEN" \
+      H_CODE="$(curl -sS -o "$tmp" -w '%{http_code}' -X "$m" \
+        --config <(printf 'header = "Authorization: Bearer %s"\n' "$HOSTINGER_API_TOKEN") \
         -H 'Accept: application/json' -H 'Content-Type: application/json' --data "$body" "$HAPI$p")" || H_CODE=000
     else
-      H_CODE="$(curl -sS -o "$tmp" -w '%{http_code}' -X "$m" -H "Authorization: Bearer $HOSTINGER_API_TOKEN" \
+      H_CODE="$(curl -sS -o "$tmp" -w '%{http_code}' -X "$m" \
+        --config <(printf 'header = "Authorization: Bearer %s"\n' "$HOSTINGER_API_TOKEN") \
         -H 'Accept: application/json' "$HAPI$p")" || H_CODE=000
     fi
     case "$H_CODE" in 429|000|502|503) sleep $((try * 6)) ;; *) break ;; esac

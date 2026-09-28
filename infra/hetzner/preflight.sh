@@ -70,8 +70,11 @@ elif [ -n "${HETZNER_API_TOKEN:-}" ] && [ -z "${HCLOUD_TOKEN:-}" ]; then
   warn "only HETZNER_API_TOKEN is set — Terraform/hcloud CLI need HCLOUD_TOKEN too"
 fi
 
-auth=(-sS -H "Authorization: Bearer ${TOKEN}")
-if ! me="$(curl "${auth[@]}" -o /dev/null -w '%{http_code}' "${API}/servers?per_page=1")"; then
+# Feed the token through --config on a pipe (an fd), never on argv: a Bearer header on the
+# curl command line is world-readable via /proc/<pid>/cmdline for the life of the call.
+# printf is a bash builtin, so the token isn't exposed as a child process's args either.
+hc_curl() { curl -sS --config <(printf 'header = "Authorization: Bearer %s"\n' "$TOKEN") "$@"; }
+if ! me="$(hc_curl -o /dev/null -w '%{http_code}' "${API}/servers?per_page=1")"; then
   fail "could not reach ${API} (network/proxy issue?)"; echo; exit 1
 fi
 case "$me" in
@@ -82,8 +85,8 @@ esac
 
 # --- 4. Does this server type exist in this location? ----------------------
 # This is the check that catches the CAX-is-EU-only class of mistake.
-types_json="$(curl "${auth[@]}" "${API}/server_types?per_page=100")"
-locs_json="$(curl "${auth[@]}" "${API}/locations")"
+types_json="$(hc_curl "${API}/server_types?per_page=100")"
+locs_json="$(hc_curl "${API}/locations")"
 
 if command -v jq >/dev/null; then
   if ! echo "$locs_json" | jq -e --arg l "$LOCATION" '.locations[]|select(.name==$l)' >/dev/null; then
@@ -123,7 +126,7 @@ echo
 
 # --- 5. Existing footprint (so you don't double-provision) -----------------
 if command -v jq >/dev/null; then
-  n="$(curl "${auth[@]}" "${API}/servers?per_page=50" | jq '.servers|length')"
+  n="$(hc_curl "${API}/servers?per_page=50" | jq '.servers|length')"
   if [ "$n" = "0" ]; then
     pass "no existing servers in this Project (clean slate)"
   else
