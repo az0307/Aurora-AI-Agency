@@ -23,10 +23,16 @@ REFRESH=0; [ "${1:-}" = --refresh ] && REFRESH=1
 say() { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 
 # place SRC DEST — install a config, but never clobber one the user has changed.
+# It remembers what it last installed ($2.aurora-shipped): a file you never edited is updated in
+# place; one you changed is kept and the new version lands next to it as $2.new.
 place() {
   mkdir -p "$(dirname "$2")"
-  if [ -f "$2" ] && ! cmp -s "$1" "$2"; then cp "$1" "$2.new"; say "kept your $2 (new version: $2.new)"
-  else cp "$1" "$2"; fi
+  local shipped="$2.aurora-shipped"
+  if [ -f "$2" ] && ! cmp -s "$1" "$2" && ! { [ -f "$shipped" ] && cmp -s "$2" "$shipped"; }; then
+    cp "$1" "$2.new"; say "kept your $2 (new version: $2.new)"
+  else
+    cp "$1" "$2"; cp "$1" "$shipped"
+  fi
 }
 
 if [ "$REFRESH" = 0 ]; then

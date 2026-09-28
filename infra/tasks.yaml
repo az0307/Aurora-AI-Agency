@@ -368,3 +368,29 @@ tasks:
       AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (+ AWS_DEFAULT_REGION if needed) in Bitwarden →
       `aurora-secrets fill` → `./bootstrap.sh --ship-only` → on the box `aurora maintain offsite`,
       then once `aurora maintain offsite-restore` to see a restore work. KEYS.md §5b.
+  - id: T033
+    title: Composio in the on-box coding agents (OpenCode + Claude Code)
+    area: stacks
+    status: done
+    owner: agent
+    files: [infra/server/aurora-agent, infra/server/opencode.json, infra/server/claude-mcp.json, infra/server/setup-tools.sh]
+    acceptance: ["aurora-agent exports COMPOSIO_CONSUMER_KEY to the child only", "both configs list a composio MCP server"]
+    notes: >
+      Done 2026-09-28. Endpoint/header verified against Composio's docs by a research subagent
+      (connect.composio.dev/mcp + x-consumer-api-key, ck_ key; OpenCode needs "oauth": false) and
+      by a live probe (the header is recognised; a dummy key is rejected with 401). Claude Code
+      parses the entry (`claude mcp get composio`); aurora-agent tested: child gets the key, parent
+      shell never does. Also fixed setup-tools.sh `place`: untouched configs now update in place
+      (it kept every differing file before, so config updates never reached the box).
+  - id: T034
+    title: Turn on Composio for the coding agents
+    area: stacks
+    status: todo
+    owner: human
+    depends_on: [T033]
+    acceptance: ["in `aurora-agent claude`, /mcp shows composio connected", "an app (e.g. Gmail) connects via the sign-in link"]
+    notes: >
+      Needs COMPOSIO_CONSUMER_KEY (ck_…) in Bitwarden → `aurora-secrets fill` → `./bootstrap.sh
+      --ship-only` (Hermes uses the same key). On the box after `aurora update`: move the two
+      *.new configs over (server/README.md → Composio), start `aurora-agent claude`, approve
+      `composio`, then ask it to do something in Gmail/Sheets and open the sign-in link it gives.

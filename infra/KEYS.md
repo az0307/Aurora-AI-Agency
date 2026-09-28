@@ -83,7 +83,7 @@ platform needs **both** its token **and** its `*_ALLOWED_USERS`, or the bot igno
 | `DISCORD_BOT_TOKEN` / `DISCORD_ALLOWED_USERS` | Discord bot | Optional | discord.com/developers → New app → Bot |
 | `SLACK_BOT_TOKEN` (`xoxb-…`) / `SLACK_APP_TOKEN` (`xapp-…`) / `SLACK_ALLOWED_USERS` | Slack (Socket Mode) | Optional | api.slack.com/apps → from `stacks/hermes/slack-manifest.json` |
 | `WHATSAPP_ALLOWED_USERS` | WhatsApp (digits with country code, e.g. `61412345678`) | Optional | pair in Hermes; its bridge uses port 3000 |
-| `COMPOSIO_CONSUMER_KEY` | 1,000+ app tools via MCP | Optional | composio.dev → Connect → consumer key |
+| `COMPOSIO_CONSUMER_KEY` | 1,000+ app tools via MCP — Hermes **and** OpenCode/Claude Code on the box (via `aurora-agent`) | Optional | platform.composio.dev → Connect → Settings → Sessions & API Key (a `ck_…` key; **not** a project `ak_…` key) |
 | `ZAPIER_MCP_TOKEN` | 9,000+ apps via Zapier MCP | Optional | mcp.zapier.com → server for "Other" → Generate token |
 | `GITHUB_PAT` | GitHub MCP (Hermes + Claude Code) | Optional | github.com/settings/tokens → **fine-grained**, least privilege |
 | `CONTEXT7_API_KEY` | docs MCP, higher limits | Optional | context7.com |
