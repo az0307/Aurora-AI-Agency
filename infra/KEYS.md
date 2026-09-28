@@ -108,6 +108,19 @@ OpenBot routing is set for you: with `OPENAI_API_KEY` blank, `stacks-up.sh openb
 `aurora-llm` Docker network). CopilotKit usage telemetry is **off** by default
 (`COPILOTKIT_TELEMETRY_DISABLED=true`); set it to `false` in OpenBot's `.env` to opt in.
 
+## 5b. Off-box encrypted backups (restic → any S3-compatible bucket)
+
+| Key | For | Required? | Get it | Lands in |
+|---|---|---|---|---|
+| `RESTIC_REPOSITORY` | where copies go, e.g. `s3:https://<endpoint>/<bucket>/aurora-01` | Needed for off-box | your bucket's S3 endpoint + name (B2 / R2 / Hetzner Object Storage) — make it **private** | box `secrets.env` (read by `maintain.sh`) |
+| `RESTIC_PASSWORD` | **the encryption key** for every copy | Needed | `python3 -c "import secrets; print(secrets.token_urlsafe(32))"` | box `secrets.env` |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | the bucket's S3 keys (any S3-compatible provider, not an AWS account) | Needed | provider console → an application key scoped to **only this bucket** | box `secrets.env` |
+| `AWS_DEFAULT_REGION` | only if your provider wants one (R2: `auto`) | Optional | provider docs | box `secrets.env` |
+
+> ⚠️ **`RESTIC_PASSWORD` is the only way to read the backups.** Lose it and every copy is
+> useless — put it in Bitwarden *before* the first run. Never rotate it casually: the existing
+> copies stay encrypted with the old one (`restic key add` / `key remove` changes it safely).
+
 ## 6. Per-stack keys you set by hand (not in `secrets.env`)
 
 Opt-in stacks keep their own secrets in their own `.env` (copy the `.env.example`). Generate

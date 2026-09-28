@@ -97,12 +97,20 @@ tasks:
   - id: T009
     title: Off-box encrypted backups (restic + rclone → object storage)
     area: backup
-    status: todo
+    status: done
     owner: agent
     depends_on: [T003]
-    files: [infra/stacks/backup/]
+    files: [infra/server/maintain.sh, infra/bootstrap.sh, infra/secrets.env.example]
     acceptance: ["nightly push to remote", "one-command restore documented + tested", "keys via secrets.env, not repo"]
-    notes: The real gap (CATALOG.md). Good first spec-driven feature (SPECKIT.md).
+    notes: >
+      Done 2026-09-28: `aurora maintain offsite | offsite-status | offsite-restore [id]`, and the
+      nightly backup pushes automatically once RESTIC_* are in secrets.env (bootstrap now ships
+      them). restic 0.19.1 from a pinned image; secrets read by root and passed by NAME (-e VAR).
+      Retention 7 daily / 4 weekly / 6 monthly + `restic check` per push. Tested against a real
+      S3 server (rclone serve s3): repo auto-init, two nights with dedup, restore of latest and of
+      an older snapshot byte-for-byte identical, restore dirs root-only, bucket has no plaintext,
+      an argv shim on `docker` recorded no secret value on any command line, nightly hook fires.
+      Your part: T032.
 
   - id: T010
     title: Cloudflare Tunnel for the YMI lead webhook
@@ -346,3 +354,17 @@ tasks:
       thefuck), `aurora start n8n` (joins aurora-llm), set N8N_IMAGE_TAG to what check.sh prints,
       `aurora maintain pg-upgrade` (type 'upgrade'), `aurora start monitoring`, then
       `bash /opt/aurora/check.sh`. Re-import the six aurora workflows (T006) — the old copies can't work.
+  - id: T032
+    title: Turn on off-box backups (a bucket + keys)
+    area: backup
+    status: todo
+    owner: human
+    depends_on: [T009]
+    acceptance: ["aurora maintain offsite-status lists a snapshot", "aurora maintain report says 'Off-box copy: set up'"]
+    notes: >
+      Make a PRIVATE bucket on Backblaze B2, Cloudflare R2 or Hetzner Object Storage (all cents/month
+      at this size) and an application key scoped to only that bucket. Put RESTIC_REPOSITORY,
+      RESTIC_PASSWORD (generate; SAVE IN BITWARDEN FIRST — losing it makes every copy unreadable),
+      AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (+ AWS_DEFAULT_REGION if needed) in Bitwarden →
+      `aurora-secrets fill` → `./bootstrap.sh --ship-only` → on the box `aurora maintain offsite`,
+      then once `aurora maintain offsite-restore` to see a restore work. KEYS.md §5b.

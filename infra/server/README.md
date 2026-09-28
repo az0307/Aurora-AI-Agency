@@ -51,9 +51,23 @@ Termux + Tailscale does everything an SSH app does, plus the scripts in `phones/
 | `pg-upgrade` | n8n Postgres 16 → 17 (asks first; backup, new volume, row-count check, auto-rollback) |
 | `report` | `check.sh` + upkeep status (Docker tuning, swap, timers, last backup, tool versions, disk, anything listening off loopback). Safe to paste to Claude: no secret values |
 
-Backups stay **on the box**, which protects against mistakes, not against losing the server.
-Also copy them off: `scp -r aurora-01:/var/backups/aurora/<date> .` to the phone, or turn on
-Hetzner's backup option (+20% of the server price). Off-box restic to object storage is on the to-do list.
+**Off-box (encrypted):** once `RESTIC_REPOSITORY`, `RESTIC_PASSWORD` and the bucket's `AWS_*` keys
+are in `secrets.env` (see `KEYS.md`), every nightly backup also goes, encrypted by restic, to your
+S3-compatible bucket (Backblaze B2 / Cloudflare R2 / Hetzner Object Storage): kept 7 daily, 4
+weekly, 6 monthly; the repository is checked after each push. Until then, backups only live on the
+box — `aurora maintain report` says which.
+
+| Off-box command | What it does |
+|---|---|
+| `offsite` | push the newest backup now (the nightly backup does this for you) |
+| `offsite-status` | list the copies in the bucket |
+| `offsite-restore [id]` | restore `latest` (or a snapshot id) into a **new** folder `/var/backups/aurora/restore-<time>/aurora-backup` — nothing live is touched |
+
+**Restore** (from on-box or off-box), by what you lost:
+- *n8n's database:* `gunzip -c n8n-postgres.sql.gz | docker exec -i n8n-postgres-1 psql -U n8n -d n8n` into a fresh, empty database (stop n8n first).
+- *a stack's volume:* stop that stack, then `docker run --rm -v <volume>:/v -v "$PWD":/b alpine:3.20 tar -C /v -xzf /b/vol-<volume>.tgz`.
+- *configs/secrets:* `tar -xzf configs.tgz` somewhere safe and copy back only what you need.
+- *the whole server:* provision a new box (`bootstrap.sh`), `aurora maintain offsite-restore`, then the three steps above.
 
 ## Tested (2026-09-27, staging copy of /opt/aurora on Docker 29.3)
 

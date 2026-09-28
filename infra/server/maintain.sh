@@ -7,6 +7,8 @@
 #   aurora maintain upgrade STACK # backup, pull newer images, recreate that stack (or: all)
 #   aurora maintain report        # full read-only health + upkeep report (paste it to Claude)
 #   aurora maintain snapshot      # backup + report + a versions/health manifest = "this worked"
+#   aurora maintain offsite       # push the newest backup to your bucket, encrypted (also runs nightly)
+#   aurora maintain offsite-status   ·   offsite-restore [id]   # list copies · restore to a new folder
 #   aurora maintain pg-upgrade    # n8n Postgres 16 → 17: backup, dump, restore onto a new volume,
 #                                 #   verify row counts, auto-rollback on failure (asks first)
 #
@@ -21,8 +23,8 @@
 #   - cleanup: closes ufw 80/443 left by older cloud-init (unless a container really publishes
 #     them), removes Ubuntu's broken apt thefuck (its login traceback)
 #
-# Backups stay ON the box (/var/backups/aurora, root-only, 7 kept). That protects against
-# mistakes, not against losing the server: copy them off-box too (see server/README.md).
+# Backups land ON the box (/var/backups/aurora, root-only, 7 kept) and, once RESTIC_* is in
+# secrets.env, an encrypted copy goes to your S3 bucket every night (see `offsite`).
 # Never touched: Docker volumes are only read, never pruned; secrets are never printed.
 set -euo pipefail
 
@@ -160,6 +162,10 @@ backup() {
   # 4. Keep the newest $KEEP days.
   as_root find "$BACKUP_DIR" -mindepth 1 -maxdepth 1 -type d -name '20*' | sort | head -n -"$KEEP" | while read -r old; do as_root rm -rf "$old"; done
   say "Backup done: $(as_root du -sh "$dst" | cut -f1) (keeping $KEEP days)"
+
+  # 5. Off-box copy (T009) when configured; a failure never spoils the on-box backup.
+  if offsite_ready; then offsite || warn "off-box copy failed — the on-box backup is fine; retry: aurora maintain offsite"
+  else say "  off-box copy not set up yet (RESTIC_* in secrets.env — see KEYS.md)"; fi
 }
 
 # ------------------------------------------------------------------------------ prune
@@ -206,6 +212,8 @@ report() {
     echo "  · $t: $(systemctl is-active "$t.timer" 2>/dev/null || echo missing) · last: ${ll:-never}"
   done
   echo "  · Latest backup: $(as_root ls -1 "$BACKUP_DIR" 2>/dev/null | grep '^20' | tail -1 || echo none)"
+  if offsite_ready; then echo "  · Off-box copy: set up (nightly; list with: aurora maintain offsite-status)"
+  else echo "  · Off-box copy: NOT set up — on-box backups don't survive losing the server (KEYS.md → restic)"; fi
   echo "  · Tools: node $(node -v 2>/dev/null || echo -) · opencode $(opencode --version 2>/dev/null || echo -) · claude $(claude --version 2>/dev/null | head -1 || echo -) · lazydocker $(command -v lazydocker >/dev/null && echo yes || echo -)"
   echo "  · Docker disk:"; docker system df 2>/dev/null | sed 's/^/      /'
   echo "  · Listening on non-loopback addresses (should be only ssh/xrdp on tailscale + tailscaled):"
@@ -231,6 +239,59 @@ snapshot() {
   as_root sh -c "echo 'snapshot taken '$(date -Is) > '$dir/OK.txt'"
   say "Snapshot done. If check.sh showed all ✓, this is a confirmed-working point to return to."
   grep -q '✗' "$dir/report.txt" 2>/dev/null && warn "report.txt still has ✗ lines — not fully green yet" || say "report.txt is clean (no ✗)."
+}
+
+# ---------------------------------------------------------------------- off-box (restic)
+# Encrypted copy of the newest backup in an S3-compatible bucket (Backblaze B2, Cloudflare R2,
+# Hetzner Object Storage…), so losing the server doesn't lose the backups. Needs, in secrets.env:
+#   RESTIC_REPOSITORY      s3:https://<endpoint>/<bucket>/aurora-01
+#   RESTIC_PASSWORD        the encryption key — lose it and every copy is unreadable (Bitwarden!)
+#   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY   the bucket's S3 keys (+ AWS_DEFAULT_REGION if needed)
+# Values are read by root from secrets.env and handed to the container by NAME (`-e VAR`), so
+# they never appear on a command line or in output. restic runs from a pinned image (no install).
+RESTIC_IMAGE="${RESTIC_IMAGE:-restic/restic:0.19.1}"   # pinned 2026-09-28
+OFFSITE_HOST="${OFFSITE_HOST:-$(hostname -s)}"          # snapshots are grouped per host
+OFFSITE_KEEP="${OFFSITE_KEEP:---keep-daily 7 --keep-weekly 4 --keep-monthly 6}"
+
+offsite_ready() {
+  as_root grep -qE '^RESTIC_REPOSITORY=.+' "$ROOT/secrets.env" 2>/dev/null \
+    && as_root grep -qE '^RESTIC_PASSWORD=.+' "$ROOT/secrets.env" 2>/dev/null
+}
+restic_run() { # restic_run "<extra docker args, e.g. -v a:b>" <restic args…>
+  local extra="$1"; shift
+  as_root env AURORA_SECRETS="$ROOT/secrets.env" AURORA_IMG="$RESTIC_IMAGE" AURORA_H="$OFFSITE_HOST" \
+    AURORA_EXTRA="$extra ${AURORA_RESTIC_DOCKER_ARGS:-}" bash -c '
+    set -a; . "$AURORA_SECRETS"; set +a
+    exec docker run --rm -i --hostname "$AURORA_H" $AURORA_EXTRA \
+      -e RESTIC_REPOSITORY -e RESTIC_PASSWORD -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION \
+      -v aurora-restic-cache:/root/.cache/restic "$AURORA_IMG" "$@"' restic_run "$@"
+}
+
+offsite() { # push the newest backup; creates the repo on first use; applies retention
+  offsite_ready || die "off-box backup isn't set up: add RESTIC_REPOSITORY, RESTIC_PASSWORD and the bucket's AWS_* keys to secrets.env (see KEYS.md), ship it, retry"
+  local latest; latest=$(as_root find "$BACKUP_DIR" -mindepth 1 -maxdepth 1 -type d -name '20*' | sort | tail -1)
+  [ -n "$latest" ] || die "no backup in $BACKUP_DIR yet — run: aurora maintain backup"
+  say "Off-box: $(basename "$latest") → bucket (encrypted)"
+  restic_run "" cat config >/dev/null 2>&1 || { say "  first run: creating the encrypted repository"; restic_run "" init >/dev/null; }
+  # A fixed path (/aurora-backup) + host tag, so restic dedups night to night and retention groups them.
+  restic_run "-v $latest:/aurora-backup:ro" backup /aurora-backup --host "$OFFSITE_HOST" --tag nightly --quiet
+  restic_run "" forget --host "$OFFSITE_HOST" --prune $OFFSITE_KEEP --quiet >/dev/null
+  restic_run "" check --quiet >/dev/null && say "  pushed, retention applied, repository checked"
+}
+offsite_status() {
+  offsite_ready || die "off-box backup isn't set up (see KEYS.md)"
+  restic_run "" snapshots --host "$OFFSITE_HOST" --compact
+}
+offsite_restore() { # offsite-restore [snapshot-id|latest] → a NEW folder; live data is never touched
+  offsite_ready || die "off-box backup isn't set up (see KEYS.md)"
+  local snap="${1:-latest}" dst; dst="$BACKUP_DIR/restore-$(date +%F_%H%M%S)"
+  as_root install -d -m 700 "$dst"
+  say "Restoring off-box snapshot '$snap' → $dst"
+  restic_run "-v $dst:/restore" restore "$snap" --host "$OFFSITE_HOST" --target /restore >/dev/null
+  as_root chmod -R go-rwx "$dst"
+  say "Restored into $dst/aurora-backup:"; as_root ls -la "$dst/aurora-backup"
+  echo "   It's the same layout as a nightly backup (n8n-postgres.sql.gz, vol-*.tgz, configs.tgz)."
+  echo "   Nothing live was changed. To use it, copy what you need back (see server/README.md → Restore)."
 }
 
 # ------------------------------------------------------------------------- pg-upgrade
@@ -321,5 +382,6 @@ pg_upgrade() {
 case "${1:-}" in
   tune) tune ;; backup) backup ;; prune) prune ;; upgrade) upgrade "${2:-}" ;; report) report ;; snapshot) snapshot ;;
   pg-upgrade) pg_upgrade ;;
-  *) sed -n '2,26p' "$0"; exit 2 ;;
+  offsite) offsite ;; offsite-status) offsite_status ;; offsite-restore) offsite_restore "${2:-latest}" ;;
+  *) sed -n '2,28p' "$0"; exit 2 ;;
 esac
