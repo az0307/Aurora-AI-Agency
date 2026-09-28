@@ -33,15 +33,16 @@ MCP config schemas differ per client (see `AGENTS.md`): Claude Code uses `.mcp.j
 ## Container images (pinned where it matters)
 | Stack | Image | Pin policy |
 |---|---|---|
-| router | `ghcr.io/berriai/litellm:main-stable` | tracks a stable tag |
-| n8n | `docker.n8n.io/n8nio/n8n:${N8N_IMAGE_TAG}` | **pin `N8N_IMAGE_TAG`** to the running version; upgrades are a dump/restore when the DB major changes |
+| router | `ghcr.io/berriai/litellm:main-stable` | vendor's stable channel (not `:latest`); versioned tags exist but this is the maintained internet-facing pin |
+| n8n | `docker.n8n.io/n8nio/n8n:${N8N_IMAGE_TAG:-2.41.3}` | **pin `N8N_IMAGE_TAG`** to the running version (`docker exec n8n-n8n-1 n8n --version`); upgrades are a dump/restore when the DB major changes |
 | postgres | `postgres:16-alpine` | n8n now recommends 17 — migrate deliberately (see server/README known issues) |
-| hermes | `nousresearch/hermes-agent:${HERMES_TAG}` | **pin for production** |
+| hermes | `nousresearch/hermes-agent:${HERMES_TAG:-v2026.9.24}` | **pin for production**; desktop build via `HERMES_TAG=latest-desktop` |
 | openbot | `ghcr.io/copilotkit/openbot:v0.0.15` | pinned |
 | dashboard | `ghcr.io/gethomepage/homepage:v1.4.0` | pinned |
 | admin (Dockge) | `louislam/dockge:1.4.1` | pinned; holds the Docker socket — review before bumping |
 | assistant | `nginx:1.27-alpine` | static only |
-| monitoring | `louislam/uptime-kuma:1`, `amir20/dozzle:latest` | Kuma major-pinned |
+| monitoring | `louislam/uptime-kuma:1`, `amir20/dozzle:v11.1.2`, `henrygd/beszel:0.20.0` (+agent), `binwiederhier/ntfy:v2.28.0` | all pinned; Kuma major-pinned |
+| agents (OpenHands) | `…/openhands:${OPENHANDS_TAG:-latest}` (+ runtime) | opt-in, **separate disposable box** — holds writable `docker.sock`; pin `OPENHANDS_TAG` on that box (release unverifiable from here) |
 
 Bump with `aurora maintain upgrade <stack>` (it backs up first and recreates only what's running).
 

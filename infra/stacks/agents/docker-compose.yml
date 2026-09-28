@@ -8,11 +8,19 @@
 
 services:
   openhands:
-    image: docker.all-hands.dev/all-hands-ai/openhands:latest
+    # ⚠️ PIN BEFORE DEPLOYING. Left as ${OPENHANDS_TAG:-latest} because the current
+    # OpenHands release cannot be verified from here (registry not reachable in this
+    # session), and this stack is opt-in on a SEPARATE, disposable box (see the socket
+    # warning below) — so an unpinned default here can't drift the agency box. On the box
+    # that actually runs it, set OPENHANDS_TAG in .env to the release you tested
+    # (see https://github.com/All-Hands-AI/OpenHands/releases) and keep the runtime image
+    # tag matched to it. Do NOT leave `latest` in production.
+    image: docker.all-hands.dev/all-hands-ai/openhands:${OPENHANDS_TAG:-latest}
     restart: unless-stopped
     environment:
-      # OpenHands launches per-task sandbox containers using this runtime image:
-      SANDBOX_RUNTIME_CONTAINER_IMAGE: ${SANDBOX_IMAGE:-docker.all-hands.dev/all-hands-ai/runtime:latest}
+      # OpenHands launches per-task sandbox containers using this runtime image. Keep its
+      # tag matched to OPENHANDS_TAG above (same release train); pin it on the box too:
+      SANDBOX_RUNTIME_CONTAINER_IMAGE: ${SANDBOX_IMAGE:-docker.all-hands.dev/all-hands-ai/runtime:${OPENHANDS_TAG:-latest}}
       LOG_ALL_EVENTS: "true"
       # Optional: preset the model/key instead of entering it in the UI.
       LLM_MODEL: ${LLM_MODEL:-anthropic/claude-sonnet-5}

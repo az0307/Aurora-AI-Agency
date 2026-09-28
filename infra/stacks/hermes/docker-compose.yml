@@ -23,7 +23,7 @@
 
 services:
   gateway:
-    image: nousresearch/hermes-agent:${HERMES_TAG:-latest}   # pin a version for production
+    image: nousresearch/hermes-agent:${HERMES_TAG:-v2026.9.24}   # pinned default (set HERMES_TAG=latest-desktop for the desktop build)
     container_name: hermes
     restart: unless-stopped
     # Host networking so the agent reaches the router at 127.0.0.1:4000 (and n8n at
@@ -42,7 +42,7 @@ services:
     shm_size: 1g                    # Chromium crashes with Docker's 64 MB default
 
   dashboard:
-    image: nousresearch/hermes-agent:${HERMES_TAG:-latest}
+    image: nousresearch/hermes-agent:${HERMES_TAG:-v2026.9.24}
     container_name: hermes-dashboard
     restart: unless-stopped
     network_mode: host

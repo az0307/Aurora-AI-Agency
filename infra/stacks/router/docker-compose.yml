@@ -15,7 +15,7 @@
 
 services:
   litellm:
-    image: ghcr.io/berriai/litellm:main-stable
+    image: ghcr.io/berriai/litellm:main-stable   # LiteLLM's curated stable channel (not :latest); pin a main-vX.Y.Z + digest for full immutability
     restart: unless-stopped
     env_file: .env
     command: ["--config", "/app/config.yaml", "--port", "4000"]
