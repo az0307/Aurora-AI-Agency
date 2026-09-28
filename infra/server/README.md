@@ -6,8 +6,8 @@ or in the RDP desktop (XFCE) with icons.
 | Thing | What it is | How you open it |
 |---|---|---|
 | **`aurora`** | Menu (TUI): status, start/stop/restart a stack, logs, agents, health check, links, update | type `aurora` · RDP icon **Aurora Control** |
-| **OpenCode** | Coding agent, models via the LiteLLM router, MCP: Playwright + n8n | `aurora` → opencode · icon **OpenCode** |
-| **Claude Code** | Anthropic's agent (your Claude login), MCP: Playwright + n8n, plugins | `aurora` → claude · icon **Claude Code** |
+| **OpenCode** | Coding agent, models via the LiteLLM router, MCP: Playwright + n8n + Composio | `aurora` → opencode · icon **OpenCode** |
+| **Claude Code** | Anthropic's agent (your Claude login), MCP: Playwright + n8n + Composio, plugins | `aurora` → claude · icon **Claude Code** |
 | **Hermes** | The always-on agent (Telegram etc.) | `aurora` → hermes (chat in the terminal) · icon **Hermes dashboard** |
 | **OpenBot** | CopilotKit OpenBot web app | `aurora start openbot` → `https://aurora-01.<tailnet>.ts.net:3020` |
 | **n8n** | Workflows | `https://aurora-01.<tailnet>.ts.net/` (tailnet only) · icon **n8n** |
@@ -51,9 +51,23 @@ Termux + Tailscale does everything an SSH app does, plus the scripts in `phones/
 | `pg-upgrade` | n8n Postgres 16 → 17 (asks first; backup, new volume, row-count check, auto-rollback) |
 | `report` | `check.sh` + upkeep status (Docker tuning, swap, timers, last backup, tool versions, disk, anything listening off loopback). Safe to paste to Claude: no secret values |
 
-Backups stay **on the box**, which protects against mistakes, not against losing the server.
-Also copy them off: `scp -r aurora-01:/var/backups/aurora/<date> .` to the phone, or turn on
-Hetzner's backup option (+20% of the server price). Off-box restic to object storage is on the to-do list.
+**Off-box (encrypted):** once `RESTIC_REPOSITORY`, `RESTIC_PASSWORD` and the bucket's `AWS_*` keys
+are in `secrets.env` (see `KEYS.md`), every nightly backup also goes, encrypted by restic, to your
+S3-compatible bucket (Backblaze B2 / Cloudflare R2 / Hetzner Object Storage): kept 7 daily, 4
+weekly, 6 monthly; the repository is checked after each push. Until then, backups only live on the
+box — `aurora maintain report` says which.
+
+| Off-box command | What it does |
+|---|---|
+| `offsite` | push the newest backup now (the nightly backup does this for you) |
+| `offsite-status` | list the copies in the bucket |
+| `offsite-restore [id]` | restore `latest` (or a snapshot id) into a **new** folder `/var/backups/aurora/restore-<time>/aurora-backup` — nothing live is touched |
+
+**Restore** (from on-box or off-box), by what you lost:
+- *n8n's database:* `gunzip -c n8n-postgres.sql.gz | docker exec -i n8n-postgres-1 psql -U n8n -d n8n` into a fresh, empty database (stop n8n first).
+- *a stack's volume:* stop that stack, then `docker run --rm -v <volume>:/v -v "$PWD":/b alpine:3.20 tar -C /v -xzf /b/vol-<volume>.tgz`.
+- *configs/secrets:* `tar -xzf configs.tgz` somewhere safe and copy back only what you need.
+- *the whole server:* provision a new box (`bootstrap.sh`), `aurora maintain offsite-restore`, then the three steps above.
 
 ## Tested (2026-09-27, staging copy of /opt/aurora on Docker 29.3)
 
@@ -95,7 +109,28 @@ Not tested here:
 | `opencode.json` | `~/.config/opencode/opencode.json` | provider `aurora` → `http://127.0.0.1:4000/v1`, default model `aurora/code`. **v1 schema** (matches opencode.ai/docs). If `opencode --version` is v2, its schema differs (`providers`/`package: "aisdk:…"`/`settings`/`mcp.servers`) — or just run `opencode mcp add …`. Checked via Context7 2026-09-27. |
 | `claude-mcp.json` | `~/work/.mcp.json` | Claude Code's MCP servers when started in `~/work` (which `aurora-agent` does) |
 
-Configs you've edited are never overwritten; a newer version lands next to them as `*.new`.
+### Composio in the coding agents (1,000+ apps: Gmail, Sheets, Calendar, Notion, GitHub, Slack, HubSpot…)
+
+Hermes already had Composio; OpenCode and Claude Code on the box now get it too, through the
+same **Composio Connect** endpoint (`https://connect.composio.dev/mcp`, header
+`x-consumer-api-key`). `aurora-agent` passes `COMPOSIO_CONSUMER_KEY` (the `ck_…` key) into the
+agent's own environment only — like the router key. No key → the server just fails to connect.
+
+- **Connecting an app:** the first time an agent needs one, Composio's tool replies with a
+  short-lived sign-in link. Open it on your phone, sign in once; the connection is remembered.
+  Link expired? Ask again and it makes a new one.
+- **It acts as you** in whatever you connect — connect only the apps you use. Composio is a
+  third-party cloud service: keep client data (Y.M.I leads) to the apps that already hold it.
+- **Rotating the key** (Composio dashboard → Settings → Sessions & API Key) cancels the old one
+  at once — ship the new one and restart Hermes too (🔁 on the phone), or both break.
+- **Once, on aurora-01** (its configs predate the update-tracking): after `aurora update`,
+  `~/.config/opencode/opencode.json.new` and `~/work/.mcp.json.new` appear. If you never edited
+  the originals, just move them over:
+  `mv ~/.config/opencode/opencode.json.new ~/.config/opencode/opencode.json && mv ~/work/.mcp.json.new ~/work/.mcp.json`.
+  Otherwise copy the `composio` block across. Future updates apply by themselves.
+
+Configs you've edited are never overwritten; a newer version lands next to them as `*.new`. One you
+never touched is updated in place (`setup-tools.sh` keeps a `*.aurora-shipped` copy to tell).
 
 ## Finish the setup (from where the box is now)
 
@@ -127,7 +162,7 @@ Public SSH is closed, so every step goes over Tailscale (`aurora-01`, or `100.75
    ```
 6. **Claude Code:** run `aurora-agent claude`.
    - Type `/login` and finish the link on your phone.
-   - The first time, approve the two project MCP servers (`playwright`, `n8n`).
+   - The first time, approve the three project MCP servers (`playwright`, `n8n`, `composio`).
    - Type `/plugin` to browse and install plugins from marketplaces, `/mcp` to see server status.
    - The plugin marketplace for this repo will be `az0307/Aurora-AI-Agency` once the plugin work lands (`/plugin marketplace add az0307/Aurora-AI-Agency`).
 7. **OpenCode:** run `aurora-agent opencode`.

@@ -97,12 +97,20 @@ tasks:
   - id: T009
     title: Off-box encrypted backups (restic + rclone → object storage)
     area: backup
-    status: todo
+    status: done
     owner: agent
     depends_on: [T003]
-    files: [infra/stacks/backup/]
+    files: [infra/server/maintain.sh, infra/bootstrap.sh, infra/secrets.env.example]
     acceptance: ["nightly push to remote", "one-command restore documented + tested", "keys via secrets.env, not repo"]
-    notes: The real gap (CATALOG.md). Good first spec-driven feature (SPECKIT.md).
+    notes: >
+      Done 2026-09-28: `aurora maintain offsite | offsite-status | offsite-restore [id]`, and the
+      nightly backup pushes automatically once RESTIC_* are in secrets.env (bootstrap now ships
+      them). restic 0.19.1 from a pinned image; secrets read by root and passed by NAME (-e VAR).
+      Retention 7 daily / 4 weekly / 6 monthly + `restic check` per push. Tested against a real
+      S3 server (rclone serve s3): repo auto-init, two nights with dedup, restore of latest and of
+      an older snapshot byte-for-byte identical, restore dirs root-only, bucket has no plaintext,
+      an argv shim on `docker` recorded no secret value on any command line, nightly hook fires.
+      Your part: T032.
 
   - id: T010
     title: Cloudflare Tunnel for the YMI lead webhook
@@ -346,3 +354,43 @@ tasks:
       thefuck), `aurora start n8n` (joins aurora-llm), set N8N_IMAGE_TAG to what check.sh prints,
       `aurora maintain pg-upgrade` (type 'upgrade'), `aurora start monitoring`, then
       `bash /opt/aurora/check.sh`. Re-import the six aurora workflows (T006) — the old copies can't work.
+  - id: T032
+    title: Turn on off-box backups (a bucket + keys)
+    area: backup
+    status: todo
+    owner: human
+    depends_on: [T009]
+    acceptance: ["aurora maintain offsite-status lists a snapshot", "aurora maintain report says 'Off-box copy: set up'"]
+    notes: >
+      Make a PRIVATE bucket on Backblaze B2, Cloudflare R2 or Hetzner Object Storage (all cents/month
+      at this size) and an application key scoped to only that bucket. Put RESTIC_REPOSITORY,
+      RESTIC_PASSWORD (generate; SAVE IN BITWARDEN FIRST — losing it makes every copy unreadable),
+      AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (+ AWS_DEFAULT_REGION if needed) in Bitwarden →
+      `aurora-secrets fill` → `./bootstrap.sh --ship-only` → on the box `aurora maintain offsite`,
+      then once `aurora maintain offsite-restore` to see a restore work. KEYS.md §5b.
+  - id: T033
+    title: Composio in the on-box coding agents (OpenCode + Claude Code)
+    area: stacks
+    status: done
+    owner: agent
+    files: [infra/server/aurora-agent, infra/server/opencode.json, infra/server/claude-mcp.json, infra/server/setup-tools.sh]
+    acceptance: ["aurora-agent exports COMPOSIO_CONSUMER_KEY to the child only", "both configs list a composio MCP server"]
+    notes: >
+      Done 2026-09-28. Endpoint/header verified against Composio's docs by a research subagent
+      (connect.composio.dev/mcp + x-consumer-api-key, ck_ key; OpenCode needs "oauth": false) and
+      by a live probe (the header is recognised; a dummy key is rejected with 401). Claude Code
+      parses the entry (`claude mcp get composio`); aurora-agent tested: child gets the key, parent
+      shell never does. Also fixed setup-tools.sh `place`: untouched configs now update in place
+      (it kept every differing file before, so config updates never reached the box).
+  - id: T034
+    title: Turn on Composio for the coding agents
+    area: stacks
+    status: todo
+    owner: human
+    depends_on: [T033]
+    acceptance: ["in `aurora-agent claude`, /mcp shows composio connected", "an app (e.g. Gmail) connects via the sign-in link"]
+    notes: >
+      Needs COMPOSIO_CONSUMER_KEY (ck_…) in Bitwarden → `aurora-secrets fill` → `./bootstrap.sh
+      --ship-only` (Hermes uses the same key). On the box after `aurora update`: move the two
+      *.new configs over (server/README.md → Composio), start `aurora-agent claude`, approve
+      `composio`, then ask it to do something in Gmail/Sheets and open the sign-in link it gives.

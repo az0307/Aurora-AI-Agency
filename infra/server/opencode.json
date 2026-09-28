@@ -41,6 +41,13 @@
         "N8N_API_URL": "{env:N8N_API_URL}",
         "N8N_API_KEY": "{env:N8N_API_KEY}"
       }
+    },
+    "composio": {
+      "type": "remote",
+      "url": "https://connect.composio.dev/mcp",
+      "oauth": false,
+      "headers": { "x-consumer-api-key": "{env:COMPOSIO_CONSUMER_KEY}" },
+      "enabled": true
     }
   }
 }

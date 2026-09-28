@@ -35,7 +35,7 @@ Add a provider key (OpenAI/Anthropic/Google) only if you want to bypass the rout
 |---|---|---|---|
 | **Caddy / Cloudflare Tunnel** | `caddy:2` / `cloudflare/cloudflared` | public HTTPS for the YMI webhook without opening ports | tiny |
 | **Vaultwarden** | `vaultwarden/server` | self-hosted Bitwarden-compatible vault (if you ever move off hosted BW) | small |
-| **Restic + rclone** | `restic/restic`, `rclone/rclone` | **off-box** encrypted backups to object storage (the missing piece today) | tiny |
+| **Restic** | `restic/restic:0.19.1` | **off-box** encrypted backups — built in: `aurora maintain offsite` (needs a bucket + keys, KEYS.md) | tiny |
 | **Gitea / Forgejo** | `gitea/gitea` | a private git mirror on the box | small |
 | **Ollama + Open WebUI** | `ollama/ollama`, `ghcr.io/open-webui/open-webui` | local/uncensored models | **heavy — CX43** |
 | **Qdrant** | `qdrant/qdrant` | vector DB for RAG (already an on-demand profile) | medium |
@@ -46,7 +46,7 @@ Add a provider key (OpenAI/Anthropic/Google) only if you want to bypass the rout
 | **Watchtower** | `containrrr/watchtower` | auto-image-updates — **not recommended**; use `aurora maintain upgrade` so upgrades are deliberate + backed up | tiny |
 
 ## What to add next (opinion)
-1. **Off-box backups (restic → object storage)** — the one real gap; on-box backups don't survive losing the server.
+1. **Off-box backups** — built in now (`aurora maintain offsite`); just needs a bucket + keys in `secrets.env` (T032).
 2. **Cloudflare Tunnel** — so the YMI lead webhook is reachable without a public port.
 3. **Vaultwarden** only if you want to stop depending on hosted Bitwarden; otherwise skip.
 

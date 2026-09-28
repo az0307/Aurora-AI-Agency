@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # aurora-agent — run an agent CLI on the box with the keys it needs, without copying them
-# anywhere. Reads ONLY the router key + n8n API key from the root-owned
+# anywhere. Reads ONLY the router key, n8n API key and Composio consumer key from the root-owned
 # /opt/aurora/secrets.env (via sudo) into this process's environment, then execs the tool.
 #
 #   aurora-agent opencode          # OpenCode, models via the LiteLLM router
-#   aurora-agent claude            # Claude Code (its own login); MCP gets n8n/Playwright
+#   aurora-agent claude            # Claude Code (its own login); MCP gets n8n/Playwright/Composio
 #   aurora-agent <any command>     # same env for anything else
 #
 # Exported for the child only: ROUTER_API_KEY (= LITELLM_MASTER_KEY), N8N_API_KEY,
-# N8N_API_URL, PLAYWRIGHT_MCP_URL. Nothing is printed or written to disk.
+# COMPOSIO_CONSUMER_KEY, N8N_API_URL, PLAYWRIGHT_MCP_URL. Nothing is printed or written to disk.
 set -euo pipefail
 [ $# -gt 0 ] || { sed -n '2,11p' "$0"; exit 2; }
 
@@ -17,8 +17,9 @@ secret() {  # secret NAME — value from secrets.env (written by bootstrap.sh wi
 }
 ROUTER_API_KEY="$(secret LITELLM_MASTER_KEY)"
 N8N_API_KEY="$(secret N8N_API_KEY)"
+COMPOSIO_CONSUMER_KEY="$(secret COMPOSIO_CONSUMER_KEY)"   # Composio Connect (ck_…): 1000+ app tools
 [ -n "$ROUTER_API_KEY" ] || echo "aurora-agent: LITELLM_MASTER_KEY not in secrets.env — router models won't work" >&2
-export ROUTER_API_KEY N8N_API_KEY
+export ROUTER_API_KEY N8N_API_KEY COMPOSIO_CONSUMER_KEY
 export N8N_API_URL="http://127.0.0.1:5678"
 export PLAYWRIGHT_MCP_URL="http://127.0.0.1:8931/mcp"
 
