@@ -44,15 +44,17 @@ Termux + Tailscale does everything an SSH app does, plus the scripts in `phones/
 
 | Command | What it does |
 |---|---|
-| `tune` (once) | Docker log rotation (10 MB × 3) + live-restore · 4 GB swap, swappiness 10 · more inotify watches · journald capped at 300 MB · nightly backup timer (03:30) + weekly prune timer (Sun 04:15) · btop, ncdu, duf, lazydocker |
+| `tune` (once) | Docker log rotation (10 MB × 3) + live-restore · 4 GB swap, swappiness 10 · more inotify watches · journald capped at 300 MB · nightly backup + off-box timer (03:30) + weekly prune timer (Sun 04:15) · btop, ncdu, duf, lazydocker, restic |
 | `backup` | n8n Postgres dump (restore-tested) + every stack volume (each stack paused for a few seconds) + all `.env` files, `secrets.env`, Hermes data and Tailscale state → `/var/backups/aurora/<date>`, root-only, 7 kept |
 | `prune` | removes images and build cache unused for 7+ days. **Never volumes.** |
 | `upgrade <stack>` / `upgrade all` | backup, then pull + recreate **only the services that are running** (so n8n's Caddy or the on-demand desktop don't start by surprise) |
+| `offsite` | encrypted restic copy of `/var/backups/aurora` to Cloudflare R2 (7 daily / 4 weekly / 6 monthly). Skips with a warning until the R2 keys are in `secrets.env` |
+| `restore-test` | `restic check`, restore the newest snapshot to a temp dir, verify the configs archive and the n8n dump, delete the temp dir |
+| `nightly` | `backup` then `offsite`: what the 03:30 timer runs |
 | `report` | `check.sh` + upkeep status (Docker tuning, swap, timers, last backup, tool versions, disk, anything listening off loopback). Safe to paste to Claude: no secret values |
 
-Backups stay **on the box**, which protects against mistakes, not against losing the server.
-Also copy them off: `scp -r aurora-01:/var/backups/aurora/<date> .` to the phone, or turn on
-Hetzner's backup option (+20% of the server price). Off-box restic to object storage is on the to-do list.
+Local backups protect against mistakes; `offsite` (restic → Cloudflare R2) protects against
+losing the server. Setup, checks and the real restore steps: `runbooks/BACKUP.md`.
 
 ## Tested (2026-09-27, staging copy of /opt/aurora on Docker 29.3)
 

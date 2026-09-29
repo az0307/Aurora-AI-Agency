@@ -7,6 +7,9 @@
 #   aurora maintain upgrade STACK # backup, pull newer images, recreate that stack (or: all)
 #   aurora maintain report        # full read-only health + upkeep report (paste it to Claude)
 #   aurora maintain snapshot      # backup + report + a versions/health manifest = "this worked"
+#   aurora maintain offsite       # encrypted copy of the backups to Cloudflare R2 (restic)
+#   aurora maintain restore-test  # restore the latest off-box snapshot to a temp dir + verify it
+#   aurora maintain nightly       # backup + offsite (what the 03:30 timer runs)
 #
 # `tune` sets up (each step is skipped if already done):
 #   - Docker: log rotation (10 MB × 3 per container) + live-restore (containers keep running
@@ -14,11 +17,12 @@
 #   - 4 GB swap + swappiness 10 (the 8 GB box slows down under a spike instead of OOM-killing)
 #   - kernel: more inotify watches (agents/editors watch many files), gentler cache pressure
 #   - journald capped at 300 MB
-#   - systemd timers: nightly backup 03:30, weekly prune Sun 04:15 (server local time)
-#   - admin tools: btop, ncdu, duf, lazydocker (Docker TUI)
+#   - systemd timers: nightly backup + offsite 03:30, weekly prune Sun 04:15 (server local time)
+#   - admin tools: btop, ncdu, duf, lazydocker (Docker TUI), restic
 #
-# Backups stay ON the box (/var/backups/aurora, root-only, 7 kept). That protects against
-# mistakes, not against losing the server: copy them off-box too (see server/README.md).
+# Backups land on the box (/var/backups/aurora, root-only, 7 kept), then `offsite` pushes an
+# encrypted restic copy to Cloudflare R2 (7 daily / 4 weekly / 6 monthly). Offsite needs
+# RESTIC_PASSWORD + R2_* in secrets.env (KEYS.md §5); without them it skips with a warning.
 # Never touched: Docker volumes are only read, never pruned; secrets are never printed.
 set -euo pipefail
 
@@ -70,20 +74,20 @@ tune() {
   printf '[Journal]\nSystemMaxUse=300M\n' | as_root tee /etc/systemd/journald.conf.d/aurora.conf >/dev/null
   as_root systemctl restart systemd-journald 2>/dev/null || true
 
-  say "Timers: nightly backup 03:30, weekly prune Sun 04:15"
+  say "Timers: nightly backup + offsite 03:30, weekly prune Sun 04:15"
   unit() {  # unit NAME ACTION ONCALENDAR
     printf '[Unit]\nDescription=aurora %s\n\n[Service]\nType=oneshot\nExecStart=%s/server/maintain.sh %s\nNice=10\nIOSchedulingClass=idle\n' \
       "$2" "$ROOT" "$2" | as_root tee "/etc/systemd/system/$1.service" >/dev/null
     printf '[Unit]\nDescription=aurora %s timer\n\n[Timer]\nOnCalendar=%s\nPersistent=true\nRandomizedDelaySec=10m\n\n[Install]\nWantedBy=timers.target\n' \
       "$2" "$3" | as_root tee "/etc/systemd/system/$1.timer" >/dev/null
   }
-  unit aurora-backup backup '*-*-* 03:30'
+  unit aurora-backup nightly '*-*-* 03:30'
   unit aurora-prune prune 'Sun *-*-* 04:15'
   as_root systemctl daemon-reload
   as_root systemctl enable --now aurora-backup.timer aurora-prune.timer >/dev/null
 
   say "Admin tools: btop ncdu duf lazydocker"
-  as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq btop ncdu duf >/dev/null || warn "apt tools failed"
+  as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq btop ncdu duf restic >/dev/null || warn "apt tools failed"
   if ! command -v lazydocker >/dev/null; then
     local arch; arch=$(uname -m); [ "$arch" = aarch64 ] && arch=arm64
     local url="https://github.com/jesseduffield/lazydocker/releases/download/v${LAZYDOCKER_VERSION}/lazydocker_${LAZYDOCKER_VERSION}_Linux_${arch}.tar.gz"
@@ -144,6 +148,87 @@ prune() {
   say "Freed $(( (after - before) / 1024 )) MB"
 }
 
+# ---------------------------------------------------------------------------- offsite
+# Encrypted off-box copy of $BACKUP_DIR to Cloudflare R2 (S3 API) with restic — survives
+# losing the server. Keys come from $ROOT/secrets.env and stay in this process: they reach
+# restic only through its environment (never argv), and are never printed.
+OFFSITE_STATUS="$BACKUP_DIR/.offsite-last"
+NTFY_URL="${AURORA_NTFY_URL:-http://127.0.0.1:8888/aurora-backups}"
+RESTIC_REPO=""
+
+need_root() { [ "$(id -u)" = 0 ] || exec sudo --preserve-env=AURORA_ROOT,AURORA_BACKUP_DIR "$0" "$@"; }
+
+# Load secrets.env (written with printf %q by bootstrap.sh) as plain, unexported variables.
+# Returns 1 when off-box backup isn't configured yet.
+offsite_keys() {
+  [ -f "$ROOT/secrets.env" ] || return 1
+  # shellcheck disable=SC1091
+  . "$ROOT/secrets.env"
+  [ -n "${RESTIC_PASSWORD:-}" ] && [ -n "${R2_ACCESS_KEY_ID:-}" ] && [ -n "${R2_SECRET_ACCESS_KEY:-}" ] || return 1
+  if [ -n "${AURORA_RESTIC_REPO:-}" ]; then RESTIC_REPO="$AURORA_RESTIC_REPO"   # tests: a local repo
+  else
+    [ -n "${R2_ACCOUNT_ID:-}" ] || return 1
+    RESTIC_REPO="s3:https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_BUCKET:-aurora-backups}/$(hostname -s)"
+  fi
+}
+
+# rst ARGS… — restic with the keys in its environment only.
+rst() {
+  RESTIC_REPOSITORY="$RESTIC_REPO" RESTIC_PASSWORD="$RESTIC_PASSWORD" \
+  AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID" AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY" \
+  AWS_DEFAULT_REGION=auto restic "$@"
+}
+
+offsite_fail() {  # record + push a phone alert (best effort), then fail the run
+  printf 'FAILED %s %s\n' "$(date -Is)" "$1" > "$OFFSITE_STATUS" 2>/dev/null || true
+  curl -fsS -m 10 -H "Title: aurora backup failed" -d "offsite backup failed on $(hostname -s): $1" "$NTFY_URL" >/dev/null 2>&1 || true
+  die "offsite backup failed: $1"
+}
+
+offsite() {
+  need_root offsite
+  if ! offsite_keys; then
+    warn "off-box backup skipped: set RESTIC_PASSWORD, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY in secrets.env (KEYS.md §5)"
+    return 0
+  fi
+  command -v restic >/dev/null || offsite_fail "restic not installed (run: aurora maintain tune)"
+  ls -d "$BACKUP_DIR"/20* >/dev/null 2>&1 || offsite_fail "no local backups in $BACKUP_DIR (run: aurora maintain backup)"
+  say "Off-box backup → R2 (restic, encrypted)"
+  # Initialise once; `init` refuses an existing repo, so a wrong password fails here too.
+  if ! rst cat config >/dev/null 2>&1; then
+    rst init >/dev/null 2>&1 || offsite_fail "cannot open or create the restic repo (check RESTIC_PASSWORD / R2 keys / bucket)"
+    say "  repository initialised"
+  fi
+  rst backup -q --tag aurora --host "$(hostname -s)" --exclude "$OFFSITE_STATUS" "$BACKUP_DIR" \
+    || offsite_fail "restic backup"
+  rst forget -q --tag aurora --keep-daily 7 --keep-weekly 4 --keep-monthly 6 --prune >/dev/null \
+    || offsite_fail "restic forget/prune"
+  printf 'ok %s\n' "$(date -Is)" > "$OFFSITE_STATUS"
+  say "Off-box backup done"
+}
+
+# Restore the newest snapshot into a temp dir and prove it's usable: repo integrity, the
+# newest day's configs archive lists, and the n8n dump (when present) is valid gzip.
+restore_test() {
+  need_root restore-test
+  offsite_keys || die "off-box backup isn't configured (KEYS.md §5)"
+  command -v restic >/dev/null || die "restic not installed (run: aurora maintain tune)"
+  RESTORE_TMP=$(mktemp -d); trap 'rm -rf "$RESTORE_TMP"' EXIT; local tmp="$RESTORE_TMP"
+  say "Checking repository"
+  rst check -q >/dev/null || die "restic check failed"
+  say "Restoring latest snapshot → $tmp"
+  rst restore latest --tag aurora --target "$tmp" >/dev/null || die "restore failed"
+  local day; day=$(find "$tmp" -type d -path "*${BACKUP_DIR}/20*" -prune | sort | tail -1)
+  [ -n "$day" ] || die "no backup day found in the snapshot"
+  [ -f "$day/configs.tgz" ] && tar -tzf "$day/configs.tgz" >/dev/null || die "configs.tgz missing or unreadable in $(basename "$day")"
+  if [ -f "$day/n8n-postgres.sql.gz" ]; then
+    gzip -t "$day/n8n-postgres.sql.gz" 2>/dev/null || die "n8n-postgres.sql.gz is corrupt in $(basename "$day")"
+  else warn "no n8n dump in $(basename "$day") (n8n wasn't running that night)"; fi
+  say "Restore test passed: $(basename "$day") restores cleanly. Real restore: RESTORE in runbooks/BACKUP.md"
+}
+
+nightly() { backup; offsite; }
+
 # ---------------------------------------------------------------------------- upgrade
 upgrade() {
   local target="${1:-}"; [ -n "$target" ] || die "upgrade which stack? (a stack name, or: all)"
@@ -177,6 +262,7 @@ report() {
     echo "  · $t: $(systemctl is-active "$t.timer" 2>/dev/null || echo missing) · last: ${ll:-never}"
   done
   echo "  · Latest backup: $(as_root ls -1 "$BACKUP_DIR" 2>/dev/null | grep '^20' | tail -1 || echo none)"
+  echo "  · Off-box (R2): $(as_root cat "$BACKUP_DIR/.offsite-last" 2>/dev/null || echo 'never — set R2 keys (KEYS.md §5), then: aurora maintain offsite')"
   echo "  · Tools: node $(node -v 2>/dev/null || echo -) · opencode $(opencode --version 2>/dev/null || echo -) · claude $(claude --version 2>/dev/null | head -1 || echo -) · lazydocker $(command -v lazydocker >/dev/null && echo yes || echo -)"
   echo "  · Docker disk:"; docker system df 2>/dev/null | sed 's/^/      /'
   echo "  · Listening on non-loopback addresses (should be only ssh/xrdp on tailscale + tailscaled):"
@@ -206,5 +292,6 @@ snapshot() {
 
 case "${1:-}" in
   tune) tune ;; backup) backup ;; prune) prune ;; upgrade) upgrade "${2:-}" ;; report) report ;; snapshot) snapshot ;;
-  *) sed -n '2,24p' "$0"; exit 2 ;;
+  offsite) offsite ;; restore-test) restore_test ;; nightly) nightly ;;
+  *) sed -n '2,26p' "$0"; exit 2 ;;
 esac

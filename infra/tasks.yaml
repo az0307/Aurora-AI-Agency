@@ -95,14 +95,31 @@ tasks:
     acceptance: ["SSH over Tailscale works", "provider firewall TCP 22 rule removed", "zero public TCP ports"]
 
   - id: T009
-    title: Off-box encrypted backups (restic + rclone → object storage)
+    title: Off-box encrypted backups (restic → Cloudflare R2)
     area: backup
-    status: todo
+    status: done
     owner: agent
     depends_on: [T003]
-    files: [infra/stacks/backup/]
+    files: [infra/server/maintain.sh, infra/server/test-offsite.sh, infra/server/aurora, infra/runbooks/BACKUP.md, infra/secrets.env.example, infra/KEYS.md]
     acceptance: ["nightly push to remote", "one-command restore documented + tested", "keys via secrets.env, not repo"]
-    notes: The real gap (CATALOG.md). Good first spec-driven feature (SPECKIT.md).
+    notes: >
+      Done 2026-09-29 in code; goes live when T021 (R2 bucket + keys) is done. `maintain.sh
+      offsite` pushes /var/backups/aurora to R2 with restic's native S3 backend (no rclone),
+      keeps 7d/4w/6m, records ok/FAILED in .offsite-last (shown in `report`), ntfy alert on
+      failure, skips cleanly without keys. `restore-test` = restic check + restore latest to a
+      temp dir + verify configs.tgz and the n8n dump. Timer now runs `nightly` (backup +
+      offsite); re-run `aurora maintain tune` on the box to switch it. Keys reach restic via
+      env only, never argv. test-offsite.sh (7 checks, local repo) passes with restic 0.16.4.
+
+  - id: T021
+    title: Create the R2 bucket + token and switch on off-box backups
+    area: backup
+    status: todo
+    owner: human
+    depends_on: [T009]
+    blocked_by: "needs a Cloudflare R2 bucket, a bucket-scoped token and a restic password"
+    acceptance: ["R2_* + RESTIC_PASSWORD in secrets.env and Bitwarden", "aurora maintain tune re-run", "aurora maintain offsite → ok", "aurora maintain restore-test passes"]
+    notes: Steps in runbooks/BACKUP.md §1.
 
   - id: T010
     title: Cloudflare Tunnel for the YMI lead webhook

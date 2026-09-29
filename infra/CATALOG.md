@@ -46,7 +46,7 @@ Add a provider key (OpenAI/Anthropic/Google) only if you want to bypass the rout
 | **Watchtower** | `containrrr/watchtower` | auto-image-updates — **not recommended**; use `aurora maintain upgrade` so upgrades are deliberate + backed up | tiny |
 
 ## What to add next (opinion)
-1. **Off-box backups (restic → object storage)** — the one real gap; on-box backups don't survive losing the server.
+1. **Off-box backups** — built in now: `aurora maintain offsite` (restic → Cloudflare R2). Needs the R2 keys (T021, runbooks/BACKUP.md).
 2. **Cloudflare Tunnel** — so the YMI lead webhook is reachable without a public port.
 3. **Vaultwarden** only if you want to stop depending on hosted Bitwarden; otherwise skip.
 

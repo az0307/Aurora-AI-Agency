@@ -102,6 +102,10 @@ Set automatically for Hermes: `ROUTER_API_KEY` (= `LITELLM_MASTER_KEY`). Hermes-
 | `KEY_ENCRYPTION_KEY` | OpenBot's local encryption key | Auto — generated on first `stacks-up.sh openbot`; **back up `stacks/openbot/.env`** (the nightly backup does) | — | openbot `.env` |
 | `N8N_API_KEY` | lets OpenCode / Claude Code manage n8n workflows (n8n MCP) | Needed for agent→n8n | n8n → Settings → n8n API → Create key (after the owner account exists) | agents' env via `aurora-agent` |
 | `TS_AUTHKEY` | Tailscale container (only if you use the `tailscale` stack instead of host Tailscale) | Yes (that stack) | login.tailscale.com → Settings → Keys → pre-approved | tailscale `.env` |
+| `R2_ACCOUNT_ID` | off-box backups (Cloudflare R2 endpoint) | Needed for off-box backup | Cloudflare dashboard → R2 overview | read by `maintain.sh offsite` from `secrets.env` |
+| `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | write access to the backup bucket | Needed for off-box backup | R2 → Manage API tokens → **Object Read & Write**, scoped to `aurora-backups` only | same |
+| `R2_BUCKET` | bucket name (default `aurora-backups`) | Optional | you pick it when creating the bucket | same |
+| `RESTIC_PASSWORD` | encrypts every off-box snapshot. **Lose it = off-box backups unreadable.** Keep in Bitwarden | Needed for off-box backup | `openssl rand -base64 32` | same |
 
 OpenBot routing is set for you: with `OPENAI_API_KEY` blank, `stacks-up.sh openbot` writes
 `OPENAI_API_KEY=<router key>` and `OPENAI_BASE_URL=http://litellm:4000/v1` (router over the

@@ -7,7 +7,7 @@
 #   aurora             # the menu
 #   aurora status      # jump straight to one action: status | start <stack> | stop <stack>
 #                      #   | restart <stack> | logs | opencode | claude | hermes | check | links
-#                      #   | update | maintain [tune|backup|prune|upgrade <stack>|report]
+#                      #   | update | maintain [tune|backup|offsite|restore-test|prune|upgrade <stack>|report]
 #                      #   | docker (lazydocker) | top (btop)
 #
 # Nothing here prints secrets. Starting stacks goes through stacks-up.sh (staged, health
@@ -79,7 +79,7 @@ act() {
               && bash "$ROOT/server/setup-tools.sh" --refresh \
               && echo "Updated from $BRANCH. Restart a stack to apply compose changes."
               ;;
-    maintain) local m="${2:-$(pick 'Maintenance' report backup snapshot prune upgrade tune)}"
+    maintain) local m="${2:-$(pick 'Maintenance' report backup offsite restore-test snapshot prune upgrade tune)}"
               [ -n "$m" ] || return 0
               if [ "$m" = upgrade ]; then
                 local s="${3:-$(pick 'Upgrade which stack (pulls newer images)?' all "${STACKS[@]}")}"
