@@ -12,9 +12,28 @@ B=$'\e[1m'; D=$'\e[2m'; N=$'\e[0m'
 
 pause() { echo; read -rp "${D}Enter to go back${N} " _; }
 remote() { ssh -t -o ConnectTimeout=10 "$SERVER" "$@"; }
+# link NAME → a URL saved on the server by stacks-up.sh (/opt/aurora/state/links); empty if none.
+link() { ssh -o ConnectTimeout=10 "$SERVER" "sed -n 's/^$1=//p' /opt/aurora/state/links 2>/dev/null" | tr -d "'\r"; }
+openurl() {
+  [ -n "$1" ] || { echo "No link saved yet — run 🚀 Start Hermes + OpenBot first."; return 1; }
+  echo "Opening $1"; termux-open-url "$1" 2>/dev/null || xdg-open "$1" 2>/dev/null || true
+}
+# Hermes' dashboard only answers on the server's 127.0.0.1, so forward the phone's 127.0.0.1:9119
+# to it. Own connection (not the shared ControlMaster one) so it survives other ssh sessions.
+hermes_tunnel() {
+  curl -fsS -o /dev/null -m 3 http://127.0.0.1:9119/ 2>/dev/null && return 0
+  ssh -f -N -o ControlMaster=no -o ControlPath=none -o ExitOnForwardFailure=yes \
+    -o ServerAliveInterval=30 -L 9119:127.0.0.1:9119 "$SERVER" \
+    && echo "Tunnel up (stays in the background). Close it: pkill -f 9119:127.0.0.1:9119"
+}
 
 # id | label | what it does (shown in the preview pane)
 MENU=$(cat <<'M'
+ai|🚀 Start Hermes + OpenBot|Starts the router (if needed), Hermes and OpenBot on the server, health-checks each, then shows their links. Safe to run again.
+openbot|🌐 Open OpenBot|Opens OpenBot (web chat) in the phone's browser. Tailscale must be on.
+tg|✈️  Chat with Hermes (Telegram)|Opens your Hermes bot in Telegram.
+hdash|📊 Hermes dashboard|Opens a private SSH tunnel, then the dashboard at http://127.0.0.1:9119 in the browser. The tunnel stays up in the background.
+links|🔗 All links|Every saved link (OpenBot, Telegram, assistant panel…) plus what Tailscale is serving.
 ask|💬 Ask Hermes (type)|Type a question or a job. Hermes answers here. It can use every tool: web, files, Gmail/Sheets (Composio, Zapier), GitHub, the browser. Uses your default model (general).
 askm|🧠 Ask with a chosen model|Pick a job model first (code, reason, free, uncensored…), then ask.
 voice|🎤 Voice command|Speak. Phone commands (torch, volume, battery, copy, open a site…) run ON the phone with Needle, offline. Anything else goes to Hermes and the answer is read out.
@@ -63,6 +82,11 @@ guides() {
 
 run() {
   case "$1" in
+    ai)       remote aurora ai; pause ;;
+    openbot)  openurl "$(link OPENBOT)"; pause ;;
+    tg)       openurl "$(link TELEGRAM)"; pause ;;
+    hdash)    hermes_tunnel && openurl http://127.0.0.1:9119; pause ;;
+    links)    remote aurora links; pause ;;
     ask)      aurora-ask; pause ;;
     askm)     m=$(awk -F'\t' '!/^#/ && $2=="text" {print $1}' "$KIT/data/models.tsv" | fzf --reverse --prompt="model › " --preview "aurora-models --card {1}") && aurora-ask -m "$m"; pause ;;
     voice)    aurora-needle --voice; pause ;;

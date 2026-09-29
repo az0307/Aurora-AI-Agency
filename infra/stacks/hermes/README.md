@@ -160,9 +160,11 @@ them. Keep the chat allowlist tight, and prefer `/yolo` per task over `off` fore
 
 ## Dashboard
 
-Loopback-only on port 9119 (it holds API keys). Over Tailscale:
-`tailscale serve --bg --https=9119 http://127.0.0.1:9119`, or over SSH:
-`ssh -L 9119:127.0.0.1:9119 aurora@<box>`.
+Loopback-only on port 9119 (it holds API keys). **Don't `tailscale serve` it**: the dashboard
+rejects any Host header but the one it's bound to ("Invalid Host header"), so a tailnet URL
+never loads. Use an SSH tunnel — the phone's 📊 button (`aurora hdash`) does it and opens
+`http://127.0.0.1:9119`; by hand: `ssh -N -L 9119:127.0.0.1:9119 aurora-01`. See
+[HERMES-OPENBOT.md](../../HERMES-OPENBOT.md).
 
 ## Ports it uses (host networking)
 

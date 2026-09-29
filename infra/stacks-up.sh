@@ -80,6 +80,15 @@ fill_env() {
   say "$n secret(s) written to $(realpath --relative-to="$ROOT" "$env") (values not shown)"
 }
 
+# save_link NAME URL — record a NON-secret link in $ROOT/state/links (NAME=URL). The phone's
+# `a` menu, the widgets and `aurora links` read it, so every "open X" button has a real URL.
+LINKS="$ROOT/state/links"
+save_link() {
+  [ -n "$2" ] && [ "$MODE" != --env-only ] || return 0
+  mkdir -p "$ROOT/state"; [ -f "$LINKS" ] || install -m 600 /dev/null "$LINKS"
+  setkv "$LINKS" "$1" "$2"
+}
+
 ram_check() {  # warn before starting something big on a nearly-full box
   local avail; avail=$(awk '/MemAvailable/{print int($2/1024)}' /proc/meminfo)
   [ "$avail" -ge 1500 ] || warn "only ${avail} MB RAM available — consider stopping something first"
@@ -176,6 +185,19 @@ EOF
     [ -f data/config.yaml ] || { cp config.yaml.example data/config.yaml; say "created stacks/hermes/data/config.yaml"; }
     fill_env .env.example data/.env
     up
+    # Telegram deep link: ask Telegram for the bot's @username. The token goes to curl on
+    # stdin (-K -), never on argv, and is never printed.
+    if have TELEGRAM_BOT_TOKEN; then
+      tg=$(printf 'url = "https://api.telegram.org/bot%s/getMe"\n' "$TELEGRAM_BOT_TOKEN" \
+            | curl -fsS -m 15 -K - 2>/dev/null | jq -r '.result.username // empty' 2>/dev/null || true)
+      if [ -n "$tg" ]; then save_link TELEGRAM "https://t.me/$tg"; say "chat with Hermes: https://t.me/$tg"
+      else warn "Telegram didn't accept TELEGRAM_BOT_TOKEN (getMe failed) — re-copy it from @BotFather"; fi
+    fi
+    # The dashboard stays loopback-only: it rejects any Host header but the one it's bound to
+    # (so a tailscale-serve link can't work), and it holds API keys. Reach it through an SSH
+    # tunnel instead — the phone's "Hermes dashboard" button does that for you.
+    save_link HERMES_DASHBOARD "http://127.0.0.1:9119"
+    for _ in $(seq 1 12); do curl -fsS -o /dev/null http://127.0.0.1:9119/ 2>/dev/null && { say "hermes dashboard is up (127.0.0.1:9119 — open it with the phone's 📊 button)"; break; }; sleep 5; done
     ;;
   tailscale)
     cd "$ROOT/stacks/tailscale"
@@ -229,6 +251,8 @@ EOF
     grep -q aurora-llm docker-compose.override.yml 2>/dev/null && ensure_llm_net
     up
     wait_http http://127.0.0.1:3020/api/capabilities openbot
+    save_link OPENBOT "${TS_URL:-http://127.0.0.1:3020}"
+    say "open OpenBot: ${TS_URL:-http://127.0.0.1:3020 (SSH tunnel / RDP Firefox)}"
     if grep -q '^OPENBOT_SINGLE_USER=true' .env; then warn "single-user mode: anyone on your tailnet who opens it is you. Fine for a personal tailnet; switch to OAuth before sharing the tailnet."; fi
     ;;
   assistant)
@@ -236,6 +260,10 @@ EOF
     [ -f .env ] || install -m 600 .env.example .env
     if ts_serve 8600; then setkv .env AURORA_TS_JS "\"$TS_DNS\""
     else setkv .env AURORA_TS_JS "location.hostname"; warn "no host tailscale: launcher tiles use the current hostname"; fi
+    save_link ASSISTANT "${TS_URL:-http://127.0.0.1:8600}"
+    # The "Chat with Hermes" tile needs the bot's t.me link (saved by `stacks-up.sh hermes`).
+    tg=$(sed -n "s/^TELEGRAM=//p" "$LINKS" 2>/dev/null | tr -d "'")
+    setkv .env AURORA_TG_JS "\"$tg\""
     docker ps --format '{{.Names}}' | grep -q '^n8n-n8n-1$' || warn "n8n isn't up — the 'send a task' box needs it (aurora start n8n) + the assistant-intake workflow imported & Active"
     up
     wait_http http://127.0.0.1:8600/ assistant
