@@ -100,15 +100,22 @@ wait_http() {  # wait_http URL NAME — up to ~2 min
 }
 
 # ts_serve PORT — publish 127.0.0.1:PORT on the tailnet only (HTTPS, never Funnel) and set
-# TS_URL=https://<box>.<tailnet>.ts.net:PORT. Returns 1 (TS_URL empty) without a host tailscale.
+# TS_URL=https://<box>.<tailnet>.ts.net:PORT. Returns 1 (TS_URL empty) when Tailscale isn't up.
 TS_DNS=""; TS_URL=""
+# tsc ARGS… — the Tailscale CLI, wherever it lives: a host install, else the `tailscale`
+# container from stacks/tailscale (host network + kernel mode, so its `serve` publishes the
+# host's 127.0.0.1 ports and the serve config persists in its ./state volume).
+tsc() {
+  if command -v tailscale >/dev/null; then sudo tailscale "$@"
+  elif docker ps --format '{{.Names}}' 2>/dev/null | grep -qx tailscale; then docker exec tailscale tailscale "$@"
+  else return 127; fi
+}
 ts_serve() {
   TS_URL=""
-  command -v tailscale >/dev/null || return 1
-  [ -n "$TS_DNS" ] || TS_DNS=$(tailscale status --json 2>/dev/null | jq -r '.Self.DNSName // empty' | sed 's/\.$//')
+  [ -n "$TS_DNS" ] || TS_DNS=$(tsc status --json 2>/dev/null | jq -r '.Self.DNSName // empty' 2>/dev/null | sed 's/\.$//' || true)
   [ -n "$TS_DNS" ] || return 1
   TS_URL="https://$TS_DNS:$1"
-  [ "$MODE" = --env-only ] || sudo tailscale serve --bg --https="$1" "http://127.0.0.1:$1" >/dev/null
+  [ "$MODE" = --env-only ] || tsc serve --bg --https="$1" "http://127.0.0.1:$1" >/dev/null
 }
 
 # The router's compose creates aurora-llm. A stack that joins it as `external` before the router
@@ -204,7 +211,14 @@ EOF
     need TS_AUTHKEY
     fill_env .env.example .env
     up
-    echo "  Next: check the admin console for aurora-01, then SETUP.md §8 (remove public SSH)."
+    for _ in $(seq 1 12); do
+      TS_DNS=$(tsc status --json 2>/dev/null | jq -r '.Self.DNSName // empty' 2>/dev/null | sed 's/\.$//' || true)
+      [ -n "$TS_DNS" ] && break; sleep 5
+    done
+    if [ -n "$TS_DNS" ]; then say "on your tailnet as $TS_DNS — re-run the other stacks (or: aurora ai) to publish their links"
+    else warn "not logged in yet — docker logs tailscale (expired/used TS_AUTHKEY? make a new one)"; fi
+    echo "  Tailnet links need MagicDNS + HTTPS Certificates on: login.tailscale.com/admin/dns"
+    echo "  Next: SETUP.md §8 (remove public SSH)."
     ;;
   computer)
     cd "$ROOT/stacks/computer"
@@ -245,7 +259,7 @@ EOF
       setkv .env TRUSTED_ORIGINS "http://127.0.0.1:3020,http://localhost:3020,$TS_URL"
       say "tailnet-only: $TS_URL"
     else
-      warn "host tailscale CLI not found: OpenBot stays on 127.0.0.1:3020 (SSH tunnel / RDP Firefox)"
+      warn "Tailscale isn't up (stacks-up.sh tailscale): OpenBot stays on 127.0.0.1:3020 (SSH tunnel / RDP Firefox)"
     fi
     for c in ollama desktop; do docker ps --format '{{.Names}}' 2>/dev/null | grep -q "$c" && warn "a container matching '$c' is running — OpenBot + it may not fit in 8 GB"; done
     grep -q aurora-llm docker-compose.override.yml 2>/dev/null && ensure_llm_net
@@ -259,7 +273,7 @@ EOF
     cd "$ROOT/stacks/assistant"
     [ -f .env ] || install -m 600 .env.example .env
     if ts_serve 8600; then setkv .env AURORA_TS_JS "\"$TS_DNS\""
-    else setkv .env AURORA_TS_JS "location.hostname"; warn "no host tailscale: launcher tiles use the current hostname"; fi
+    else setkv .env AURORA_TS_JS "location.hostname"; warn "Tailscale isn't up (stacks-up.sh tailscale): launcher tiles use the current hostname"; fi
     save_link ASSISTANT "${TS_URL:-http://127.0.0.1:8600}"
     # The "Chat with Hermes" tile needs the bot's t.me link (saved by `stacks-up.sh hermes`).
     tg=$(sed -n "s/^TELEGRAM=//p" "$LINKS" 2>/dev/null | tr -d "'")
@@ -275,7 +289,7 @@ EOF
     if ts_serve 3002; then
       setkv .env HOMEPAGE_VAR_TS "$TS_DNS"
       setkv .env HOMEPAGE_ALLOWED_HOSTS "127.0.0.1:3002,localhost:3002,$TS_DNS:3002"
-    else warn "host tailscale CLI not found: links in the dashboard will point at aurora-01.example.ts.net"; fi
+    else warn "Tailscale isn't up (stacks-up.sh tailscale): links in the dashboard will point at aurora-01.example.ts.net"; fi
     have TZ && setkv .env TZ "$TZ"
     up
     wait_http http://127.0.0.1:3002 dashboard
@@ -284,7 +298,7 @@ EOF
   admin)
     cd "$ROOT/stacks/admin"
     mkdir -p data
-    ts_serve 5001 || warn "host tailscale CLI not found: Dockge stays on 127.0.0.1:5001"
+    ts_serve 5001 || warn "Tailscale isn't up (stacks-up.sh tailscale): Dockge stays on 127.0.0.1:5001"
     up
     wait_http http://127.0.0.1:5001 dockge
     say "open ${TS_URL:-http://127.0.0.1:5001} NOW and create the admin login (first visitor becomes admin)"
@@ -295,7 +309,7 @@ EOF
     wait_http http://127.0.0.1:3001 "uptime-kuma"
     # Publish both on the tailnet (the start page links Kuma :3001 and Dozzle :8080). Never Funnel.
     if ts_serve 3001 && ts_serve 8080; then say "open on your phone: https://$TS_DNS:3001 (Kuma) · :8080 (Dozzle logs)"
-    else warn "host tailscale CLI not found: Kuma/Dozzle stay on 127.0.0.1:3001 / :8080"; fi
+    else warn "Tailscale isn't up (stacks-up.sh tailscale): Kuma/Dozzle stay on 127.0.0.1:3001 / :8080"; fi
     ;;
   status)
     docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
