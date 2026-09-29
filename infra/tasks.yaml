@@ -422,3 +422,16 @@ tasks:
       INTELLIGENCE_API_KEY → Bitwarden → `aurora-secrets fill` → `./bootstrap.sh --ship-only`.
       Then on the phone: `git -C ~/aurora pull`, `aurora widgets`, `ssh -t aurora-01 aurora update`,
       `a` → 🚀. Full card: infra/HERMES-OPENBOT.md.
+  - id: T037
+    title: Tailnet links skipped when Tailscale runs as the container
+    area: tailscale
+    status: done
+    owner: agent
+    files: [infra/stacks-up.sh, infra/server/aurora, infra/HERMES-OPENBOT.md]
+    acceptance: ["with only the `tailscale` container, stacks-up.sh openbot prints a https://<box>.ts.net:3020 link"]
+    notes: >
+      Done 2026-09-29. stacks/tailscale is Tailscale's standalone-Docker setup, but ts_serve and
+      `aurora links` only looked for a host CLI, so every tailnet link fell back to 127.0.0.1.
+      tsc() now uses the host CLI or `docker exec tailscale tailscale`; the tailscale stack reports
+      its MagicDNS name; `aurora ai` starts Tailscale first if it's down. Tested with a docker stub
+      (serve called with the right args; no-Tailscale path exits cleanly under set -e).

@@ -84,20 +84,30 @@ After you pull this change on the phone:
    - The fix: the string is now single-quoted.
    - It also carries the Telegram link, so there's a **Chat with Hermes** tile, which hides itself
      until the bot exists.
-3. **OpenBot uses CopilotKit's cloud service** (`INTELLIGENCE_API_KEY`), so chats pass through a
+3. **Tailnet links were skipped when Tailscale runs in Docker.**
+   - The problem: `stacks/tailscale` runs Tailscale as a container (Tailscale's
+     [standalone Docker setup](https://tailscale.com/docs/features/containers/docker/how-to/connect-docker-standalone)),
+     but the scripts only looked for a host install. OpenBot, the control panel, the start page,
+     Kuma and Dockge silently fell back to 127.0.0.1.
+   - The fix: every `tailscale` call now uses the host CLI if there is one, else
+     `docker exec tailscale tailscale …`. The container uses host networking, so its `serve`
+     publishes the host's 127.0.0.1 ports, and the serve config survives restarts in its
+     `./state` volume.
+   - `aurora ai` now starts Tailscale first when it isn't running.
+4. **OpenBot uses CopilotKit's cloud service** (`INTELLIGENCE_API_KEY`), so chats pass through a
    third party.
    - Don't paste client personal information into OpenBot.
    - For client work use Hermes on a paid model chain (`general`, `code`, …, never a `-free` one).
-4. **OpenBot is in single-user mode.** Anyone on your tailnet who opens it *is you*. That's fine
+5. **OpenBot is in single-user mode.** Anyone on your tailnet who opens it *is you*. That's fine
    while the tailnet is just your devices. Switch it to OAuth before you share the tailnet.
-5. **Hermes answers only the people in `TELEGRAM_ALLOWED_USERS`.** Leave
+6. **Hermes answers only the people in `TELEGRAM_ALLOWED_USERS`.** Leave
    `GATEWAY_ALLOW_ALL_USERS=false`. The bot can run commands and spend your credits.
-6. **Memory: the box has 8 GB.** router + n8n + Hermes + OpenBot fit. Don't also run Ollama or the
+7. **Memory: the box has 8 GB.** router + n8n + Hermes + OpenBot fit. Don't also run Ollama or the
    computer-use desktop at the same time, and `stacks-up.sh openbot` warns if they're up.
-7. **The dashboard tunnel keeps running in the background.** That costs a little battery. Close it
+8. **The dashboard tunnel keeps running in the background.** That costs a little battery. Close it
    with `pkill -f 9119:127.0.0.1:9119`, or it ends when Termux is killed.
-8. **Links can only be opened from your own devices.** Everything is tailnet-only: no Funnel, no
+9. **Links can only be opened from your own devices.** Everything is tailnet-only: no Funnel, no
    public port, and Telegram connects outbound. A phone without Tailscale on can still use
    Telegram, but not the web links.
-9. **Nothing here can start from a cloud session.** The server is reachable only from your
+10. **Nothing here can start from a cloud session.** The server is reachable only from your
    tailnet, so the first `aurora ai` has to be run by you, from the phone.
