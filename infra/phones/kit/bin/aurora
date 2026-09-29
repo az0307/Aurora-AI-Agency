@@ -29,6 +29,7 @@ hermes_tunnel() {
 
 # id | label | what it does (shown in the preview pane)
 MENU=$(cat <<'M'
+mega|⚡ MEGA: bring everything up|Phone kit + buttons, server update, Tailscale → router → Hermes → OpenBot, control panel + start page, health check, opens the panel, then Claude on the server. Safe to re-run.
 ai|🚀 Start Hermes + OpenBot|Starts the router (if needed), Hermes and OpenBot on the server, health-checks each, then shows their links. Safe to run again.
 openbot|🌐 Open OpenBot|Opens OpenBot (web chat) in the phone's browser. Tailscale must be on.
 tg|✈️  Chat with Hermes (Telegram)|Opens your Hermes bot in Telegram.
@@ -83,6 +84,7 @@ guides() {
 
 run() {
   case "$1" in
+    mega)     aurora-mega; pause ;;
     ai)       remote aurora ai; pause ;;
     openbot)  openurl "$(link OPENBOT)"; pause ;;
     tg)       openurl "$(link TELEGRAM)"; pause ;;

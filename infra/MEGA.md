@@ -11,6 +11,10 @@ Then paste **Block B** into the Claude session that Block A opens on the server.
 
 ## Block A: Termux (phone)
 
+**Shortest:** tap the **mega** widget, or type `aurora-mega` (also `a` → ⚡). The first time,
+before the kit has it, run `git -C ~/aurora pull && bash ~/aurora/infra/phones/kit/bin/aurora-mega`.
+It runs exactly the block below.
+
 ```sh
 # ── 1. Phone: latest kit + all home-screen buttons ──────────────────────────────────────
 git -C ~/aurora pull --ff-only && aurora widgets
