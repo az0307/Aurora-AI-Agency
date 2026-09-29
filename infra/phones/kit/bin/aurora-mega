@@ -1,0 +1,50 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# aurora-mega — bring EVERYTHING up from the phone in one go (infra/MEGA.md, Block A).
+#
+#   aurora-mega            # all four steps
+#   aurora-mega --no-claude  # skip step 4 (Claude on the server)
+#
+# Safe to re-run: stacks missing a key are skipped with the key's name; nothing is bought;
+# no secret is printed. Tailscale must be on.
+#
+# Everything is inside main(): step 1 git-pulls THIS file, and bash reads a function whole
+# before running it, so the update can't corrupt the run in progress.
+main() {
+set -uo pipefail
+SERVER=${AURORA_SERVER:-aurora-01}
+KIT=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+REPO=$(cd "$KIT/../../.." && pwd)
+B=$'\e[1;36m'; N=$'\e[0m'
+step() { printf '\n%s━━ %s%s\n' "$B" "$*" "$N"; }
+
+command -v jq >/dev/null || { echo "Installing jq…"; pkg install -y jq >/dev/null 2>&1 || true; }
+
+step "1/4 Phone: latest kit + home-screen buttons"
+git -C "$REPO" pull --ff-only || echo "  (pull failed — carrying on with the kit you have)"
+"$KIT/bin/aurora-widgets" install || true
+
+step "2/4 Server: update → Tailscale → router → Hermes → OpenBot → panel → start page → check"
+ssh -t -o ConnectTimeout=15 "$SERVER" 'aurora update && aurora ai
+  bash /opt/aurora/stacks-up.sh assistant
+  bash /opt/aurora/stacks-up.sh dashboard
+  bash /opt/aurora/check.sh' \
+  || echo "  (some steps reported problems — read above; fix and re-run, it's safe)"
+
+step "3/4 Tailnet name + control panel"
+TS=$(ssh -o ConnectTimeout=15 "$SERVER" 'docker exec tailscale tailscale status --json 2>/dev/null || tailscale status --json' 2>/dev/null \
+     | jq -r '.Self.DNSName // empty' 2>/dev/null | sed 's/\.$//')
+if [ -n "$TS" ]; then
+  echo "$TS" > "$HOME/.aurora_ts"
+  echo "Control panel: https://$TS:8600"
+  termux-open-url "https://$TS:8600" 2>/dev/null || true
+else
+  echo "Couldn't read the server's tailnet name — is Tailscale up on it? (ssh -t $SERVER aurora start tailscale)"
+fi
+
+if [ "${1:-}" = --no-claude ]; then exit 0; fi
+step "4/4 Claude on the server → Claude app → Code (Ctrl-b d leaves it running)"
+read -rp "Start it now? [Y/n] " a
+[[ "$a" =~ ^[Nn] ]] && exit 0
+exec "$KIT/bin/aurora" claude
+}
+main "$@"
