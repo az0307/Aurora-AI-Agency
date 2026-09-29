@@ -9,7 +9,8 @@ server {
   # Injects the box's tailnet name so the launcher tiles point at https://<box>:PORT.
   location = /base.js {
     default_type application/javascript;
-    return 200 "window.AURORA_TS=${AURORA_TS_JS};";
+    # Single-quoted: the injected values are JS strings that carry their own double quotes.
+    return 200 'window.AURORA_TS=${AURORA_TS_JS};window.AURORA_TG=${AURORA_TG_JS};';
   }
 
   # "Send to assistant" → the n8n assistant-intake webhook (unauthenticated by design, on the

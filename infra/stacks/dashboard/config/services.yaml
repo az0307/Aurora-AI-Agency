@@ -13,8 +13,10 @@
         server: local
         container: aurora-openbot
     - Hermes:
-        href: https://{{HOMEPAGE_VAR_TS}}:9119
-        description: The always-on agent (dashboard; chat is on Telegram)
+        # Loopback-only (it rejects tailnet Host headers): tap the phone's 📊 button first — it
+        # opens an SSH tunnel, then this link works on that phone. Chat is in Telegram.
+        href: http://127.0.0.1:9119
+        description: Agent dashboard (phone 📊 tunnel first) · chat in Telegram
         icon: mdi-message-flash
         server: local
         container: hermes

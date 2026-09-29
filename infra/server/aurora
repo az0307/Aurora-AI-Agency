@@ -7,6 +7,7 @@
 #   aurora             # the menu
 #   aurora status      # jump straight to one action: status | start <stack> | stop <stack>
 #                      #   | restart <stack> | logs | opencode | claude | hermes | check | links
+#                      #   | ai (router → Hermes → OpenBot, then their links)
 #                      #   | update | maintain [tune|backup|offsite|offsite-status|offsite-restore|prune|upgrade <stack>|report|pg-upgrade]
 #                      #   | docker (lazydocker) | top (btop)
 #
@@ -66,7 +67,20 @@ act() {
     claude)   aurora-agent claude ;;
     hermes)   docker exec -it hermes hermes ;;
     check)    bash "$ROOT/check.sh" ;;
-    links)    echo "Tailnet-only links (open on a phone/PC that's on Tailscale):"
+    ai)       # Hermes + OpenBot (and the router both think through), then print their links
+              local s
+              for s in router hermes openbot; do
+                if [ "$s" = router ] && curl -fsS -o /dev/null http://127.0.0.1:4000/health/liveliness 2>/dev/null; then continue; fi
+                echo; printf '\033[1;36m==> ai: %s\033[0m\n' "$s"
+                bash "$ROOT/stacks-up.sh" "$s" || echo "  $s didn't start — fix the message above, then: aurora start $s"
+              done
+              echo; act links ;;
+    links)    if [ -s "$ROOT/state/links" ]; then
+                echo "Your links (saved by stacks-up.sh; tailnet ones need Tailscale on):"
+                tr -d "'" < "$ROOT/state/links" | awk -F= '{printf "  %-17s %s\n", $1, substr($0, length($1)+2)}'
+                echo "  (HERMES_DASHBOARD works on the phone after its 📊 tunnel button)"; echo
+              fi
+              echo "Tailnet-only links (open on a phone/PC that's on Tailscale):"
               sudo tailscale serve status 2>/dev/null || echo "  tailscale serve isn't set up on the host"
               echo; echo "On the box itself (RDP Firefox): n8n http://127.0.0.1:5678 · router http://127.0.0.1:4000/ui"
               echo "  Hermes http://127.0.0.1:9119 · OpenBot http://127.0.0.1:3020 · Kuma http://127.0.0.1:3001 · Dozzle http://127.0.0.1:8080" ;;
@@ -96,6 +110,6 @@ act() {
 
 while :; do
   choice=$(pick "What do you want to do?" \
-    status up start stop restart logs docker top opencode claude hermes kali check links maintain update shell quit) || exit 0
+    status up ai start stop restart logs docker top opencode claude hermes kali check links maintain update shell quit) || exit 0
   case "$choice" in quit|"") exit 0 ;; *) clear; act "$choice"; pause ;; esac
 done

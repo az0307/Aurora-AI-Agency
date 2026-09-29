@@ -14,6 +14,8 @@ services:
       # base.js is JS, so the value must be a quoted JS string. stacks-up.sh sets AURORA_TS_JS
       # to '"<box>.<tailnet>.ts.net"' (or 'location.hostname' when there's no tailnet yet).
       AURORA_TS_JS: ${AURORA_TS_JS:-location.hostname}
+      # '"https://t.me/<bot>"' once `stacks-up.sh hermes` has looked the bot up; '""' hides the tile.
+      AURORA_TG_JS: ${AURORA_TG_JS:-""}
     ports:
       - "127.0.0.1:8600:8600"
     volumes:

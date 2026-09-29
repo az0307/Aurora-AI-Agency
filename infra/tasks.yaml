@@ -394,3 +394,31 @@ tasks:
       --ship-only` (Hermes uses the same key). On the box after `aurora update`: move the two
       *.new configs over (server/README.md → Composio), start `aurora-agent claude`, approve
       `composio`, then ask it to do something in Gmail/Sheets and open the sign-in link it gives.
+  - id: T035
+    title: One-tap start + real links for Hermes and OpenBot (phone, server, control panel)
+    area: hermes
+    status: done
+    owner: agent
+    files: [infra/stacks-up.sh, infra/server/aurora, infra/phones/kit/bin/aurora, infra/phones/kit/widgets/shortcuts/, infra/stacks/assistant/, infra/stacks/dashboard/config/services.yaml, infra/HERMES-OPENBOT.md]
+    acceptance: ["`aurora ai` starts router → hermes → openbot and prints links", "phone `a` has 🚀/🌐/✈️/📊/🔗", "control panel serves base.js with the tailnet name"]
+    notes: >
+      Done 2026-09-29. Found + fixed: the assistant panel's nginx template crashed on start once
+      Tailscale was on ([emerg] unexpected "a" — double quotes inside a double-quoted string;
+      reproduced with nginx:1.27-alpine, fixed with single quotes, base.js verified). The Hermes
+      dashboard can't be tailscale-served (it rejects foreign Host headers), so it stays loopback and
+      the phone reaches it through an SSH tunnel (`aurora hdash`). stacks-up.sh records non-secret
+      links in /opt/aurora/state/links (Telegram t.me link looked up with the token on curl's stdin).
+      Tested: save_link, Telegram lookup (stub), panel render at 390px (no page errors, tile hides
+      without a bot). Not run on aurora-01 — needs T004/T007 keys, then `aurora update` + `aurora ai`.
+  - id: T036
+    title: Fire up Hermes + OpenBot on aurora-01
+    area: hermes
+    status: todo
+    owner: human
+    depends_on: [T004, T035]
+    acceptance: ["`aurora ai` ends with OPENBOT + TELEGRAM links", "bot replies on Telegram", "OpenBot opens from the phone's 🌐 button"]
+    notes: >
+      Keys: LITELLM_MASTER_KEY + OPENROUTER_API_KEY, TELEGRAM_BOT_TOKEN + TELEGRAM_ALLOWED_USERS,
+      INTELLIGENCE_API_KEY → Bitwarden → `aurora-secrets fill` → `./bootstrap.sh --ship-only`.
+      Then on the phone: `git -C ~/aurora pull`, `aurora widgets`, `ssh -t aurora-01 aurora update`,
+      `a` → 🚀. Full card: infra/HERMES-OPENBOT.md.

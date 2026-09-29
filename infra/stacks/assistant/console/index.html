@@ -91,7 +91,10 @@ const base = (port, path="") => `https://${TS}${port?":"+port:""}${path}`;
 const cards = {
   talk: [
     ["OpenBot", "Web AI assistant (OpenBot)", 3020, "/", "openbot"],
-    ["Hermes dashboard", "The always-on agent · chat is on Telegram", 9119, "/", "hermes"],
+    ["Chat with Hermes", "The always-on agent, in Telegram", window.AURORA_TG || "", "", "hermes"],
+    // The Hermes dashboard only answers on 127.0.0.1 — the phone's 📊 button opens an SSH
+    // tunnel first, after which this link works on that phone.
+    ["Hermes dashboard", "Needs the phone's 📊 tunnel button first", "http://127.0.0.1:9119", "/", "hermes"],
   ],
   run: [
     ["n8n", "Workflows & automations", 0, "/", "n8n"],
@@ -109,8 +112,9 @@ function render(){
   for(const [sec, items] of Object.entries(cards)){
     const el = document.getElementById(sec); el.innerHTML="";
     for(const [t,d,port,path,id] of items){
+      if(port==="") continue;   // e.g. no Telegram bot yet
       const a=document.createElement("a"); a.className="card";
-      a.href = port===0 ? base(0,path) : base(port,path); a.target="_blank"; a.rel="noopener";
+      a.href = typeof port==="string" ? port+path : base(port,path); a.target="_blank"; a.rel="noopener";
       a.innerHTML=`<span class="t"><span class="dot unknown" data-id="${id}"></span>${t}</span><span class="d">${d}</span>`;
       el.appendChild(a);
     }
