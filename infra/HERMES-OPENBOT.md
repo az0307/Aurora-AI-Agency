@@ -57,6 +57,7 @@ aurora ai                           # start router → Hermes → OpenBot, then 
 aurora tg                           # open Hermes in Telegram
 aurora openbot                      # open OpenBot in the browser
 aurora hdash                        # tunnel + open the Hermes dashboard
+aurora claude                       # Claude Code ON the server, driven from the Claude app → Code
 pkill -f 9119:127.0.0.1:9119        # close the dashboard tunnel
 aurora logs                         # follow Hermes' logs (Ctrl-C to stop)
 aurora restart                      # reload Hermes' keys from secrets.env and restart it

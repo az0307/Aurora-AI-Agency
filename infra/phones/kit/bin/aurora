@@ -42,6 +42,7 @@ image|🖼  Make an image|Describe it; Hermes makes it on the server and it land
 video|🎬 Make a video|Describe it; 1–10 minutes; lands in Movies/Aurora. ~3–50¢ per second depending on the model.
 models|📊 Model guide|Which model is best for what, what it costs, and what data it may see.
 shell|🖥  Server terminal|mosh + tmux on the server (session "main"). Detach with Ctrl-a d.
+claude|🧑‍💻 Claude on the server (Remote Control)|Starts Claude Code ON aurora-01 (router, n8n, browser, Composio wired in) inside tmux and links it to the Claude app → Code, so you drive it from the phone. Keeps running after you close Termux (Ctrl-b d to leave). First time: it asks you to /login.
 hermes|🤖 Hermes terminal UI|The full Hermes TUI on the server (all slash commands).
 check|✅ Check the server|Read-only health check: containers, exposure, models, Hermes, MCP, Tailscale, RAM/disk.
 live|🧪 Check + test every model|Same, plus one tiny message to every model chain (a few cents).
@@ -95,6 +96,8 @@ run() {
     video)    read -rp "Seconds (4–15, Enter = model default): " s; aurora-gen video ${s:+--seconds "$s"}; pause ;;
     models)   aurora-models ;;
     shell)    command -v mosh >/dev/null && mosh "$SERVER" -- tmux new -A -s main || remote tmux new -A -s main ;;
+    # Remote Control needs a logged-in Claude Code; if it isn't yet, open plain `claude` for /login.
+    claude)   remote "tmux new -A -s claude 'aurora-agent claude remote-control || { echo; echo \"Not logged in? Type /login, finish, then /exit and tap this again.\"; aurora-agent claude; }'" ;;
     hermes)   remote docker exec -it hermes hermes ;;
     check)    remote bash /opt/aurora/check.sh; pause ;;
     live)     remote bash /opt/aurora/check.sh --live; pause ;;
