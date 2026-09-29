@@ -1,5 +1,7 @@
 # Hermes + OpenBot: start them, open them
 
+The one paste-in block that brings everything up is in [MEGA.md](./MEGA.md).
+
 This page covers how to start Hermes and OpenBot, the links to open each one, and the phone
 commands. Each piece lives in the repo, so nothing here is a one-off.
 
