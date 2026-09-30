@@ -8,11 +8,12 @@ export function useWebSocket(onMessage) {
   const wsRef = useRef(null);
   const reconnectCount = useRef(0);
   const reconnectTimer = useRef(null);
+  const disposed = useRef(false);
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
 
   const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (disposed.current || wsRef.current?.readyState === WebSocket.OPEN) return;
 
     const token = localStorage.getItem('ab_token');
     if (!token) {
@@ -41,6 +42,7 @@ export function useWebSocket(onMessage) {
 
     ws.onclose = () => {
       console.log('[ws] closed');
+      if (disposed.current) return;
       if (reconnectCount.current < MAX_RECONNECTS) {
         reconnectCount.current++;
         reconnectTimer.current = setTimeout(connect, RECONNECT_DELAY);
@@ -54,8 +56,10 @@ export function useWebSocket(onMessage) {
   }, []);
 
   useEffect(() => {
+    disposed.current = false;
     connect();
     return () => {
+      disposed.current = true;
       clearTimeout(reconnectTimer.current);
       wsRef.current?.close();
     };
