@@ -35,7 +35,7 @@ echo
 # --- 1. Local tooling ------------------------------------------------------
 echo "Local tooling"
 command -v curl >/dev/null && pass "curl present" || fail "curl missing"
-command -v jq   >/dev/null && pass "jq present"   || warn "jq missing (output will be raw JSON)"
+command -v jq   >/dev/null && pass "jq present"   || warn "jq missing (server-type/location compatibility check will be skipped, not just raw JSON)"
 command -v terraform >/dev/null && pass "terraform present" \
   || warn "terraform missing — fine if you provision via the Hetzner MCP instead"
 echo
@@ -82,10 +82,10 @@ esac
 
 # --- 4. Does this server type exist in this location? ----------------------
 # This is the check that catches the CAX-is-EU-only class of mistake.
-types_json="$(curl "${auth[@]}" "${API}/server_types?per_page=100")"
-locs_json="$(curl "${auth[@]}" "${API}/locations")"
-
 if command -v jq >/dev/null; then
+  types_json="$(curl "${auth[@]}" "${API}/server_types?per_page=100")"
+  locs_json="$(curl "${auth[@]}" "${API}/locations")"
+
   if ! echo "$locs_json" | jq -e --arg l "$LOCATION" '.locations[]|select(.name==$l)' >/dev/null; then
     fail "location '$LOCATION' does not exist. Available: $(echo "$locs_json" | jq -r '[.locations[].name]|join(", ")')"
   else
@@ -123,7 +123,7 @@ echo
 
 # --- 5. Existing footprint (so you don't double-provision) -----------------
 if command -v jq >/dev/null; then
-  n="$(curl "${auth[@]}" "${API}/servers?per_page=50" | jq '.servers|length')"
+  n="$(curl "${auth[@]}" "${API}/servers?per_page=1" | jq '.meta.pagination.total_entries')"
   if [ "$n" = "0" ]; then
     pass "no existing servers in this Project (clean slate)"
   else
