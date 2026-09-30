@@ -22,6 +22,7 @@ python mcp_server.py
 ## n8n Integration
 
 Use the MCP node or HTTP Request node to call `http://localhost:3001` (when wrapped with an HTTP bridge).
+The bridge requires an `X-MCP-Token` header matching `MCP_BRIDGE_TOKEN`; with the variable unset it returns 503 for every call.
 
 ## Security
 
