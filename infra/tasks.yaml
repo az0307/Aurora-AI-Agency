@@ -435,3 +435,29 @@ tasks:
       tsc() now uses the host CLI or `docker exec tailscale tailscale`; the tailscale stack reports
       its MagicDNS name; `aurora ai` starts Tailscale first if it's down. Tested with a docker stub
       (serve called with the right args; no-Tailscale path exits cleanly under set -e).
+  - id: T038
+    title: Cua desktop (trycua/cua) for MCP agents
+    area: stacks
+    status: done
+    owner: agent
+    files: [infra/stacks/computer/cua/, infra/stacks/computer/docker-compose.yml, infra/stacks-up.sh, infra/server/claude-mcp.json, infra/server/opencode.json, infra/phones/kit/bin/aurora]
+    acceptance: ["stacks-up.sh cua → computer-cua healthy, noVNC on 127.0.0.1:6081 + tailnet", "`cua` MCP server lists 62 tools in aurora-agent claude"]
+    notes: >
+      Done 2026-09-30. Cua Driver 0.30.4 (MIT), release tarball pinned + sha256-checked against the
+      release's checksums.txt; telemetry off before first run. Debian 12 + XFCE on Xvfb, AT-SPI,
+      x11vnc (container-local) + noVNC (the only published port, loopback). Non-root user, no host
+      mounts, no Docker socket; standard permission mode (the container is the boundary). Agents
+      attach over stdio: docker exec -i computer-cua cua-driver mcp --socket …. Tested here via
+      compose: healthy, 62 tools, launch_app + type_text + screenshot + accessibility tree (menus by
+      name). Hermes can't use it yet (its container has no Docker socket, by design).
+  - id: T039
+    title: Try the Cua desktop on aurora-01
+    area: stacks
+    status: todo
+    owner: human
+    depends_on: [T038]
+    acceptance: ["phone `a` → 🖥 Cua desktop opens the live screen", "`aurora-agent claude` → /mcp shows cua connected"]
+    notes: >
+      `aurora update` (configs you edited land as *.new — see server/README.md), then `a` → 🖥 Cua
+      desktop. First start builds the image (~5 min, ~1 GB). In `aurora-agent claude`, ask: "use the
+      cua desktop to open Firefox at example.com and tell me the heading". Stop it after: `a` → ⏹ Cua.

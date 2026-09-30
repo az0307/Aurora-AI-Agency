@@ -12,6 +12,7 @@
 #   bash /opt/aurora/stacks-up.sh monitoring   # Uptime Kuma + Dozzle
 #   bash /opt/aurora/stacks-up.sh computer     # Playwright MCP browser on 127.0.0.1:8931
 #   bash /opt/aurora/stacks-up.sh openbot      # OpenBot on 127.0.0.1:3020 (+ Tailscale Serve :3020)
+#   bash /opt/aurora/stacks-up.sh cua          # Cua desktop for MCP agents, noVNC 127.0.0.1:6081 (+ tailnet :6081)
 #   bash /opt/aurora/stacks-up.sh dashboard    # Homepage start page, 127.0.0.1:3002 (+ tailnet :3002)
 #   bash /opt/aurora/stacks-up.sh admin        # Dockge stack manager GUI, 127.0.0.1:5001 (+ tailnet :5001)
 #   bash /opt/aurora/stacks-up.sh assistant    # Aurora Assistant control panel, 127.0.0.1:8600 (+ tailnet :8600)
@@ -229,6 +230,19 @@ EOF
       [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8931/mcp)" != 000 ] && { say "playwright MCP is listening on 127.0.0.1:8931/mcp"; break; }
       sleep 2
     done
+    ;;
+  cua)
+    # Cua desktop (on demand, ~1–2 GB): built locally from stacks/computer/cua (pinned, checksum-verified).
+    cd "$ROOT/stacks/computer"
+    for c in ollama computer-desktop; do docker ps --format '{{.Names}}' 2>/dev/null | grep -q "$c" && warn "'$c' is running — it + the Cua desktop may not fit in 8 GB"; done
+    [ "$MODE" = --env-only ] && { say "env only; not starting"; exit 0; }
+    ram_check; docker compose --profile cua up -d --build cua
+    for _ in $(seq 1 30); do docker exec computer-cua cua-driver status >/dev/null 2>&1 && { say "cua driver is ready"; break; }; sleep 3; done
+    docker exec computer-cua cua-driver status >/dev/null 2>&1 || die "Cua desktop didn't get ready — docker logs computer-cua"
+    if ts_serve 6081; then save_link CUA "$TS_URL/vnc.html?autoconnect=1&resize=scale"; say "watch it: $TS_URL/vnc.html?autoconnect=1&resize=scale"
+    else save_link CUA "http://127.0.0.1:6081/vnc.html?autoconnect=1&resize=scale"; warn "Tailscale isn't up (stacks-up.sh tailscale): noVNC stays on 127.0.0.1:6081"; fi
+    echo "  Agents: Claude Code / OpenCode (aurora-agent) have a 'cua' MCP server — ask them to use the Cua desktop."
+    echo "  Stop (gives the RAM back): cd $ROOT/stacks/computer && docker compose --profile cua stop cua"
     ;;
   openbot)
     cd "$ROOT/stacks/openbot"

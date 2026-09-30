@@ -48,6 +48,11 @@
       "oauth": false,
       "headers": { "x-consumer-api-key": "{env:COMPOSIO_CONSUMER_KEY}" },
       "enabled": true
+    },
+    "cua": {
+      "type": "local",
+      "command": ["docker", "exec", "-i", "computer-cua", "cua-driver", "mcp", "--socket", "/home/agent/.cache/cua-driver/cua-driver.sock"],
+      "enabled": true
     }
   }
 }

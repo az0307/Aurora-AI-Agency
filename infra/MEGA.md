@@ -81,4 +81,5 @@ RULES (hard):
 | Health check | `ssh -t aurora-01 bash /opt/aurora/check.sh` |
 | Hermes in Telegram / OpenBot / dashboard | `aurora tg` / `aurora openbot` / `aurora hdash` |
 | Claude on the server | `aurora claude` (or the **claude-server** widget) |
+| Cua desktop (agents drive it; you watch) | `aurora cua_on` / `aurora cua_off` |
 | The menu | `a` |

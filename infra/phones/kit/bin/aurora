@@ -51,6 +51,8 @@ logs|📜 Hermes logs|Follow the bot's logs (Ctrl-c to stop).
 restart|🔁 Restart Hermes|Reloads its keys from secrets.env and restarts it — use after adding or rotating a key (ship it first: bootstrap.sh --ship-only).
 desk_on|🖱  Computer desktop: start|Starts the computer-use desktop on the server (then open the two Tailscale links).
 desk_off|⏹  Computer desktop: stop|Gives the ~1–2 GB RAM back.
+cua_on|🖥  Cua desktop: start + watch|Starts the Cua desktop (Claude Code / OpenCode drive it over MCP: sees menus + buttons by name) and opens the live screen in your browser.
+cua_off|⏹  Cua desktop: stop|Gives the ~1–2 GB RAM back.
 cron|⏰ Scheduled jobs|What Hermes runs on a timer (cron). Add one in chat: /cron add "0 21 * * *" "…"
 secrets|🔐 Fill secrets from Bitwarden|Unlocks your vault, writes infra/secrets.env from the "Aurora" folder, locks again.
 create|🚀 Create / update the server|Runs bootstrap.sh: shows the live price first (capped at AUD $39/mo), asks before buying.
@@ -109,6 +111,8 @@ run() {
     restart)  remote 'bash /opt/aurora/stacks-up.sh hermes --env-only && cd /opt/aurora/stacks/hermes && docker compose restart gateway'; pause ;;
     desk_on)  remote 'cd /opt/aurora/stacks/computer && docker compose --profile desktop up -d desktop'; pause ;;
     desk_off) remote 'cd /opt/aurora/stacks/computer && docker compose --profile desktop stop desktop'; pause ;;
+    cua_on)   remote bash /opt/aurora/stacks-up.sh cua && openurl "$(link CUA)"; pause ;;
+    cua_off)  remote 'cd /opt/aurora/stacks/computer && docker compose --profile cua stop cua'; pause ;;
     cron)     remote docker exec hermes hermes cron list; pause ;;
     secrets)  aurora-secrets fill; pause ;;
     create)   (cd "$INFRA" && ./bootstrap.sh --dry-run && read -rp "Create/update it for real? [y/N] " y && [ "$y" = y ] && ./bootstrap.sh); pause ;;
