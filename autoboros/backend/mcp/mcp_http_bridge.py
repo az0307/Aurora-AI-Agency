@@ -7,7 +7,9 @@ import os
 from pathlib import Path
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+import hmac
+
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 import structlog
 
@@ -53,8 +55,17 @@ class ToolRequest(BaseModel):
     name: str
     arguments: dict = {}
 
+def _require_token(x_mcp_token: str | None):
+    """Fail closed: /call exposes shell_exec + file_write, so a shared token is mandatory."""
+    expected = os.environ.get("MCP_BRIDGE_TOKEN", "")
+    if not expected:
+        raise HTTPException(status_code=503, detail="MCP_BRIDGE_TOKEN not configured")
+    if not x_mcp_token or not hmac.compare_digest(x_mcp_token.encode(), expected.encode()):
+        raise HTTPException(status_code=401, detail="Invalid MCP bridge token")
+
 @app.post("/call")
-async def call_tool(req: ToolRequest):
+async def call_tool(req: ToolRequest, x_mcp_token: str | None = Header(default=None)):
+    _require_token(x_mcp_token)
     logger.info("mcp_call", tool=req.name)
     result = call_mcp_tool(req.name, req.arguments)
     return result

@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import hmac
 from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -96,7 +97,7 @@ async def login(req: LoginRequest, request: Request, response: Response):
         raise HTTPException(status_code=429, detail="Too many attempts. Try again later.")
 
     expected = getattr(settings, 'ab_password', 'autoboros')
-    if req.password != expected:
+    if not hmac.compare_digest(req.password.encode(), str(expected).encode()):
         fails = await store.incr_with_ttl(f"login_fails:{ip}", LOCKOUT_SECONDS)
         if fails >= MAX_ATTEMPTS:
             await store.set_flag(f"login_lock:{ip}", LOCKOUT_SECONDS)

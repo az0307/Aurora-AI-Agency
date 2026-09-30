@@ -22,12 +22,12 @@ class JobCreate(JobBase):
     pass
 
 class JobUpdate(BaseModel):
-    t: Optional[str] = None
-    client: Optional[str] = None
-    status: Optional[str] = None
-    lvl: Optional[int] = None
-    actor: Optional[str] = None
-    src: Optional[str] = None
+    t: Optional[str] = Field(None, max_length=500)
+    client: Optional[str] = Field(None, max_length=100)
+    status: Optional[str] = Field(None, max_length=50)
+    lvl: Optional[int] = Field(None, ge=0, le=4)
+    actor: Optional[str] = Field(None, max_length=20)
+    src: Optional[str] = Field(None, max_length=100)
     skill: Optional[str] = None
     steps: Optional[List[str]] = None
     ask: Optional[str] = None
