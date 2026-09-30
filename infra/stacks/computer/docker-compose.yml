@@ -63,6 +63,28 @@ services:
       - "127.0.0.1:6080:6080"        # the live desktop (noVNC): watch or take over
     mem_limit: 2g
 
+  # Cua desktop (on demand): a disposable XFCE desktop that ANY MCP agent drives through Cua
+  # Driver (github.com/trycua/cua, MIT) — screenshots + the accessibility tree, so it can click
+  # menus/buttons by name, not just pixels. Built here from ./cua (pinned + checksum-verified).
+  #   bash /opt/aurora/stacks-up.sh cua      # build/start, publish noVNC on the tailnet (:6081)
+  # Agents on the host connect over stdio (no port):
+  #   docker exec -i computer-cua cua-driver mcp --socket /home/agent/.cache/cua-driver/cua-driver.sock
+  # No host mounts, no Docker socket, runs as a non-root user: the container is the boundary.
+  cua:
+    build: ./cua
+    image: aurora-cua:0.30.4
+    container_name: computer-cua
+    profiles: ["cua"]
+    restart: "no"
+    init: true
+    environment:
+      CUA_WIDTH: "1280"              # keep ≤ WXGA: bigger screenshots = worse clicks
+      CUA_HEIGHT: "800"
+    ports:
+      - "127.0.0.1:6081:6080"        # noVNC: watch or take over
+    shm_size: 1g
+    mem_limit: 2g
+
 volumes:
   playwright_home:
   desktop_config:

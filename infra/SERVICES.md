@@ -75,6 +75,7 @@ fighting over one host port is the easiest mistake to make here.
 | 5001 | Dockge (stack manager GUI) | admin |
 | 5678 | n8n | n8n |
 | 6080 | computer-use desktop screen (noVNC, `desktop` profile) | computer |
+| 6081 | Cua desktop screen (noVNC, `cua` profile; agents use MCP over `docker exec`, no port) | computer |
 | 6333 | Qdrant | ondemand |
 | 8080 | Dozzle | monitoring |
 | 8600 | Aurora Assistant (control panel) | assistant |

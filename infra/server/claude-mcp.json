@@ -19,6 +19,10 @@
       "type": "http",
       "url": "https://connect.composio.dev/mcp",
       "headers": { "x-consumer-api-key": "${COMPOSIO_CONSUMER_KEY}" }
+    },
+    "cua": {
+      "command": "docker",
+      "args": ["exec", "-i", "computer-cua", "cua-driver", "mcp", "--socket", "/home/agent/.cache/cua-driver/cua-driver.sock"]
     }
   }
 }
