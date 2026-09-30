@@ -1,0 +1,69 @@
+*** DRAFT — NOT APPROVED — DO NOT SEND ***
+Every [bracketed] item must be decided or filled in by Aaron first. Delete this banner and every
+bracket note before it goes out. See YMI-BILLING-DECISION.md for the reasoning (Option A).
+Do not copy bank details into this file; add them from INVOICE-TEMPLATE.txt at send time only.
+
+INVOICE
+
+Aaron Baker, trading as Aurora AI Agency        [confirm ASIC business-name registration first]
+Melton South, VIC 3338 [full street address outstanding — Services Agreement §10]
+ABN: 15 870 917 390
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Invoice #:    [AURORA-0001 — earlier drafts reused this number; confirm it was never issued]
+Date:         [Date]
+Due Date:     [Date + 7 days]
+To:           Ben Breheny, Y.M.I Roofing Pty Ltd
+              ACN: 695 710 055   ABN: 14 695 710 055
+              [Ben's postal address — outstanding]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DESCRIPTION                                               QTY     RATE       AMOUNT
+─────────────────────────────────────────────────────────────────────────────────────
+Website build and launch — ymiroofing.com.au               1    [$700.00]   [$700.00]
+  Delivered and live:
+   • Homepage, 7 service pages, service areas, review
+     page, privacy policy and terms
+   • Quote form with email delivery, enquiry record
+     and password-protected enquiries dashboard
+     [keep this line only once a test enquiry has
+      reached Ben's inbox and the dashboard]
+   • Google Analytics with phone-tap and form events
+   • Search-engine structured data and sitemap
+   • Mobile-first build, hosted on Cloudflare Pages
+
+Monthly service — month 1 ([Essentials $200 / agreed figure]) 1   [$200.00]   [$200.00]
+  Hosting, maintenance, monthly report, and up to about
+  one hour of small changes (text, phone numbers, photos).
+
+─────────────────────────────────────────────────────────────────────────────────────
+                                                  SUBTOTAL:        [$900.00]
+                                                  GST:             $0.00*
+                                                  TOTAL DUE:       [$900.00]
+
+* Aurora (ABN 15 870 917 390) is not currently registered for GST — this supply is not subject
+  to GST.
+
+NOT YET ACTIVE — NO CHARGE
+Automated SMS alerts, review-request automation, missed-call text-back and the chatbot are not
+yet switched on. They will be added, and the monthly fee reviewed, only when each one is live
+and you have agreed to it.
+
+NOT INCLUDED (billed to you directly, in your own name)
+Domain renewal, SMS provider, ManyChat, advertising spend, professional photography.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PAYMENT DETAILS
+Bank transfer — [copy account name, BSB and account number from INVOICE-TEMPLATE.txt at send time]
+Reference: [AURORA-0001-YMI]
+
+TERMS
+Payment due within 7 days of the invoice date.
+[Reference the agreement only once it has been reviewed and agreed in writing; otherwise say
+ "As confirmed by email on [date]."]
+
+Thank you for your business.
+Aurora AI Agency · ABN 15 870 917 390
