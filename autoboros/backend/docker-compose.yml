@@ -61,7 +61,7 @@ services:
     ports:
       - "127.0.0.1:3001:3001"
     environment:
-      - MCP_BRIDGE_TOKEN=${MCP_BRIDGE_TOKEN:?set MCP_BRIDGE_TOKEN}
+      - MCP_BRIDGE_TOKEN=${MCP_BRIDGE_TOKEN:-}
       - DATABASE_URL=postgresql+asyncpg://autoboros:autoboros@db:5432/autoboros
     volumes:
       - ./mcp:/app/mcp
