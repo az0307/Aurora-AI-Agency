@@ -80,7 +80,7 @@ write_files:
       if type -q zoxide;   zoxide init fish  | source; end
       if type -q atuin;    atuin init fish   | source; end
       # fish already gives autosuggestions + syntax highlighting with no plugins
-      alias cat='bat'
+      alias cat='batcat'
       alias ls='eza'
       abbr -a cd z
       # `thefuck` autocorrect: run `fix` after a mistyped command
@@ -104,7 +104,7 @@ runcmd:
   # --- Terminal extras not in apt: Starship, Atuin, Zellij, thefuck ---
   - su - aurora -c 'curl -sS https://starship.rs/install.sh | sh -s -- -y' || true
   - su - aurora -c "curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --non-interactive" || true
-  - (curl -fsSL https://github.com/zellij-org/zellij/releases/latest/download/zellij-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin) || true
+  - ARCH="$(dpkg --print-architecture 2>/dev/null || true)"; case "$ARCH" in amd64) ZTARGET=x86_64-unknown-linux-musl ;; arm64) ZTARGET=aarch64-unknown-linux-musl ;; *) ZTARGET="" ;; esac; if [ -n "$ZTARGET" ]; then (curl -fsSL "https://github.com/zellij-org/zellij/releases/latest/download/zellij-${ZTARGET}.tar.gz" | tar -xz -C /usr/local/bin) || true; fi
   - DEBIAN_FRONTEND=noninteractive apt-get install -y thefuck || true
 
   # --- Restart SSH so hardening takes effect ---

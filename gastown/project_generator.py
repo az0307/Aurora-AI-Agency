@@ -5,6 +5,7 @@ Takes a project idea and generates a sensible file/folder structure with stub fi
 """
 
 import os
+import re
 import sys
 import argparse
 from pathlib import Path
@@ -28,7 +29,9 @@ class ProjectGenerator:
             return "api_backend"
         elif any(word in idea for word in ["cli", "command", "tool", "script"]):
             return "cli_tool"
-        elif any(word in idea for word in ["ml", "machine learning", "ai", "model", "neural"]):
+        elif any(word in idea for word in ["ml", "machine learning", "model", "neural"]) or re.search(r"\bai\b", idea):
+            # "ai" is checked as a whole word (not a substring) to avoid false
+            # positives inside unrelated words like "maintenance" or "retail".
             return "ml_project"
         elif any(word in idea for word in ["data", "analytics", "pipeline", "etl"]):
             return "data_project"
