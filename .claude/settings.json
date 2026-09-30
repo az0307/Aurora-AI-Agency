@@ -1,6 +1,20 @@
 {
   "extraKnownMarketplaces": {
-    "aurora": { "source": { "source": "github", "repo": "az0307/Aurora-AI-Agency" } }
+    "aurora": {
+      "source": {
+        "source": "github",
+        "repo": "az0307/Aurora-AI-Agency"
+      }
+    },
+    "hyperframes": {
+      "source": {
+        "source": "github",
+        "repo": "heygen-com/hyperframes"
+      }
+    }
   },
-  "enabledPlugins": { "aurora-ops@aurora": true }
+  "enabledPlugins": {
+    "aurora-ops@aurora": true,
+    "hyperframes@hyperframes": true
+  }
 }

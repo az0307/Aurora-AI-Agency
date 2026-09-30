@@ -38,11 +38,12 @@ place() {
 if [ "$REFRESH" = 0 ]; then
   say "apt packages"
   sudo apt-get update -qq
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq whiptail fzf jq rsync git curl ca-certificates >/dev/null
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq whiptail fzf jq rsync git curl ca-certificates ffmpeg >/dev/null
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq adb >/dev/null 2>&1 \
     || sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq android-tools-adb >/dev/null 2>&1 || true
 
-  if ! command -v node >/dev/null || [ "$(node -p 'process.versions.node.split(".")[0]')" -lt 20 ]; then
+  # 22+: the HyperFrames video CLI (Claude Code plugin below) requires it.
+  if ! command -v node >/dev/null || [ "$(node -p 'process.versions.node.split(".")[0]')" -lt 22 ]; then
     say "Node.js 22 (NodeSource)"
     curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - >/dev/null
     sudo apt-get install -y -qq nodejs >/dev/null
@@ -56,6 +57,16 @@ fi
 say "aurora menu + aurora-agent → /usr/local/bin"
 sudo install -m 755 "$SRC/aurora" /usr/local/bin/aurora
 sudo install -m 755 "$SRC/aurora-agent" /usr/local/bin/aurora-agent
+
+say "Claude Code plugins"
+# HyperFrames (HeyGen, Apache-2.0): make + render videos from HTML (`npx hyperframes …`, needs
+# Node 22 + ffmpeg, both above). Idempotent; a failure here never stops the rest of setup.
+command -v ffmpeg >/dev/null || sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ffmpeg >/dev/null 2>&1 || true
+if command -v claude >/dev/null; then
+  claude plugin marketplace add heygen-com/hyperframes >/dev/null 2>&1 || true
+  if claude plugin install hyperframes@hyperframes >/dev/null 2>&1; then echo "  hyperframes: installed"
+  else echo "  hyperframes: not installed — run: claude plugin install hyperframes@hyperframes"; fi
+fi
 
 say "agent configs"
 place "$SRC/opencode.json" "$HOME/.config/opencode/opencode.json"
