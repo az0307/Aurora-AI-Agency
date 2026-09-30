@@ -16,6 +16,7 @@ import subprocess
 import os
 import sqlite3
 from pathlib import Path
+from urllib.parse import quote
 
 def send(msg):
     print(json.dumps(msg), flush=True)
@@ -137,12 +138,15 @@ def handle_call(name, args):
             # valid syntax. Open the connection itself in read-only mode (SQLite
             # URI mode=ro) so any write is rejected at the engine level
             # regardless of how the query text is phrased.
-            conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            cursor.execute(q)
-            rows = [dict(row) for row in cursor.fetchall()]
-            conn.close()
+            uri = "file:" + quote(os.path.abspath(db_path)) + "?mode=ro"
+            conn = sqlite3.connect(uri, uri=True)
+            try:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute(q)
+                rows = [dict(row) for row in cursor.fetchall()]
+            finally:
+                conn.close()
             return {"rows": rows, "count": len(rows)}
         except Exception as e:
             return {"error": str(e)}

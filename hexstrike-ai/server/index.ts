@@ -45,6 +45,7 @@ function safeSpawn(cmd: string, args: string[]) {
 
 // Run an allowlisted command via safeSpawn and collect its stdout as a Promise,
 // mirroring the non-streaming exec() call sites but without shell interpolation.
+const MAX_OUTPUT_BYTES = 10 * 1024 * 1024;
 function runCmd(cmd: string, args: string[], timeoutMs: number): Promise<string> {
   return new Promise((resolve, reject) => {
     let proc: ReturnType<typeof safeSpawn>;
@@ -56,14 +57,32 @@ function runCmd(cmd: string, args: string[], timeoutMs: number): Promise<string>
     }
     let out = '';
     let err = '';
-    const timer = setTimeout(() => {
+    let outBytes = 0;
+    let errBytes = 0;
+    let settled = false;
+    const fail = (e: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       proc.kill('SIGKILL');
-      reject(new Error(`${cmd} timed out after ${timeoutMs}ms`));
-    }, timeoutMs);
-    proc.stdout.on('data', (d: Buffer) => { out += d.toString(); });
-    proc.stderr.on('data', (d: Buffer) => { err += d.toString(); });
-    proc.on('error', (e) => { clearTimeout(timer); reject(e); });
+      reject(e);
+    };
+    const timer = setTimeout(() => fail(new Error(`${cmd} timed out after ${timeoutMs}ms`)), timeoutMs);
+    // Cap captured output per stream (exec() enforced this via maxBuffer).
+    proc.stdout.on('data', (d: Buffer) => {
+      outBytes += d.length;
+      if (outBytes > MAX_OUTPUT_BYTES) return fail(new Error(`${cmd} output exceeded ${MAX_OUTPUT_BYTES} bytes`));
+      out += d.toString();
+    });
+    proc.stderr.on('data', (d: Buffer) => {
+      errBytes += d.length;
+      if (errBytes > MAX_OUTPUT_BYTES) return fail(new Error(`${cmd} stderr exceeded ${MAX_OUTPUT_BYTES} bytes`));
+      err += d.toString();
+    });
+    proc.on('error', (e) => fail(e));
     proc.on('close', (code) => {
+      if (settled) return;
+      settled = true;
       clearTimeout(timer);
       if (code === 0) resolve(out);
       else reject(new Error(err || `${cmd} exited with code ${code}`));

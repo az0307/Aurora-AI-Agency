@@ -134,7 +134,11 @@ export function AppProvider({ children }) {
     }
   }, []);
 
-  const { send: wsSend } = useWebSocket(handleWS);
+  const { send: wsSend, connect: wsConnect } = useWebSocket(handleWS);
+
+  useEffect(() => {
+    if (user) wsConnect();
+  }, [user, wsConnect]);
 
   const showToast = useCallback((msg) => {
     dispatch({ type: 'SHOW_TOAST', payload: msg });

@@ -123,8 +123,10 @@ echo
 
 # --- 5. Existing footprint (so you don't double-provision) -----------------
 if command -v jq >/dev/null; then
-  n="$(curl "${auth[@]}" "${API}/servers?per_page=1" | jq '.meta.pagination.total_entries')"
-  if [ "$n" = "0" ]; then
+  n="$(curl "${auth[@]}" "${API}/servers?per_page=1" | jq -r '.meta.pagination.total_entries // "unknown"')"
+  if [ "$n" = "unknown" ]; then
+    warn "could not determine how many servers this Project already has"
+  elif [ "$n" = "0" ]; then
     pass "no existing servers in this Project (clean slate)"
   else
     warn "this Project already has ${n} server(s) — confirm you're not duplicating"

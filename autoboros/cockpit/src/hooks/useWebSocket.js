@@ -18,7 +18,7 @@ export function useWebSocket(onMessage) {
     const token = localStorage.getItem('ab_token');
     if (!token) {
       // B5 — WS auth is mandatory; don't open a tokenless socket (server closes 4001).
-      reconnectTimer.current = setTimeout(connect, RECONNECT_DELAY);
+      // No retry timer: the caller calls connect() again once a user logs in.
       return;
     }
     const url = `${WS_URL}?token=${encodeURIComponent(token)}`;
@@ -42,7 +42,7 @@ export function useWebSocket(onMessage) {
 
     ws.onclose = () => {
       console.log('[ws] closed');
-      if (disposed.current) return;
+      if (disposed.current || wsRef.current !== ws) return;
       if (reconnectCount.current < MAX_RECONNECTS) {
         reconnectCount.current++;
         reconnectTimer.current = setTimeout(connect, RECONNECT_DELAY);
