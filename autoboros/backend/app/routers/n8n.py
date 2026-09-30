@@ -1,3 +1,4 @@
+import hmac
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +15,7 @@ logger = structlog.get_logger()
 
 def verify_n8n_key(x_n8n_key: str = Header(None)):
     expected = getattr(settings, 'n8n_api_key', '')
-    if not expected or x_n8n_key != expected:
+    if not expected or not x_n8n_key or not hmac.compare_digest(x_n8n_key.encode(), expected.encode()):
         raise HTTPException(status_code=403, detail="Invalid n8n API key")
     return True
 
