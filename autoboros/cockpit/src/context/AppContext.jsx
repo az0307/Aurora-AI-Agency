@@ -89,7 +89,7 @@ export function AppProvider({ children }) {
   const initRef = useRef(false);
 
   useEffect(() => {
-    if (authLoading || initRef.current) return;
+    if (authLoading || !user || initRef.current) return;
     initRef.current = true;
 
     async function load() {
@@ -105,7 +105,7 @@ export function AppProvider({ children }) {
       }
     }
     load();
-  }, [authLoading]);
+  }, [authLoading, user]);
 
   useEffect(() => {
     if (state.initialized) {
