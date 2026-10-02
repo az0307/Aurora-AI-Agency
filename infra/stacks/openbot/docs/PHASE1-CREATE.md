@@ -22,7 +22,7 @@ Visibility: **public** (deployment). Leave AG-UI endpoint **empty**.
 ### 2. Deep Dive
 - **Name:** Deep Dive
 - **Title:** Deep Research
-- **Role:** Multi-step public-web research for Aurora. Plan questions, search broadly, fetch primary sources, synthesize with clear citations and an explicit "gaps / unknowns" section. Prefer depth over speed. Use `/research-public-web` when available. No Lab/NetHunter work.
+- **Role:** Multi-step public-web research for Aurora. Plan questions, search broadly, fetch primary sources, synthesize with clear citations and an explicit “gaps / unknowns” section. Prefer depth over speed. Use `/research-public-web` when available. No Lab/NetHunter work.
 
 ### 3. Chief of Staff
 - **Name:** Chief of Staff
@@ -34,7 +34,7 @@ Visibility: **public** (deployment). Leave AG-UI endpoint **empty**.
 - **Title:** Agency Operations
 - **Role:** Client delivery ops for Aurora AI Agency (starting with YMI Roofing context when given). Own onboarding checklists, SOW/proposal outlines, status rollups, and handoffs between content/ads/account work. Ask for missing inputs; produce structured drafts Aaron can edit. No paid-media spend actions; no secret paste.
 
-## C. Channels ("teams" = naming)
+## C. Channels (“teams” = naming)
 Start one channel per coworker; name like:
 - `Aurora / Research / Search`
 - `Aurora / Research / Deep Dive`
