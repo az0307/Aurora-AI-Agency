@@ -26,3 +26,8 @@ secrets.env
 # Hermes runtime data (sessions, memories, its .env) and Tailscale node state
 stacks/hermes/data/
 stacks/tailscale/state/
+
+# OpenBot filled envs (never commit — use *.env.example only)
+stacks/openbot/*.env
+stacks/openbot/**/*.env
+!**/*.env.example
