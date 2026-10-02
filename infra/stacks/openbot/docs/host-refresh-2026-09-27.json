@@ -1,0 +1,14 @@
+{
+  "checked_aest": "2026-09-27 08:09 AEST",
+  "scope": "read_only",
+  "docker": {"cli": "missing", "compose": "missing", "daemon": "unreachable", "notes": "docker command not found; daemon not running"},
+  "bun": {"path": "/usr/local/bin/bun", "version": "1.4.2", "meets_1_3_plus": true},
+  "node": "v20.19.2",
+  "postgres_host": "missing",
+  "ports": {"3001": "free", "3010": "free", "4100": "free", "4200": "free", "4201": "free", "4500": "free", "5432": "free"},
+  "ports_listening": [],
+  "ports_free": [3001, 3010, 4100, 4200, 4201, 4500, 5432],
+  "disk": {"root_free_gb": 110, "workspace_free_gb": 110, "root_size_gb": 126, "root_used_pct": 9},
+  "memory": {"total_gb": 15.6, "available_gb": 5.8, "used_gb": 9.8, "swap_gb": 0},
+  "cpu_count": 8
+}

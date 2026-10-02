@@ -9,10 +9,10 @@ Distinguish: **(a)** OpenBot native built-ins/plugins/skills · **(b)** patterns
 
 ## Tier S — must-enable now
 
-1. **Research Desk** + built-in **browser/computer** — Parallel absent on pin  
-2. **Notion** plugin (reads-first)  
-3. **Skills** — `/research-public-web` + Phase-1 role skills  
-4. **Boundaries** presets before broad grants  
+1. **Research Desk** + built-in **browser/computer** — Parallel absent on pin
+2. **Notion** plugin (reads-first)
+3. **Skills** — `/research-public-web` + Phase-1 role skills
+4. **Boundaries** presets before broad grants
 5. **Composio** apps: Gmail → Calendar → GitHub (key SET; reads first)
 
 *Next-up:* Google Drive when OAuth client ready.
