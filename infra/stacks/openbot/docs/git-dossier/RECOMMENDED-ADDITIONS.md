@@ -10,7 +10,7 @@ Placeholder for Bot Forge / CoS / VPN / Right Hand input. Edit freely; keep **no
 ## Bot Forge Top 5 (priority order)
 
 1. **Deep Dive on Research Desk** — make Deep Dive the primary research seat on Research Desk (grants + channel); prefer this over more Search clones until Search thread-init is fixed.
-2. **Channel `Aurora / Agency Core` + Agency Ops skill** — channel naming + standing skill for Agency Ops / CoS routing (not a Grok "team").
+2. **Channel `Aurora / Agency Core` + Agency Ops skill** — channel naming + standing skill for Agency Ops / CoS routing (not a Grok “team”).
 3. **Channel `Aurora / Mentor-Study` + Study Coach skill** — mentor/study lane; Study Coach one-job skill (Sydney TZ plans, quizzes, source-linked summaries; never submit as Aaron).
 4. **Channel `Aurora / Client-YMI` + YMI Account skill** — client-signal clean; holds: **no Ben contact**, **no live ads** without Aaron yes.
 5. **Plugins:** Notion → Google Drive → then Gmail / Calendar / GitHub (Composio apps after key already in env).
@@ -25,7 +25,7 @@ Placeholder for Bot Forge / CoS / VPN / Right Hand input. Edit freely; keep **no
 
 | Seat / skill | One-line |
 |--------------|----------|
-| **Life Continuity Desk** | Cross-day continuity for Aaron priorities, open loops, and "what was I doing" without owning specialist work |
+| **Life Continuity Desk** | Cross-day continuity for Aaron priorities, open loops, and “what was I doing” without owning specialist work |
 | **Open-Loop / Decision PA** | Capture decisions pending Aaron; draft options; never send/spend/commit |
 | **Mentor & Study spaced-review** | Spaced-review prompts paired with Mentor-Study / Study Coach |
 | **Household Admin** (pair **Tradbot**) | Household/ops admin drafts; pair with Tradbot lane — no finance publish |
